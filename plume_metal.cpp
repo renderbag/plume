@@ -15,7 +15,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <algorithm>
-#include <xxHash/xxh3.h>
 #include <mutex>
 
 #include "plume_metal.h"
@@ -42,26 +41,32 @@ namespace plume {
         return (n + alignment - 1) & ~(alignment - 1);
     }
 
-    uint64_t hashForRenderPipelineDescriptor(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled) {
-        XXH3_state_t xxh3;
-        XXH3_64bits_reset(&xxh3);
+    uint64_t createClearPipelineKey(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled) {
+        ClearPipelineKey key;
+        key.value = 0;
+        key.depthClear = depthWriteEnabled ? 1 : 0;
+        key.msaaCount = pipelineDesc->sampleCount();
 
-        std::uintptr_t sampleCount = pipelineDesc->sampleCount();
-        XXH3_64bits_update(&xxh3, &sampleCount, sizeof(sampleCount));
-
-        uint16_t pixel_info[ATTACHMENT_COUNT] = { 0 };
-        for (uint32_t i = 0; i < COLOR_COUNT; i++) {
-            if (auto colorAttachment = pipelineDesc->colorAttachments()->object(i)) {
-                pixel_info[i] = static_cast<uint16_t>(colorAttachment->pixelFormat()) ^ colorAttachment->writeMask();
+        auto colorFormat = [&](uint32_t index) {
+            if (auto colorAttachment = pipelineDesc->colorAttachments()->object(index)) {
+                return static_cast<uint64_t>(colorAttachment->pixelFormat());
             }
+            return 0llu;
+        };
+
+        key.colorFormat0 = colorFormat(0);
+        key.colorFormat1 = colorFormat(1);
+        key.colorFormat2 = colorFormat(2);
+        key.colorFormat3 = colorFormat(3);
+        key.colorFormat4 = colorFormat(4);
+        key.colorFormat5 = colorFormat(5);
+        key.colorFormat6 = colorFormat(6);
+
+        if (uint64_t depthAttachment = pipelineDesc->depthAttachmentPixelFormat()) {
+            key.depthFormat = depthAttachment;
         }
 
-        if (pipelineDesc->depthAttachmentPixelFormat() != MTL::PixelFormatInvalid) {
-            pixel_info[DEPTH_INDEX] = static_cast<uint16_t>(pipelineDesc->depthAttachmentPixelFormat()) ^ (depthWriteEnabled ? 1 : 0);
-        }
-
-        XXH3_64bits_update(&xxh3, pixel_info, sizeof(pixel_info));
-        return XXH3_64bits_digest(&xxh3);
+        return key.value;
     }
 
     NS::UInteger alignmentForRenderFormat(MTL::Device *device, RenderFormat format) {
@@ -3351,10 +3356,10 @@ namespace plume {
     }
 
     MTL::RenderPipelineState* MetalDevice::getOrCreateClearRenderPipelineState(MTL::RenderPipelineDescriptor *pipelineDesc, const bool depthWriteEnabled) {
-        uint64_t hash = hashForRenderPipelineDescriptor(pipelineDesc, depthWriteEnabled);
+        uint64_t pipelineKey = createClearPipelineKey(pipelineDesc, depthWriteEnabled);
 
         std::lock_guard lock(clearPipelineStateMutex);
-        const auto it = clearRenderPipelineStates.find(hash);
+        const auto it = clearRenderPipelineStates.find(pipelineKey);
         if (it != clearRenderPipelineStates.end()) {
             return it->second;
         }
@@ -3368,7 +3373,7 @@ namespace plume {
             return nullptr;
         }
 
-        auto [inserted_it, success] = clearRenderPipelineStates.insert(std::make_pair(hash, clearPipelineState));
+        auto [inserted_it, success] = clearRenderPipelineStates.insert(std::make_pair(pipelineKey, clearPipelineState));
         return inserted_it->second;
     }
 

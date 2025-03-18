@@ -62,6 +62,26 @@ namespace plume {
         Resolve
     };
 
+    struct ClearPipelineKey {
+        static_assert(static_cast<uint32_t>(RenderFormat::MAX) < 128,
+                "ClearPipelineKey needs to use more bits for each render target format.");
+        union {
+            uint64_t value = 0;
+            struct {
+                uint64_t depthClear: 1;
+                uint64_t msaaCount: 4;
+                uint64_t colorFormat0: 7;
+                uint64_t colorFormat1: 7;
+                uint64_t colorFormat2: 7;
+                uint64_t colorFormat3: 7;
+                uint64_t colorFormat4: 7;
+                uint64_t colorFormat5: 7;
+                uint64_t colorFormat6: 7;
+                uint64_t depthFormat: 7;
+            };
+        };
+    };
+
     struct ComputeStateFlags {
         uint32_t pipelineState : 1;
         uint32_t descriptorSets : 1;
