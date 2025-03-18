@@ -34,6 +34,7 @@ namespace plume {
     // MARK: - Prototypes
 
     MTL::PixelFormat mapPixelFormat(RenderFormat format);
+    RenderFormat mapRenderFormat(MTL::PixelFormat format);
 
     // MARK: - Helpers
 
@@ -49,7 +50,7 @@ namespace plume {
 
         auto colorFormat = [&](uint32_t index) {
             if (auto colorAttachment = pipelineDesc->colorAttachments()->object(index)) {
-                return static_cast<uint64_t>(colorAttachment->pixelFormat());
+                return static_cast<uint64_t>(mapRenderFormat(colorAttachment->pixelFormat()));
             }
             return 0llu;
         };
@@ -62,8 +63,8 @@ namespace plume {
         key.colorFormat5 = colorFormat(5);
         key.colorFormat6 = colorFormat(6);
 
-        if (uint64_t depthAttachment = pipelineDesc->depthAttachmentPixelFormat()) {
-            key.depthFormat = depthAttachment;
+        if (auto depthAttachment = pipelineDesc->depthAttachmentPixelFormat()) {
+            key.depthFormat = static_cast<uint64_t>(mapRenderFormat(depthAttachment));
         }
 
         return key.value;
