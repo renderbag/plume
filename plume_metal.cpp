@@ -43,11 +43,6 @@ namespace plume {
     }
 
     uint64_t createClearPipelineKey(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled) {
-        ClearPipelineKey key;
-        key.value = 0;
-        key.depthClear = depthWriteEnabled ? 1 : 0;
-        key.msaaCount = pipelineDesc->sampleCount();
-
         auto colorFormat = [&](uint32_t index) {
             if (auto colorAttachment = pipelineDesc->colorAttachments()->object(index)) {
                 return static_cast<uint64_t>(mapRenderFormat(colorAttachment->pixelFormat()));
@@ -55,6 +50,10 @@ namespace plume {
             return 0llu;
         };
 
+        ClearPipelineKey key;
+        key.value = 0;
+        key.depthClear = depthWriteEnabled ? 1 : 0;
+        key.msaaCount = pipelineDesc->sampleCount();
         key.colorFormat0 = colorFormat(0);
         key.colorFormat1 = colorFormat(1);
         key.colorFormat2 = colorFormat(2);
