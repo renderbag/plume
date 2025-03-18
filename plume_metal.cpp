@@ -62,10 +62,7 @@ namespace plume {
         key.colorFormat4 = colorFormat(4);
         key.colorFormat5 = colorFormat(5);
         key.colorFormat6 = colorFormat(6);
-
-        if (auto depthAttachment = pipelineDesc->depthAttachmentPixelFormat()) {
-            key.depthFormat = static_cast<uint64_t>(mapRenderFormat(depthAttachment));
-        }
+        key.depthFormat = static_cast<uint64_t>(mapRenderFormat(pipelineDesc->depthAttachmentPixelFormat()));
 
         return key.value;
     }
