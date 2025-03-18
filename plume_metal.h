@@ -65,6 +65,7 @@ namespace plume {
     struct ClearPipelineKey {
         static_assert(static_cast<uint32_t>(RenderFormat::MAX) < 128,
                 "ClearPipelineKey needs to use more bits for each render target format.");
+
         union {
             uint64_t value = 0;
             struct {
