@@ -762,14 +762,16 @@ namespace plume {
         }
     }
 
-    MTL::ResourceOptions mapResourceOption(RenderHeapType heapType) {
+    MTL::ResourceOptions mapResourceOption(RenderHeapType heapType, bool hasUma) {
         switch (heapType) {
             case RenderHeapType::DEFAULT:
                 return MTL::ResourceStorageModePrivate;
             case RenderHeapType::UPLOAD:
-                return MTL::ResourceStorageModeShared;
             case RenderHeapType::READBACK:
-                return MTL::ResourceStorageModeShared;
+                if (hasUma) {
+                    return MTL::ResourceStorageModeShared;
+                }
+                return MTL::ResourceStorageModeManaged;
             default:
                 assert(false && "Unknown heap type.");
                 return MTL::ResourceStorageModePrivate;
@@ -1047,7 +1049,7 @@ namespace plume {
         this->desc = desc;
         this->device = device;
 
-        this->mtl = device->mtl->newBuffer(desc.size, mapResourceOption(desc.heapType));
+        this->mtl = device->mtl->newBuffer(desc.size, mapResourceOption(desc.heapType, device->getCapabilities().uma));
     }
 
     MetalBuffer::~MetalBuffer() {
@@ -1092,7 +1094,7 @@ namespace plume {
         // Configure texture properties
         const MTL::PixelFormat pixelFormat = mapPixelFormat(format);
         const MTL::TextureUsage usage = mapTextureUsageFromBufferFlags(buffer->desc.flags);
-        const MTL::ResourceOptions options = mapResourceOption(buffer->desc.heapType);
+        const MTL::ResourceOptions options = mapResourceOption(buffer->desc.heapType, buffer->device->getCapabilities().uma);
 
         // Create texture with configured descriptor and alignment
         MTL::TextureDescriptor *descriptor = MTL::TextureDescriptor::textureBufferDescriptor(pixelFormat, width, options, usage);
@@ -1489,9 +1491,10 @@ namespace plume {
 
         uint64_t requiredSize = setLayout->argumentEncoder->encodedLength();
         requiredSize = alignUp(requiredSize, 256);
+        MTL::ResourceOptions storageMode = device->getCapabilities().uma ? MTL::ResourceStorageModeShared : MTL::ResourceStorageModeManaged;
 
         argumentBuffer = {
-            .mtl = device->mtl->newBuffer(requiredSize, MTL::ResourceStorageModeManaged),
+            .mtl = device->mtl->newBuffer(requiredSize, storageMode),
             .argumentEncoder = setLayout->argumentEncoder,
             .offset = 0,
         };
@@ -1969,8 +1972,20 @@ namespace plume {
             return;
         }
 
-        // End render passes on all barriers
-        endActiveRenderEncoder();
+        // Sync resources with the blit encoder
+        checkActiveBlitEncoder();
+
+        for (uint32_t i = 0; i < bufferBarriersCount; i++) {
+            const RenderBufferBarrier &barrier = bufferBarriers[i];
+            MTL::Resource *resource = static_cast<const MetalBuffer *>(barrier.buffer)->mtl;
+            activeBlitEncoder->synchronizeResource(resource);
+        }
+
+        for (uint32_t i = 0; i < textureBarriersCount; i++) {
+            const RenderTextureBarrier &barrier = textureBarriers[i];
+            MTL::Resource *resource = static_cast<const MetalTexture *>(barrier.texture)->mtl;
+            activeBlitEncoder->synchronizeResource(resource);
+        }
     }
 
     void MetalCommandList::dispatch(const uint32_t threadGroupCountX, const uint32_t threadGroupCountY, const uint32_t threadGroupCountZ) {
