@@ -1,4 +1,4 @@
-set(EXAMPLE_NAME triangle)
+set(EXAMPLE_NAME clear_color)
 
 # Source files
 set(SOURCES

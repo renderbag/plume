@@ -1,51 +1,54 @@
-#include <SDL.h>
+#include "../framework.h"
 #include <iostream>
-#include <chrono>
-#include <thread>
+
+class TriangleExample : public plume::example::Example {
+private:
+    SDL_Window* m_window;
+    int m_width;
+    int m_height;
+
+public:
+    void init(SDL_Window* window) override {
+        m_window = window;
+        
+        // Get the configuration to set initial size
+        auto config = getConfig();
+        m_width = config.width;
+        m_height = config.height;
+        
+        std::cout << "Triangle example initialized\n";
+    }
+    
+    void render() override {
+        // For now, just print that we're rendering
+        std::cout << "Rendering triangle frame...\r" << std::flush;
+        
+        // In a full implementation, this would draw a triangle using the render interface
+    }
+    
+    void resize(int width, int height) override {
+        m_width = width;
+        m_height = height;
+        std::cout << "Resized to " << width << "x" << height << std::endl;
+    }
+    
+    void handleEvent(const SDL_Event& event) override {
+        // Handle any additional events specific to this example
+    }
+    
+    plume::example::FrameworkConfig getConfig() const override {
+        plume::example::FrameworkConfig config;
+        config.title = "Plume Triangle Example";
+        config.width = 800;
+        config.height = 600;
+        config.vsync = true;
+        config.resizable = true;
+        return config;
+    }
+};
 
 int main(int argc, char* argv[]) {
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
-        return -1;
-    }
-
-    // Create SDL window
-    SDL_Window* window = SDL_CreateWindow(
-        "Plume Triangle Example",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        800, 600,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
-    );
-
-    if (!window) {
-        std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return -1;
-    }
-
-    std::cout << "Window created with SDL" << std::endl;
-    
-    // Main loop
-    bool quit = false;
-    SDL_Event event;
-    
-    while (!quit) {
-        // Handle events
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                quit = true;
-            }
-        }
-        
-        // In a real app, we would render here
-        // For this simplified example, we just sleep a bit
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    }
-
-    // Clean up
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    
+    auto triangleExample = std::make_unique<TriangleExample>();
+    plume::example::run(std::move(triangleExample));
     return 0;
 } 

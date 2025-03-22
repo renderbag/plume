@@ -1,63 +1,60 @@
-# Plume Render Hardware Interface (RHI)
+# Plume
 
-A lightweight cross-platform rendering abstraction layer supporting Vulkan, Direct3D 12, and Metal.
+Plume is a modern, cross-platform rendering hardware interface (RHI) library that provides a unified API for multiple rendering backends:
 
-## Overview
-
-Plume RHI provides a unified API for modern graphics APIs, allowing you to write rendering code once and run it on multiple platforms with minimal changes. It supports:
-
-- Windows: Direct3D 12 and Vulkan
-- macOS/iOS: Metal and MoltenVK (Vulkan)
-- Linux: Vulkan
+- Vulkan
+- Metal (macOS/iOS)
+- Direct3D 12 (Windows)
 
 ## Features
 
-- Modern rendering pipeline with explicit synchronization
-- Unified resource handling (buffers, textures, samplers)
-- Shader compilation and reflection
-- Efficient descriptor set management
-- Compute shader support
-- Low-level access to native API objects when needed
+- Unified rendering API for multiple backends
+- Modern shader model (SM6.0+)
+- Support for compute shaders
+- Resource barriers for explicit synchronization
+- Pipeline state objects
+- Descriptor sets/layouts
+- And more!
 
 ## Building
 
 ### Prerequisites
 
-- CMake 3.20 or newer
+- CMake 3.20+
 - C++17 compatible compiler
+- SDL2 development libraries
 - Platform-specific SDK:
-  - Windows: Windows SDK, DirectX SDK, Vulkan SDK
-  - macOS: Xcode with Metal support, Vulkan SDK (optional)
-  - Linux: Vulkan SDK
+  - Vulkan SDK (all platforms)
+  - Metal SDK (macOS/iOS)
+  - DirectX 12 SDK (Windows)
 
-### Build Steps
+### Build Commands
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/plume.git
-cd plume
-
-# Create build directory
+# Create a build directory
 mkdir build
 cd build
 
-# Configure and build
-cmake ..
+# Configure with CMake
+# For macOS, use pkgx to ensure SDL2 is available
+pkgx +ninja +libsdl.org@2 cmake ..
+
+# Build
 cmake --build .
 ```
 
-### Build Options
-
-- `PLUME_STATIC`: Build as a static library (default: OFF)
-- `PLUME_BUILD_EXAMPLES`: Build example applications (default: ON)
-
 ## Examples
 
-The repository includes several examples demonstrating how to use the Plume RHI:
+### Triangle
 
-- `triangle_example`: A simple colored triangle, the "Hello World" of graphics programming
-- More examples coming soon!
+A basic example demonstrating how to set up and render a simple colored triangle.
+
+To run:
+
+```bash
+./bin/triangle
+```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+See the [LICENSE](LICENSE) file for details.
