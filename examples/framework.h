@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
+#include <cstdint>
 
 namespace plume {
 namespace example {
@@ -15,6 +17,21 @@ struct FrameworkConfig {
     int height = 600;
     bool vsync = true;
     bool resizable = true;
+};
+
+// Shader data structure
+struct ShaderData {
+    const uint8_t* data = nullptr;
+    uint32_t size = 0;
+    
+    bool isValid() const { return data != nullptr && size > 0; }
+};
+
+// Shader type
+enum class ShaderType {
+    Vertex,
+    Fragment,
+    Compute
 };
 
 // Interface that each example must implement
@@ -40,6 +57,15 @@ public:
 
 // Run an example with the framework
 void run(std::unique_ptr<Example> example);
+
+// Load a shader from compiled binary
+ShaderData loadShader(const char* name, ShaderType type);
+
+// Register a shader with the framework
+void registerShader(const char* name, ShaderType type, const uint8_t* data, uint32_t size);
+
+// Register a Metal shader with the framework (macOS only)
+void registerMetalShader(const char* name, const uint8_t* data, uint32_t size);
 
 } // namespace example
 } // namespace plume 

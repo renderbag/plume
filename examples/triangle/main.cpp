@@ -1,54 +1,70 @@
-#include "../framework.h"
+#include "framework.h"
 #include <iostream>
 
-class TriangleExample : public plume::example::Example {
-private:
-    SDL_Window* m_window;
-    int m_width;
-    int m_height;
+// Include the generated shader header files
+#if defined(__APPLE__)
+extern "C" const uint8_t triangleBlobMSL[];
+extern "C" const uint32_t triangleBlobMSLSize;
+#endif
+extern "C" const uint8_t triangle_vertBlobSPIRV[];
+extern "C" const uint32_t triangle_vertBlobSPIRVSize;
+extern "C" const uint8_t triangle_fragBlobSPIRV[];
+extern "C" const uint32_t triangle_fragBlobSPIRVSize;
 
+class TriangleExample : public plume::example::Example {
 public:
+    plume::example::FrameworkConfig getConfig() const override {
+        plume::example::FrameworkConfig config;
+        config.title = "Triangle Example";
+        config.width = 800;
+        config.height = 600;
+        config.resizable = true;
+        return config;
+    }
+    
     void init(SDL_Window* window) override {
-        m_window = window;
+        std::cout << "Initializing Triangle Example" << std::endl;
         
-        // Get the configuration to set initial size
-        auto config = getConfig();
-        m_width = config.width;
-        m_height = config.height;
+        // Register shaders with the framework
+        #if defined(__APPLE__)
+        plume::example::registerMetalShader("triangle", triangleBlobMSL, triangleBlobMSLSize);
+        #endif
+        plume::example::registerShader("triangle", plume::example::ShaderType::Vertex, 
+                                      triangle_vertBlobSPIRV, triangle_vertBlobSPIRVSize);
+        plume::example::registerShader("triangle", plume::example::ShaderType::Fragment, 
+                                      triangle_fragBlobSPIRV, triangle_fragBlobSPIRVSize);
         
-        std::cout << "Triangle example initialized\n";
-    }
-    
-    void render() override {
-        // For now, just print that we're rendering
-        std::cout << "Rendering triangle frame...\r" << std::flush;
+        // Load shaders
+        auto vertexShader = plume::example::loadShader("triangle", plume::example::ShaderType::Vertex);
+        auto fragmentShader = plume::example::loadShader("triangle", plume::example::ShaderType::Fragment);
         
-        // In a full implementation, this would draw a triangle using the render interface
-    }
-    
-    void resize(int width, int height) override {
-        m_width = width;
-        m_height = height;
-        std::cout << "Resized to " << width << "x" << height << std::endl;
+        if (!vertexShader.isValid() || !fragmentShader.isValid()) {
+            throw std::runtime_error("Failed to load shaders");
+        }
+        
+        std::cout << "Vertex shader loaded: " << vertexShader.size << " bytes" << std::endl;
+        std::cout << "Fragment shader loaded: " << fragmentShader.size << " bytes" << std::endl;
+        
+        // Initialize rendering resources
+        // This would initialize the renderer with the loaded shaders and other resources
     }
     
     void handleEvent(const SDL_Event& event) override {
-        // Handle any additional events specific to this example
+        // Handle user input here
     }
     
-    plume::example::FrameworkConfig getConfig() const override {
-        plume::example::FrameworkConfig config;
-        config.title = "Plume Triangle Example";
-        config.width = 800;
-        config.height = 600;
-        config.vsync = true;
-        config.resizable = true;
-        return config;
+    void resize(int width, int height) override {
+        std::cout << "Resizing triangle example to " << width << "x" << height << std::endl;
+        // Update viewport and projection matrices if needed
+    }
+    
+    void render() override {
+        // Render the triangle
     }
 };
 
 int main(int argc, char* argv[]) {
-    auto triangleExample = std::make_unique<TriangleExample>();
-    plume::example::run(std::move(triangleExample));
+    auto example = std::make_unique<TriangleExample>();
+    plume::example::run(std::move(example));
     return 0;
 } 

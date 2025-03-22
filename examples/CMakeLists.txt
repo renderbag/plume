@@ -1,9 +1,39 @@
-# Add framework sources
+# Framework sources
 set(FRAMEWORK_SOURCES
     framework.cpp
     framework.h
 )
 
-# Add examples
+# Create framework library
+add_library(plume_example_framework STATIC ${FRAMEWORK_SOURCES})
+target_link_libraries(plume_example_framework plume ${SDL2_LIBRARIES})
+target_include_directories(plume_example_framework PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${SDL2_INCLUDE_DIRS}
+)
+
+# Add examples source directory to include paths
+target_include_directories(plume_example_framework PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Create shaders directory for the examples
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/shaders)
+
+# Set up a custom command to copy the shader files to the bin directory
+add_custom_target(copy_shaders ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/shaders
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/shaders ${CMAKE_BINARY_DIR}/bin/shaders
+    COMMENT "Copying shader files to bin directory"
+)
+
+# Add examples in order
 add_subdirectory(triangle)
-add_subdirectory(clear_color) 
+add_subdirectory(clear_color)
+
+# Make clear_color depend on triangle to ensure shaders are built in sequence
+add_dependencies(clear_color triangle)
+
+# Make examples depend on the shader copying
+add_dependencies(triangle copy_shaders)
+add_dependencies(clear_color copy_shaders) 

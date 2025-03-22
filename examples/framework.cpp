@@ -2,9 +2,83 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <string>
+#include <map>
+#include <fstream>
 
 namespace plume {
 namespace example {
+
+// Map of shader names to data
+using ShaderMap = std::map<std::string, ShaderData>;
+
+// Initialize empty shader maps
+static ShaderMap s_metalShaders;
+static ShaderMap s_spirvVertexShaders;
+static ShaderMap s_spirvFragmentShaders;
+
+// Register a shader with the framework
+void registerShader(const char* name, ShaderType type, const uint8_t* data, uint32_t size) {
+    if (data == nullptr || size == 0) {
+        std::cerr << "Attempted to register invalid shader: " << name << std::endl;
+        return;
+    }
+    
+    std::string shaderName(name);
+    
+    switch (type) {
+    case ShaderType::Vertex:
+        s_spirvVertexShaders[shaderName] = {data, size};
+        break;
+    case ShaderType::Fragment:
+        s_spirvFragmentShaders[shaderName] = {data, size};
+        break;
+    case ShaderType::Compute:
+        // Add support for compute shaders later
+        break;
+    }
+}
+
+// Register a Metal shader with the framework (macOS only)
+void registerMetalShader(const char* name, const uint8_t* data, uint32_t size) {
+    if (data == nullptr || size == 0) {
+        std::cerr << "Attempted to register invalid Metal shader: " << name << std::endl;
+        return;
+    }
+    
+    s_metalShaders[std::string(name)] = {data, size};
+}
+
+// Load a shader based on platform and type
+ShaderData loadShader(const char* name, ShaderType type) {
+    std::string shaderName(name);
+    
+#if defined(__APPLE__)
+    // On macOS, prefer Metal shaders
+    auto metalIter = s_metalShaders.find(shaderName);
+    if (metalIter != s_metalShaders.end()) {
+        std::cout << "Found Metal shader for: " << shaderName << std::endl;
+        return metalIter->second;
+    }
+#endif
+    
+    // Fall back to SPIRV shaders
+    if (type == ShaderType::Vertex) {
+        auto iter = s_spirvVertexShaders.find(shaderName);
+        if (iter != s_spirvVertexShaders.end()) {
+            return iter->second;
+        }
+    } else if (type == ShaderType::Fragment) {
+        auto iter = s_spirvFragmentShaders.find(shaderName);
+        if (iter != s_spirvFragmentShaders.end()) {
+            return iter->second;
+        }
+    }
+    
+    // Return an invalid shader if not found
+    std::cerr << "Shader not found: " << name << std::endl;
+    return {};
+}
 
 void run(std::unique_ptr<Example> example) {
     // Get configuration from the example
