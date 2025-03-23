@@ -4,21 +4,10 @@ project(plume LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ShaderCompilation module is now in examples/cmake
-
 if(APPLE)
     enable_language(OBJC OBJCXX)
-    # Disable Vulkan on macOS
-    set(PLUME_ENABLE_VULKAN OFF)
     # Always enable Metal on macOS
     add_compile_definitions(PLUME_ENABLE_METAL)
-endif()
-
-# file_to_c tool is now in examples/tools
-
-# Backend options
-if(NOT DEFINED PLUME_ENABLE_VULKAN)
-    option(PLUME_ENABLE_VULKAN "Enable Vulkan backend" OFF)
 endif()
 
 # D3D12 is optional on Windows
@@ -39,7 +28,7 @@ endif()
 
 # Print status messages
 message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
-message(STATUS "Building with backends: Vulkan=${PLUME_ENABLE_VULKAN} Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
+message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -67,15 +56,11 @@ if(WIN32 AND PLUME_ENABLE_D3D12)
     )
 endif()
 
-if(PLUME_ENABLE_VULKAN)
-    add_compile_definitions(PLUME_ENABLE_VULKAN)
-    list(APPEND PLUME_SOURCES
-        plume_vulkan.cpp
-        plume_vulkan.h
-    )
-else()
-    add_compile_definitions(PLUME_DISABLE_VULKAN)
-endif()
+# Always include Vulkan backend files
+list(APPEND PLUME_SOURCES
+    plume_vulkan.cpp
+    plume_vulkan.h
+)
 
 # Add a dummy source file if no backend is enabled to avoid CMake errors
 if(NOT PLUME_SOURCES)
