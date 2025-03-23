@@ -6,6 +6,7 @@
 #include <functional>
 #include <vector>
 #include <cstdint>
+#include "plume_render_interface.h"
 
 namespace plume {
 namespace example {
@@ -40,7 +41,7 @@ public:
     virtual ~Example() = default;
 
     // Called when the example is initialized
-    virtual void init(SDL_Window* window) = 0;
+    virtual void init(SDL_Window* window, plume::RenderInterface* renderInterface, plume::RenderWindow renderWindow) = 0;
 
     // Called when the example should be rendered
     virtual void render() = 0;

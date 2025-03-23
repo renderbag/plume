@@ -6,6 +6,16 @@
 #include <map>
 #include <fstream>
 
+#ifdef __APPLE__
+#include <SDL_metal.h>
+#include <SDL_syswm.h>
+
+// Function prototype for creating the Metal interface on Apple platforms
+namespace plume {
+    extern std::unique_ptr<RenderInterface> CreateMetalInterface();
+}
+#endif
+
 namespace plume {
 namespace example {
 
@@ -95,6 +105,10 @@ void run(std::unique_ptr<Example> example) {
     if (config.resizable) {
         windowFlags |= SDL_WINDOW_RESIZABLE;
     }
+
+#ifdef __APPLE__
+    windowFlags |= SDL_WINDOW_METAL;
+#endif
     
     SDL_Window* window = SDL_CreateWindow(
         config.title,
@@ -109,11 +123,54 @@ void run(std::unique_ptr<Example> example) {
         return;
     }
     
+    // Create the render interface and platform-specific window
+    std::unique_ptr<plume::RenderInterface> renderInterface;
+    plume::RenderWindow renderWindow = {};
+    
+    #ifdef __APPLE__
+    // On macOS, create a Metal view and Metal interface
+    SDL_MetalView metalView = SDL_Metal_CreateView(window);
+    if (!metalView) {
+        std::cerr << "Failed to create Metal view: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return;
+    }
+    
+    // Get the Cocoa window and CAMetalLayer
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    if (!SDL_GetWindowWMInfo(window, &wmInfo)) {
+        std::cerr << "Failed to get window info: " << SDL_GetError() << std::endl;
+        SDL_Metal_DestroyView(metalView);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return;
+    }
+    
+    // Set up the render window for Metal
+    renderWindow.window = wmInfo.info.cocoa.window;
+    renderWindow.view = SDL_Metal_GetLayer(metalView);
+    
+    // Create the Metal interface
+    renderInterface = plume::CreateMetalInterface();
+    if (!renderInterface) {
+        std::cerr << "Failed to create Metal interface" << std::endl;
+        SDL_Metal_DestroyView(metalView);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return;
+    }
+    #endif
+    
     // Initialize the example
     try {
-        example->init(window);
+        example->init(window, renderInterface.get(), renderWindow);
     } catch (const std::exception& e) {
         std::cerr << "Failed to initialize example: " << e.what() << std::endl;
+        #ifdef __APPLE__
+        SDL_Metal_DestroyView(metalView);
+        #endif
         SDL_DestroyWindow(window);
         SDL_Quit();
         return;
@@ -148,6 +205,9 @@ void run(std::unique_ptr<Example> example) {
     }
     
     // Clean up
+    #ifdef __APPLE__
+    SDL_Metal_DestroyView(metalView);
+    #endif
     SDL_DestroyWindow(window);
     SDL_Quit();
 }

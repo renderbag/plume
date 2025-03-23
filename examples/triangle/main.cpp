@@ -22,31 +22,19 @@ public:
         return config;
     }
     
-    void init(SDL_Window* window) override {
+    void init(SDL_Window* window, plume::RenderInterface* renderInterface, plume::RenderWindow renderWindow) override {
         std::cout << "Initializing Triangle Example" << std::endl;
         
-        // Register shaders with the framework
+        // Register the shaders with the framework
         #if defined(__APPLE__)
         plume::example::registerMetalShader("triangle", triangleBlobMSL, triangleBlobMSLSize);
         #endif
         plume::example::registerShader("triangle", plume::example::ShaderType::Vertex, 
-                                      triangle_vertBlobSPIRV, triangle_vertBlobSPIRVSize);
+                                     triangle_vertBlobSPIRV, triangle_vertBlobSPIRVSize);
         plume::example::registerShader("triangle", plume::example::ShaderType::Fragment, 
-                                      triangle_fragBlobSPIRV, triangle_fragBlobSPIRVSize);
+                                     triangle_fragBlobSPIRV, triangle_fragBlobSPIRVSize);
         
-        // Load shaders
-        auto vertexShader = plume::example::loadShader("triangle", plume::example::ShaderType::Vertex);
-        auto fragmentShader = plume::example::loadShader("triangle", plume::example::ShaderType::Fragment);
-        
-        if (!vertexShader.isValid() || !fragmentShader.isValid()) {
-            throw std::runtime_error("Failed to load shaders");
-        }
-        
-        std::cout << "Vertex shader loaded: " << vertexShader.size << " bytes" << std::endl;
-        std::cout << "Fragment shader loaded: " << fragmentShader.size << " bytes" << std::endl;
-        
-        // Initialize rendering resources
-        // This would initialize the renderer with the loaded shaders and other resources
+        std::cout << "Triangle Example initialized" << std::endl;
     }
     
     void handleEvent(const SDL_Event& event) override {
