@@ -7,3 +7,6 @@
 [submodule "contrib/VulkanMemoryAllocator"]
 	path = contrib/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "contrib/Vulkan-Headers"]
+	path = contrib/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers
