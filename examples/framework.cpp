@@ -133,7 +133,7 @@ void run(std::unique_ptr<Example> example) {
             // Use platform default (Metal on macOS, Vulkan elsewhere)
             #ifdef __APPLE__
             useMetalBackend = true;
-            #elif SDL_VULKAN_ENABLED
+            #else
             useVulkanBackend = true;
             #endif
             break;
@@ -148,14 +148,7 @@ void run(std::unique_ptr<Example> example) {
             break;
             
         case RenderBackendType::Vulkan:
-            #if SDL_VULKAN_ENABLED
             useVulkanBackend = true;
-            #else
-            std::cerr << "Vulkan backend requested but not supported" << std::endl;
-            #ifdef __APPLE__
-            useMetalBackend = true; // Fall back to Metal on macOS
-            #endif
-            #endif
             break;
     }
 
