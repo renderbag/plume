@@ -29,11 +29,6 @@ add_custom_target(copy_shaders ALL
 
 # Add examples in order
 add_subdirectory(triangle)
-add_subdirectory(clear_color)
-
-# Make clear_color depend on triangle to ensure shaders are built in sequence
-add_dependencies(clear_color triangle)
 
 # Make examples depend on the shader copying
-add_dependencies(triangle copy_shaders)
-add_dependencies(clear_color copy_shaders) 
+add_dependencies(triangle copy_shaders) 
