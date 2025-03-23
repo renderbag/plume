@@ -55,12 +55,6 @@ list(APPEND PLUME_SOURCES
     plume_vulkan.h
 )
 
-# Add a dummy source file if no backend is enabled to avoid CMake errors
-if(NOT PLUME_SOURCES)
-    file(WRITE ${CMAKE_BINARY_DIR}/dummy.cpp "// Empty file to ensure library has at least one source file\n")
-    list(APPEND PLUME_SOURCES ${CMAKE_BINARY_DIR}/dummy.cpp)
-endif()
-
 # Create target
 add_library(plume ${PLUME_SOURCES})
 
