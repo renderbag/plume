@@ -75,6 +75,9 @@ add_library(plume ${PLUME_SOURCES})
 target_include_directories(plume PUBLIC
     ${SDL2_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/volk
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/VulkanMemoryAllocator/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Vulkan-Headers/include
 )
 
 # Platform-specific includes
