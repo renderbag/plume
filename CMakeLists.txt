@@ -19,17 +19,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
     add_compile_definitions("SDL_VULKAN_ENABLED")
 endif()
 
-# Use pkgx for SDL2 on macOS
+# Find SDL2 on all platforms
+find_package(SDL2 REQUIRED)
+
+# Add define to use SDL2 prefix on macOS
 if(APPLE)
-    # Define SDL2 variables manually to avoid find_package
-    set(SDL2_INCLUDE_DIRS "$ENV{HOME}/.pkgx/libsdl.org/v2.30.10/include/SDL2" "$ENV{HOME}/.pkgx/libsdl.org/v2.30.10/include")
-    set(SDL2_LIBRARIES "-L$ENV{HOME}/.pkgx/libsdl.org/v2.30.10/lib -lSDL2")
-    
-    # Add define to use SDL2 prefix
     add_compile_definitions(SDL_MAIN_HANDLED)
-else()
-    # Find SDL2 on other platforms
-    find_package(SDL2 REQUIRED)
 endif()
 
 # Print status messages

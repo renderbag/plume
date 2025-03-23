@@ -1,9 +1,6 @@
 # Shader compilation functions for Plume
 # Using DXC for HLSL to SPIR-V compilation and Metal for macOS
 
-# Find pkgx if available
-find_program(PKGX_EXECUTABLE NAMES pkgx)
-
 # Detect platform
 if(APPLE)
     set(PLUME_PLATFORM "macos")
