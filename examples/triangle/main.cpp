@@ -224,6 +224,12 @@ private:
             throw std::runtime_error("Failed to create swap chain");
         }
         
+        // Explicitly resize the swapchain to create the textures
+        bool resized = m_swapChain->resize();
+        if (!resized) {
+            throw std::runtime_error("Failed to resize swap chain during initialization");
+        }
+        
         // Create command list
         m_commandList = m_commandQueue->createCommandList();
         if (!m_commandList) {
@@ -249,6 +255,7 @@ private:
     void createFramebuffers() {
         // Create framebuffers for each swap chain image
         m_framebuffers.clear();
+        
         for (uint32_t i = 0; i < m_swapChain->getTextureCount(); i++) {
             const plume::RenderTexture* colorAttachment = m_swapChain->getTexture(i);
             if (!colorAttachment) {
