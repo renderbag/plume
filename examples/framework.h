@@ -1,6 +1,9 @@
 #pragma once
 
 #include <SDL.h>
+#if SDL_VULKAN_ENABLED
+#include <SDL_vulkan.h>
+#endif
 #include <memory>
 #include <string>
 #include <functional>

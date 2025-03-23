@@ -13,6 +13,16 @@ endif()
 # D3D12 is optional on Windows
 option(PLUME_ENABLE_D3D12 "Enable D3D12 backend" OFF)
 
+# Enable SDL Vulkan support (except on Apple where we use Metal)
+if(NOT APPLE)
+    option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" ON)
+    add_compile_definitions(SDL_VULKAN_ENABLED=${SDL_VULKAN_ENABLED})
+    message(STATUS "SDL Vulkan integration: ON")
+else()
+    set(SDL_VULKAN_ENABLED OFF)
+    message(STATUS "SDL Vulkan integration: OFF (using Metal on Apple platforms)")
+endif()
+
 # Use pkgx for SDL2 on macOS
 if(APPLE)
     # Define SDL2 variables manually to avoid find_package

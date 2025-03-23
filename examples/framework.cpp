@@ -16,6 +16,15 @@ namespace plume {
 }
 #endif
 
+#if SDL_VULKAN_ENABLED
+#include <SDL_vulkan.h>
+
+// Function prototype for creating the Vulkan interface
+namespace plume {
+    extern std::unique_ptr<RenderInterface> CreateVulkanInterface(RenderWindow sdlWindow);
+}
+#endif
+
 namespace plume {
 namespace example {
 
@@ -109,6 +118,10 @@ void run(std::unique_ptr<Example> example) {
 #ifdef __APPLE__
     windowFlags |= SDL_WINDOW_METAL;
 #endif
+
+#if SDL_VULKAN_ENABLED
+    windowFlags |= SDL_WINDOW_VULKAN;
+#endif
     
     SDL_Window* window = SDL_CreateWindow(
         config.title,
@@ -157,6 +170,18 @@ void run(std::unique_ptr<Example> example) {
     if (!renderInterface) {
         std::cerr << "Failed to create Metal interface" << std::endl;
         SDL_Metal_DestroyView(metalView);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return;
+    }
+    #elif SDL_VULKAN_ENABLED
+    // For Vulkan, RenderWindow is defined as SDL_Window* in the header when SDL_VULKAN_ENABLED is set
+    renderWindow = window;
+    
+    // Create the Vulkan interface
+    renderInterface = plume::CreateVulkanInterface(renderWindow);
+    if (!renderInterface) {
+        std::cerr << "Failed to create Vulkan interface" << std::endl;
         SDL_DestroyWindow(window);
         SDL_Quit();
         return;
