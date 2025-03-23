@@ -4,9 +4,7 @@ project(plume LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include our own CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(ShaderCompilation)
+# ShaderCompilation module is now in examples/cmake
 
 if(APPLE)
     enable_language(OBJC OBJCXX)
@@ -16,8 +14,7 @@ if(APPLE)
     set(PLUME_ENABLE_METAL ON CACHE BOOL "Enable Metal backend" FORCE)
 endif()
 
-# Add the file_to_c tool
-add_subdirectory(tools/file_to_c)
+# file_to_c tool is now in examples/tools
 
 # Backend options
 if(NOT DEFINED PLUME_ENABLE_VULKAN)

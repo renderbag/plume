@@ -4,6 +4,13 @@ set(FRAMEWORK_SOURCES
     framework.h
 )
 
+# Add tools directory first (needed for shader compilation)
+add_subdirectory(tools)
+
+# Include custom ShaderCompilation module
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(ShaderCompilation)
+
 # Create framework library
 add_library(plume_example_framework STATIC ${FRAMEWORK_SOURCES})
 target_link_libraries(plume_example_framework plume ${SDL2_LIBRARIES})
