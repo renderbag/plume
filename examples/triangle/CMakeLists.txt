@@ -5,15 +5,12 @@ set(SOURCES
     main.cpp
 )
 
-# Shader source files
-set(SHADER_SOURCES
-    ${CMAKE_BINARY_DIR}/shaders/triangle.metal.c
-    ${CMAKE_BINARY_DIR}/shaders/triangle_vert.spirv.c
-    ${CMAKE_BINARY_DIR}/shaders/triangle_frag.spirv.c
-)
-
-# Add shaders to sources
-list(APPEND SOURCES ${SHADER_SOURCES})
+# Add shader source files
+if(APPLE)
+    list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle.metal.c)
+endif()
+list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle_vert.spirv.c)
+list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle_frag.spirv.c)
 
 # Create executable
 add_executable(${EXAMPLE_NAME} ${SOURCES})
@@ -26,7 +23,6 @@ target_include_directories(${EXAMPLE_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/examples
     ${SDL2_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}  # Add build directory to include path to find shader files
 )
 
 # Set output directory
