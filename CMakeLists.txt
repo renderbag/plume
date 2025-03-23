@@ -13,14 +13,10 @@ endif()
 # D3D12 is optional on Windows
 option(PLUME_ENABLE_D3D12 "Enable D3D12 backend" OFF)
 
-# Enable SDL Vulkan support (except on Apple where we use Metal)
-if(NOT APPLE)
-    option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" ON)
-    add_compile_definitions(SDL_VULKAN_ENABLED=${SDL_VULKAN_ENABLED})
-    message(STATUS "SDL Vulkan integration: ON")
-else()
-    set(SDL_VULKAN_ENABLED OFF)
-    message(STATUS "SDL Vulkan integration: OFF (using Metal on Apple platforms)")
+# Enable SDL Vulkan support
+option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
+    add_compile_definitions("SDL_VULKAN_ENABLED")
 endif()
 
 # Use pkgx for SDL2 on macOS
@@ -39,6 +35,7 @@ endif()
 # Print status messages
 message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
+message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES

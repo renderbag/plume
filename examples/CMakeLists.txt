@@ -1,3 +1,6 @@
+# Enable SDL Vulkan integration
+set(SDL_VULKAN_ENABLED TRUE)
+
 # Framework sources
 set(FRAMEWORK_SOURCES
     framework.cpp
