@@ -36,10 +36,19 @@ public:
         this->m_renderInterface = renderInterface;
         this->m_renderWindow = renderWindow;
         
-        // Register shaders with the framework
-        #if defined(__APPLE__)
-        plume::example::registerMetalShader("triangle", triangleBlobMSL, triangleBlobMSLSize);
-        #endif
+        // Get active backend type
+        auto activeBackend = plume::example::getActiveBackendType();
+        
+        // Register shaders with the framework based on backend
+        if (activeBackend == plume::example::RenderBackendType::Metal) {
+            #if defined(__APPLE__)
+            std::cout << "Registering Metal shaders" << std::endl;
+            plume::example::registerMetalShader("triangle", triangleBlobMSL, triangleBlobMSLSize);
+            #endif
+        }
+        
+        // Always register SPIRV shaders for Vulkan backend or fallback
+        std::cout << "Registering SPIRV shaders" << std::endl;
         plume::example::registerShader("triangle", plume::example::ShaderType::Vertex, 
                                      triangle_vertBlobSPIRV, triangle_vertBlobSPIRVSize);
         plume::example::registerShader("triangle", plume::example::ShaderType::Fragment, 
@@ -83,7 +92,23 @@ public:
     void render() override {
         static int counter = 0;
         if (counter++ % 60 == 0) {
-            std::cout << "Rendering frame " << counter << std::endl;
+            // Display which backend is in use
+            auto backend = plume::example::getActiveBackendType();
+            std::string backendName;
+            
+            switch (backend) {
+                case plume::example::RenderBackendType::Metal:
+                    backendName = "Metal";
+                    break;
+                case plume::example::RenderBackendType::Vulkan:
+                    backendName = "Vulkan";
+                    break;
+                case plume::example::RenderBackendType::Auto:
+                    backendName = "Auto";
+                    break;
+            }
+            
+            std::cout << "Rendering frame " << counter << " using " << backendName << " backend" << std::endl;
         }
         
         // Acquire the next swapchain image
@@ -342,6 +367,58 @@ private:
 
 int main(int argc, char* argv[]) {
     auto example = std::make_unique<TriangleExample>();
+    
+    // Parse command line arguments for backend selection
+    if (argc > 1) {
+        std::string arg(argv[1]);
+        if (arg == "--metal") {
+            std::cout << "Backend requested: Metal" << std::endl;
+            auto config = example->getConfig();
+            config.backendType = plume::example::RenderBackendType::Metal;
+            
+            // Create a new example with the updated config
+            class ConfigurableTriangleExample : public TriangleExample {
+            public:
+                ConfigurableTriangleExample(const plume::example::FrameworkConfig& config) : m_config(config) {}
+                
+                plume::example::FrameworkConfig getConfig() const override {
+                    return m_config;
+                }
+                
+            private:
+                plume::example::FrameworkConfig m_config;
+            };
+            
+            example = std::make_unique<ConfigurableTriangleExample>(config);
+        } else if (arg == "--vulkan") {
+            std::cout << "Backend requested: Vulkan" << std::endl;
+            auto config = example->getConfig();
+            config.backendType = plume::example::RenderBackendType::Vulkan;
+            
+            // Create a new example with the updated config
+            class ConfigurableTriangleExample : public TriangleExample {
+            public:
+                ConfigurableTriangleExample(const plume::example::FrameworkConfig& config) : m_config(config) {}
+                
+                plume::example::FrameworkConfig getConfig() const override {
+                    return m_config;
+                }
+                
+            private:
+                plume::example::FrameworkConfig m_config;
+            };
+            
+            example = std::make_unique<ConfigurableTriangleExample>(config);
+        } else if (arg == "--help") {
+            std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
+            std::cout << "Options:" << std::endl;
+            std::cout << "  --metal     Force Metal backend (macOS only)" << std::endl;
+            std::cout << "  --vulkan    Force Vulkan backend" << std::endl;
+            std::cout << "  --help      Show this help message" << std::endl;
+            return 0;
+        }
+    }
+    
     plume::example::run(std::move(example));
     return 0;
 } 

@@ -14,6 +14,13 @@
 namespace plume {
 namespace example {
 
+// Render backend type
+enum class RenderBackendType {
+    Auto,       // Choose the best backend for the platform (Metal on macOS, Vulkan elsewhere)
+    Metal,      // Force Metal backend (macOS only)
+    Vulkan      // Force Vulkan backend
+};
+
 // Framework configuration that can be specialized by each example
 struct FrameworkConfig {
     const char* title = "Plume Example";
@@ -21,6 +28,7 @@ struct FrameworkConfig {
     int height = 600;
     bool vsync = true;
     bool resizable = true;
+    RenderBackendType backendType = RenderBackendType::Auto; // Default to automatic selection
 };
 
 // Shader data structure
@@ -70,6 +78,9 @@ void registerShader(const char* name, ShaderType type, const uint8_t* data, uint
 
 // Register a Metal shader with the framework (macOS only)
 void registerMetalShader(const char* name, const uint8_t* data, uint32_t size);
+
+// Get the current active backend type
+RenderBackendType getActiveBackendType();
 
 } // namespace example
 } // namespace plume 
