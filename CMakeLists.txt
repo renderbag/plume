@@ -10,8 +10,8 @@ if(APPLE)
     enable_language(OBJC OBJCXX)
     # Disable Vulkan on macOS
     set(PLUME_ENABLE_VULKAN OFF)
-    # Enable Metal on macOS
-    set(PLUME_ENABLE_METAL ON CACHE BOOL "Enable Metal backend" FORCE)
+    # Always enable Metal on macOS
+    add_compile_definitions(PLUME_ENABLE_METAL)
 endif()
 
 # file_to_c tool is now in examples/tools
@@ -20,9 +20,8 @@ endif()
 if(NOT DEFINED PLUME_ENABLE_VULKAN)
     option(PLUME_ENABLE_VULKAN "Enable Vulkan backend" OFF)
 endif()
-if(NOT DEFINED PLUME_ENABLE_METAL)
-    option(PLUME_ENABLE_METAL "Enable Metal backend" OFF)
-endif()
+
+# D3D12 is optional on Windows
 option(PLUME_ENABLE_D3D12 "Enable D3D12 backend" OFF)
 
 # Use pkgx for SDL2 on macOS
@@ -40,7 +39,7 @@ endif()
 
 # Print status messages
 message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
-message(STATUS "Building with backends: Vulkan=${PLUME_ENABLE_VULKAN} Metal=${PLUME_ENABLE_METAL} D3D12=${PLUME_ENABLE_D3D12}")
+message(STATUS "Building with backends: Vulkan=${PLUME_ENABLE_VULKAN} Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -50,9 +49,8 @@ set(PLUME_SOURCES
 )
 
 # Platform-specific files
-if(APPLE AND PLUME_ENABLE_METAL)
+if(APPLE)
     message(STATUS "Adding Metal backend files")
-    add_compile_definitions(PLUME_ENABLE_METAL)
     list(APPEND PLUME_SOURCES
         plume_metal.cpp
         plume_metal.h
