@@ -5,13 +5,6 @@ set(SOURCES
     main.cpp
 )
 
-# Add shader source files
-if(APPLE)
-    list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle.metal.c)
-endif()
-list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle_vert.spirv.c)
-list(APPEND SOURCES ${CMAKE_BINARY_DIR}/shaders/triangle_frag.spirv.c)
-
 # Create executable
 add_executable(${EXAMPLE_NAME} ${SOURCES})
 
@@ -23,6 +16,7 @@ target_include_directories(${EXAMPLE_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/examples
     ${SDL2_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}/shaders  # Include shaders directory
 )
 
 # Set output directory
@@ -30,12 +24,14 @@ set_target_properties(${EXAMPLE_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# Compile shaders
+# Create the shaders directory
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
+
+# Compile Metal shader if on Apple platform - this outputs triangleBlobMSL as the main.cpp expects
 if(APPLE)
-    # Compile Metal shader
-    compile_metal_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.metal" "triangle")
+    compile_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.metal" "vertex" "triangle")
 endif()
 
-# Compile GLSL shaders for Vulkan
-compile_vertex_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert" "triangle_vert")
-compile_fragment_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag" "triangle_frag") 
+# Compile HLSL shaders for Vulkan - these output triangle_vertBlobSPIRV and triangle_fragBlobSPIRV
+compile_vertex_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert.hlsl" "triangle_vert")
+compile_fragment_shader(${EXAMPLE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag.hlsl" "triangle_frag") 
