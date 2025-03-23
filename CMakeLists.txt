@@ -22,11 +22,6 @@ endif()
 # Find SDL2 on all platforms
 find_package(SDL2 REQUIRED)
 
-# Add define to use SDL2 prefix on macOS
-if(APPLE)
-    add_compile_definitions(SDL_MAIN_HANDLED)
-endif()
-
 # Print status messages
 message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
