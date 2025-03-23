@@ -10,9 +10,6 @@ if(APPLE)
     add_compile_definitions(PLUME_ENABLE_METAL)
 endif()
 
-# D3D12 is optional on Windows
-option(PLUME_ENABLE_D3D12 "Enable D3D12 backend" OFF)
-
 # Enable SDL Vulkan support
 option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
@@ -24,7 +21,7 @@ find_package(SDL2 REQUIRED)
 
 # Print status messages
 message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
-message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${PLUME_ENABLE_D3D12}")
+message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
 
 # Basic source files that are always included
@@ -45,8 +42,7 @@ if(APPLE)
     )
 endif()
 
-if(WIN32 AND PLUME_ENABLE_D3D12)
-    add_compile_definitions(PLUME_ENABLE_D3D12)
+if (WIN32)
     list(APPEND PLUME_SOURCES
         plume_d3d12.cpp
         plume_d3d12.h
