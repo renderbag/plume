@@ -58,7 +58,7 @@ list(APPEND PLUME_SOURCES
 )
 
 # Create target
-add_library(plume ${PLUME_SOURCES})
+add_library(plume STATIC ${PLUME_SOURCES})
 
 # Include directories
 target_include_directories(plume PUBLIC
