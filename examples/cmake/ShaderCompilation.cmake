@@ -35,7 +35,9 @@ elseif(APPLE)
     if(EXISTS "${DXC_EXECUTABLE}")
         # Set executable permission if needed
         execute_process(COMMAND chmod +x "${DXC_EXECUTABLE}")
-        set(DXC "${DXC_EXECUTABLE}")
+        
+        # Set DXC command with DYLD_LIBRARY_PATH
+        set(DXC "env" "DYLD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
         message(STATUS "Found DXC at ${DXC_EXECUTABLE}")
     else()
         message(FATAL_ERROR "DXC not found at ${DXC_EXECUTABLE} - required for shader compilation")
@@ -87,24 +89,13 @@ function(build_shader_spirv_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NA
     endif()
     
     # Compile to SPIR-V using DXC
-    if(APPLE)
-        add_custom_command(
-            OUTPUT ${SPIRV_OUTPUT}
-            COMMAND ${CMAKE_COMMAND} -E env "DYLD_LIBRARY_PATH=${DXC_LIB_DIR}" 
-                    ${DXC} -E main -T ${SHADER_PROFILE} -spirv -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
-                    -Fo ${SPIRV_OUTPUT} ${SHADER_SOURCE}
-            DEPENDS ${SHADER_SOURCE}
-            COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to SPIR-V using DXC"
-        )
-    else()
-        add_custom_command(
-            OUTPUT ${SPIRV_OUTPUT}
-            COMMAND ${DXC} -E main -T ${SHADER_PROFILE} -spirv -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
-                    -Fo ${SPIRV_OUTPUT} ${SHADER_SOURCE}
-            DEPENDS ${SHADER_SOURCE}
-            COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to SPIR-V using DXC"
-        )
-    endif()
+    add_custom_command(
+        OUTPUT ${SPIRV_OUTPUT}
+        COMMAND ${DXC} -E main -T ${SHADER_PROFILE} -spirv -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
+                -Fo ${SPIRV_OUTPUT} ${SHADER_SOURCE}
+        DEPENDS ${SHADER_SOURCE}
+        COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to SPIR-V using DXC"
+    )
     
     # Generate C header
     add_custom_command(
@@ -116,6 +107,57 @@ function(build_shader_spirv_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NA
     
     # Add the generated source file to the target
     target_sources(${TARGET_NAME} PRIVATE "${SPIRV_C_OUTPUT}")
+    
+    # Make sure the target can find the generated header
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/shaders")
+endfunction()
+
+# Function to compile HLSL to DXIL using DXC
+function(build_shader_dxil_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME)
+    # Create unique output names
+    set(DXIL_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil")
+    set(DXIL_C_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil.c")
+    set(DXIL_H_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil.h")
+    
+    # Create output directory
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
+    
+    # Determine the shader options based on type
+    if(SHADER_TYPE STREQUAL "vertex")
+        set(SHADER_PROFILE "vs_6_0")
+        set(DXC_EXTRA_ARGS "-fvk-invert-y") # Only include invert-y for vertex shaders
+        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
+    elseif(SHADER_TYPE STREQUAL "fragment")
+        set(SHADER_PROFILE "ps_6_0")
+        set(DXC_EXTRA_ARGS "")
+        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
+    elseif(SHADER_TYPE STREQUAL "compute")
+        set(SHADER_PROFILE "cs_6_0")
+        set(DXC_EXTRA_ARGS "")
+        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
+    else()
+        message(FATAL_ERROR "Unknown shader type: ${SHADER_TYPE}")
+    endif()
+    
+    # Compile to DXIL using DXC
+    add_custom_command(
+        OUTPUT ${DXIL_OUTPUT}
+        COMMAND ${DXC} -E main -T ${SHADER_PROFILE} -Wno-ignored-attributes -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
+                -Fo ${DXIL_OUTPUT} ${SHADER_SOURCE}
+        DEPENDS ${SHADER_SOURCE}
+        COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to DXIL using DXC"
+    )
+    
+    # Generate C header
+    add_custom_command(
+        OUTPUT "${DXIL_C_OUTPUT}" "${DXIL_H_OUTPUT}"
+        COMMAND file_to_c ${DXIL_OUTPUT} "${BLOB_NAME}" "${DXIL_C_OUTPUT}" "${DXIL_H_OUTPUT}"
+        DEPENDS ${DXIL_OUTPUT} file_to_c
+        COMMENT "Generating C header for DXIL shader ${OUTPUT_NAME}"
+    )
+    
+    # Add the generated source file to the target
+    target_sources(${TARGET_NAME} PRIVATE "${DXIL_C_OUTPUT}")
     
     # Make sure the target can find the generated header
     target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/shaders")
