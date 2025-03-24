@@ -8,15 +8,18 @@ if(APPLE)
     enable_language(OBJC OBJCXX)
 endif()
 
-# Enable SDL Vulkan support
+# Project options
 option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF)
-if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
-    add_compile_definitions("SDL_VULKAN_ENABLED")
-endif()
+option(BUILD_EXAMPLES "Build example applications" OFF)
 
 # Windows-specific definitions
 if(WIN32)
     add_compile_definitions(NOMINMAX)
+endif()
+
+# Enable SDL Vulkan support
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
+    add_compile_definitions("SDL_VULKAN_ENABLED")
 endif()
 
 # Find SDL2 only if Vulkan via SDL is enabled
@@ -28,6 +31,7 @@ endif()
 # Print status messages
 message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
+message(STATUS "Building examples: ${BUILD_EXAMPLES}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -79,5 +83,7 @@ if(APPLE)
     )
 endif()
 
-# Add examples
-add_subdirectory(examples) 
+# Add examples if requested
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif() 
