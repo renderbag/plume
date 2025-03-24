@@ -37,7 +37,7 @@ elseif(APPLE)
         execute_process(COMMAND chmod +x "${DXC_EXECUTABLE}")
         
         # Set DXC command with DYLD_LIBRARY_PATH
-        set(DXC "env" "DYLD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
+        set(DXC "DYLD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
         message(STATUS "Found DXC at ${DXC_EXECUTABLE}")
     else()
         message(FATAL_ERROR "DXC not found at ${DXC_EXECUTABLE} - required for shader compilation")
@@ -46,15 +46,17 @@ else()
     # Linux
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
         set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxc-linux")
+        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/x64")
     else()
         set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/arm64/dxc-linux")
+        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/arm64")
     endif()
     
     # Make sure the executable is accessible and has execute permissions
     if(EXISTS "${DXC_EXECUTABLE}")
         # Set executable permission if needed
         execute_process(COMMAND chmod +x "${DXC_EXECUTABLE}")
-        set(DXC "${DXC_EXECUTABLE}")
+        set(DXC "LD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
         message(STATUS "Found DXC at ${DXC_EXECUTABLE}")
     else()
         message(FATAL_ERROR "DXC not found at ${DXC_EXECUTABLE} - required for shader compilation")
