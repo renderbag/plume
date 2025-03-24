@@ -10,3 +10,6 @@
 [submodule "contrib/Vulkan-Headers"]
 	path = contrib/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
+[submodule "contrib/D3D12MemoryAllocator"]
+	path = contrib/D3D12MemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator

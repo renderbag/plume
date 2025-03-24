@@ -64,9 +64,15 @@ add_library(plume STATIC ${PLUME_SOURCES})
 target_include_directories(plume PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/volk
-    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/VulkanMemoryAllocator/include
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Vulkan-Headers/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/contrib/VulkanMemoryAllocator/include
 )
+
+if(WIN32)
+    target_include_directories(plume PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/contrib/D3D12MemoryAllocator/include
+    )
+endif()
 
 if(SDL_VULKAN_ENABLED)
     target_include_directories(plume PUBLIC ${SDL2_INCLUDE_DIRS})
