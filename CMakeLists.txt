@@ -85,10 +85,5 @@ if(APPLE)
     )
 endif()
 
-# Platform-specific libraries
-if(APPLE)
-    target_link_libraries(plume "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation -framework IOKit")
-endif()
-
 # Add examples
 add_subdirectory(examples) 

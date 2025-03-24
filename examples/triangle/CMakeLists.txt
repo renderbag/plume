@@ -8,8 +8,17 @@ set(SOURCES
 # Create executable
 add_executable(${EXAMPLE_NAME} ${SOURCES})
 
-# Link with framework and SDL2 libraries
+# Link with framework and platform-specific libraries
 target_link_libraries(${EXAMPLE_NAME} plume_example_framework ${SDL2_LIBRARIES})
+
+# Platform-specific libraries
+if(APPLE)
+    target_link_libraries(${EXAMPLE_NAME} "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation -framework IOKit")
+endif()
+
+if(WIN32)
+    target_link_libraries(${EXAMPLE_NAME} d3d12 dxgi)
+endif()
 
 # Include directories
 target_include_directories(${EXAMPLE_NAME} PRIVATE 
