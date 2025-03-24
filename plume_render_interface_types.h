@@ -26,9 +26,6 @@
 #undef ControlMask
 #undef Success
 #undef Always
-
-#elif defined(__APPLE__)
-#include <SDL.h>
 #endif
 
 #ifdef SDL_VULKAN_ENABLED
