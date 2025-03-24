@@ -86,4 +86,20 @@ jobs:
           
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DPLUME_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
           cmake --build cmake-build --config ${{ matrix.type }} --target plume -j $cpuCores
-          cmake --build cmake-build --config ${{ matrix.type }} --target triangle -j $cpuCores 
+          cmake --build cmake-build --config ${{ matrix.type }} --target triangle -j $cpuCores
+
+      - name: Upload Windows Build
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plume-windows-${{ matrix.type }}
+          path: |
+            cmake-build/${{ matrix.type }}/bin/triangle.exe
+
+      - name: Upload Linux Build
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plume-linux-${{ matrix.type }}-${{ matrix.os }}
+          path: |
+            cmake-build/bin/triangle
