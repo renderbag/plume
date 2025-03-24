@@ -61,12 +61,24 @@ else()
     endif()
 endif()
 
-# Function to compile HLSL to SPIR-V using DXC
-function(build_shader_spirv_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME)
-    # Create unique output names
-    set(SPIRV_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.spv")
-    set(SPIRV_C_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.spirv.c")
-    set(SPIRV_H_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.spirv.h")
+# Function to compile HLSL using DXC with common parameters
+function(build_shader_dxc_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME OUTPUT_FORMAT)
+    # Create unique output names based on format
+    if(OUTPUT_FORMAT STREQUAL "spirv")
+        set(OUTPUT_EXT "spv")
+        set(BLOB_SUFFIX "SPIRV")
+        set(FORMAT_FLAGS "-spirv")
+    elseif(OUTPUT_FORMAT STREQUAL "dxil")
+        set(OUTPUT_EXT "dxil")
+        set(BLOB_SUFFIX "DXIL")
+        set(FORMAT_FLAGS "-Wno-ignored-attributes")
+    else()
+        message(FATAL_ERROR "Unknown output format: ${OUTPUT_FORMAT}")
+    endif()
+
+    set(SHADER_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.${OUTPUT_EXT}")
+    set(C_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.${OUTPUT_FORMAT}.c")
+    set(H_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.${OUTPUT_FORMAT}.h")
     
     # Create output directory
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
@@ -75,92 +87,50 @@ function(build_shader_spirv_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NA
     if(SHADER_TYPE STREQUAL "vertex")
         set(SHADER_PROFILE "vs_6_0")
         set(DXC_EXTRA_ARGS "-fvk-invert-y") # Only include invert-y for vertex shaders
-        set(BLOB_NAME "${OUTPUT_NAME}BlobSPIRV")
     elseif(SHADER_TYPE STREQUAL "fragment")
         set(SHADER_PROFILE "ps_6_0")
         set(DXC_EXTRA_ARGS "")
-        set(BLOB_NAME "${OUTPUT_NAME}BlobSPIRV") 
     elseif(SHADER_TYPE STREQUAL "compute")
         set(SHADER_PROFILE "cs_6_0")
         set(DXC_EXTRA_ARGS "")
-        set(BLOB_NAME "${OUTPUT_NAME}BlobSPIRV")
     else()
         message(FATAL_ERROR "Unknown shader type: ${SHADER_TYPE}")
     endif()
+
+    set(BLOB_NAME "${OUTPUT_NAME}Blob${BLOB_SUFFIX}")
     
-    # Compile to SPIR-V using DXC
+    # Compile using DXC
     add_custom_command(
-        OUTPUT ${SPIRV_OUTPUT}
-        COMMAND ${DXC} -E main -T ${SHADER_PROFILE} -spirv -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
-                -Fo ${SPIRV_OUTPUT} ${SHADER_SOURCE}
+        OUTPUT ${SHADER_OUTPUT}
+        COMMAND ${DXC} -E main -T ${SHADER_PROFILE} ${FORMAT_FLAGS} -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
+                -Fo ${SHADER_OUTPUT} ${SHADER_SOURCE}
         DEPENDS ${SHADER_SOURCE}
-        COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to SPIR-V using DXC"
+        COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to ${OUTPUT_FORMAT} using DXC"
     )
     
     # Generate C header
     add_custom_command(
-        OUTPUT "${SPIRV_C_OUTPUT}" "${SPIRV_H_OUTPUT}"
-        COMMAND file_to_c ${SPIRV_OUTPUT} "${BLOB_NAME}" "${SPIRV_C_OUTPUT}" "${SPIRV_H_OUTPUT}"
-        DEPENDS ${SPIRV_OUTPUT} file_to_c
-        COMMENT "Generating C header for SPIR-V shader ${OUTPUT_NAME}"
+        OUTPUT "${C_OUTPUT}" "${H_OUTPUT}"
+        COMMAND file_to_c ${SHADER_OUTPUT} "${BLOB_NAME}" "${C_OUTPUT}" "${H_OUTPUT}"
+        DEPENDS ${SHADER_OUTPUT} file_to_c
+        COMMENT "Generating C header for ${OUTPUT_FORMAT} shader ${OUTPUT_NAME}"
     )
     
     # Add the generated source file to the target
-    target_sources(${TARGET_NAME} PRIVATE "${SPIRV_C_OUTPUT}")
+    target_sources(${TARGET_NAME} PRIVATE "${C_OUTPUT}")
     
     # Make sure the target can find the generated header
     target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/shaders")
 endfunction()
 
+# Function to compile HLSL to SPIR-V using DXC
+function(build_shader_spirv_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME)
+    build_shader_dxc_impl(${TARGET_NAME} ${SHADER_SOURCE} ${SHADER_TYPE} ${OUTPUT_NAME} "spirv")
+endfunction()
+
 # Function to compile HLSL to DXIL using DXC
 function(build_shader_dxil_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME)
-    # Create unique output names
-    set(DXIL_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil")
-    set(DXIL_C_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil.c")
-    set(DXIL_H_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.dxil.h")
-    
-    # Create output directory
-    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
-    
-    # Determine the shader options based on type
-    if(SHADER_TYPE STREQUAL "vertex")
-        set(SHADER_PROFILE "vs_6_0")
-        set(DXC_EXTRA_ARGS "-fvk-invert-y") # Only include invert-y for vertex shaders
-        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
-    elseif(SHADER_TYPE STREQUAL "fragment")
-        set(SHADER_PROFILE "ps_6_0")
-        set(DXC_EXTRA_ARGS "")
-        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
-    elseif(SHADER_TYPE STREQUAL "compute")
-        set(SHADER_PROFILE "cs_6_0")
-        set(DXC_EXTRA_ARGS "")
-        set(BLOB_NAME "${OUTPUT_NAME}BlobDXIL")
-    else()
-        message(FATAL_ERROR "Unknown shader type: ${SHADER_TYPE}")
-    endif()
-    
-    # Compile to DXIL using DXC
-    add_custom_command(
-        OUTPUT ${DXIL_OUTPUT}
-        COMMAND ${DXC} -E main -T ${SHADER_PROFILE} -Wno-ignored-attributes -fspv-target-env=vulkan1.0 -fvk-use-dx-layout ${DXC_EXTRA_ARGS}
-                -Fo ${DXIL_OUTPUT} ${SHADER_SOURCE}
-        DEPENDS ${SHADER_SOURCE}
-        COMMENT "Compiling ${SHADER_TYPE} shader ${SHADER_SOURCE} to DXIL using DXC"
-    )
-    
-    # Generate C header
-    add_custom_command(
-        OUTPUT "${DXIL_C_OUTPUT}" "${DXIL_H_OUTPUT}"
-        COMMAND file_to_c ${DXIL_OUTPUT} "${BLOB_NAME}" "${DXIL_C_OUTPUT}" "${DXIL_H_OUTPUT}"
-        DEPENDS ${DXIL_OUTPUT} file_to_c
-        COMMENT "Generating C header for DXIL shader ${OUTPUT_NAME}"
-    )
-    
-    # Add the generated source file to the target
-    target_sources(${TARGET_NAME} PRIVATE "${DXIL_C_OUTPUT}")
-    
-    # Make sure the target can find the generated header
-    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/shaders")
+    build_shader_dxc_impl(${TARGET_NAME} ${SHADER_SOURCE} ${SHADER_TYPE} ${OUTPUT_NAME} "dxil")
 endfunction()
 
 # Function to compile Metal shaders
