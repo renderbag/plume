@@ -29,9 +29,9 @@ if(SDL_VULKAN_ENABLED)
 endif()
 
 # Print status messages
-message(STATUS "plume: Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
-message(STATUS "plume: SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
-message(STATUS "plume: Building examples: ${PLUME_BUILD_EXAMPLES}")
+message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
+message(STATUS "Plume - SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
+message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -41,7 +41,6 @@ set(PLUME_SOURCES
 
 # Platform-specific files
 if(APPLE)
-    message(STATUS "Adding Metal backend files")
     list(APPEND PLUME_SOURCES
         plume_metal.cpp
         plume_metal.h

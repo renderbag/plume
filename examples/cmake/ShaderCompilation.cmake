@@ -38,7 +38,6 @@ elseif(APPLE)
         
         # Set DXC command with DYLD_LIBRARY_PATH
         set(DXC "DYLD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
-        message(STATUS "Found DXC at ${DXC_EXECUTABLE}")
     else()
         message(FATAL_ERROR "DXC not found at ${DXC_EXECUTABLE} - required for shader compilation")
     endif()
@@ -57,7 +56,6 @@ else()
         # Set executable permission if needed
         execute_process(COMMAND chmod +x "${DXC_EXECUTABLE}")
         set(DXC "LD_LIBRARY_PATH=${DXC_LIB_DIR}" "${DXC_EXECUTABLE}")
-        message(STATUS "Found DXC at ${DXC_EXECUTABLE}")
     else()
         message(FATAL_ERROR "DXC not found at ${DXC_EXECUTABLE} - required for shader compilation")
     endif()
