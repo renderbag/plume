@@ -165,8 +165,18 @@ void run(std::unique_ptr<Example> example) {
     }
     #endif
     
+    // Create window title with backend information
+    std::string windowTitle = config.title;
+    if (useMetalBackend) {
+        windowTitle += " (Metal)";
+    } else if (useVulkanBackend) {
+        windowTitle += " (Vulkan)";
+    } else {
+        windowTitle += " (Auto)";
+    }
+    
     SDL_Window* window = SDL_CreateWindow(
-        config.title,
+        windowTitle.c_str(),
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         config.width, config.height,
         windowFlags
