@@ -206,6 +206,11 @@ void run(std::unique_ptr<Example> example) {
     std::unique_ptr<plume::RenderInterface> renderInterface;
     plume::RenderWindow renderWindow = {};
 
+    // Get the window info
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    SDL_bool gotWindowInfo = SDL_GetWindowWMInfo(window, &wmInfo);
+
     // Create renderWindow based on platform
     #ifdef __APPLE__
         SDL_MetalView metalView = SDL_Metal_CreateView(window);
@@ -216,10 +221,7 @@ void run(std::unique_ptr<Example> example) {
             return;
         }
         
-        // Get the Cocoa window and CAMetalLayer
-        SDL_SysWMinfo wmInfo;
-        SDL_VERSION(&wmInfo.version);
-        if (!SDL_GetWindowWMInfo(window, &wmInfo)) {
+        if (!gotWindowInfo) {
             std::cerr << "Failed to get window info: " << SDL_GetError() << std::endl;
             SDL_Metal_DestroyView(metalView);
             SDL_DestroyWindow(window);
@@ -233,6 +235,13 @@ void run(std::unique_ptr<Example> example) {
     #elif defined(_WIN32)
         windowHandle = wmInfo.info.win.window;
     #elif defined(__linux__) || defined(__ANDROID__)  
+        if (!gotWindowInfo) {
+            std::cerr << "Failed to get window info: " << SDL_GetError() << std::endl;
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return;
+        }
+
         #ifdef SDL_VULKAN_ENABLED
         renderWindow = window;
         renderInterface = plume::CreateVulkanInterface(renderWindow);
