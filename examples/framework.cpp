@@ -246,8 +246,8 @@ void run(std::unique_ptr<Example> example) {
         renderWindow = window;
         renderInterface = plume::CreateVulkanInterface(renderWindow);
         #else
-        renderWindow.window = wmInfo.info.x11.display;
-        renderWindow.view = wmInfo.info.x11.window;
+        renderWindow.display = wmInfo.info.x11.display;
+        renderWindow.window = wmInfo.info.x11.window;
         #endif
     #endif
     
