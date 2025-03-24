@@ -7,9 +7,9 @@
 #include <fstream>
 
 #include <SDL_vulkan.h>
+#include <SDL_syswm.h>
 #ifdef __APPLE__
 #include <SDL_metal.h>
-#include <SDL_syswm.h>
 #endif
 
 // Function prototype for creating the Metal interface on Apple platforms
