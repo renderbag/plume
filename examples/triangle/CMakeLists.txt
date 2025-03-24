@@ -14,10 +14,12 @@ target_link_libraries(${EXAMPLE_NAME} plume_example_framework ${SDL2_LIBRARIES})
 # Platform-specific libraries
 if(APPLE)
     target_link_libraries(${EXAMPLE_NAME} "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation -framework IOKit")
-endif()
-
-if(WIN32)
+elseif(WIN32)
     target_link_libraries(${EXAMPLE_NAME} d3d12 dxgi)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_package(X11 REQUIRED)
+    target_include_directories(${EXAMPLE_NAME} PUBLIC ${X11_INCLUDE_DIR} ${X11_Xrandr_INCLUDE_PATH})
+    target_link_libraries(${EXAMPLE_NAME} ${X11_LIBRARIES} ${X11_Xrandr_LIB})
 endif()
 
 # Include directories
