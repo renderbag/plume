@@ -30,7 +30,10 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install ninja
+          vcpkg install sdl2 --triplet x64-windows-static
+
           Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+          "C:\vcpkg\installed\x64-windows-static\bin" >> $env:GITHUB_PATH
 
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
