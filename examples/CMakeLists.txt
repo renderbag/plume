@@ -1,5 +1,5 @@
 # Enable SDL Vulkan integration
-set(SDL_VULKAN_ENABLED TRUE)
+set_option(SDL_VULKAN_ENABLED ON)
 
 # Find SDL2 (required for examples)
 find_package(SDL2 REQUIRED)
