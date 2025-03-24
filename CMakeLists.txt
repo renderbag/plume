@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(APPLE)
     enable_language(OBJC OBJCXX)
-    # Always enable Metal on macOS
-    add_compile_definitions(PLUME_ENABLE_METAL)
 endif()
 
 # Enable SDL Vulkan support
@@ -33,9 +31,8 @@ message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
-    plume_render_interface.h
-    plume_render_interface_types.h
-    plume_render_interface_builders.h
+    plume_vulkan.cpp
+    plume_vulkan.h
 )
 
 # Platform-specific files
@@ -47,20 +44,12 @@ if(APPLE)
         plume_apple.mm
         plume_apple.h
     )
-endif()
-
-if (WIN32)
+elseif(WIN32)
     list(APPEND PLUME_SOURCES
         plume_d3d12.cpp
         plume_d3d12.h
     )
 endif()
-
-# Always include Vulkan backend files
-list(APPEND PLUME_SOURCES
-    plume_vulkan.cpp
-    plume_vulkan.h
-)
 
 # Create target
 add_library(plume STATIC ${PLUME_SOURCES})
