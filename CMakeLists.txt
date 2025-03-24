@@ -10,7 +10,7 @@ endif()
 
 # Project options
 option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF)
-option(BUILD_EXAMPLES "Build example applications" OFF)
+option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
 
 # Windows-specific definitions
 if(WIN32)
@@ -29,9 +29,9 @@ if(SDL_VULKAN_ENABLED)
 endif()
 
 # Print status messages
-message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${WIN32}")
-message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
-message(STATUS "Building examples: ${BUILD_EXAMPLES}")
+message(STATUS "plume: Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
+message(STATUS "plume: SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
+message(STATUS "plume: Building examples: ${PLUME_BUILD_EXAMPLES}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -84,6 +84,6 @@ if(APPLE)
 endif()
 
 # Add examples if requested
-if(BUILD_EXAMPLES)
+if(PLUME_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif() 

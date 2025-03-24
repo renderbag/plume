@@ -1,5 +1,5 @@
 # Enable SDL Vulkan integration
-set_option(SDL_VULKAN_ENABLED ON)
+set(SDL_VULKAN_ENABLED ON CACHE BOOL "Enable SDL Vulkan integration" FORCE)
 
 # Find SDL2 (required for examples)
 find_package(SDL2 REQUIRED)
