@@ -16,11 +16,13 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
     add_compile_definitions("SDL_VULKAN_ENABLED")
 endif()
 
-# Find SDL2 on all platforms
-find_package(SDL2 REQUIRED)
+# Find SDL2 only if Vulkan via SDL is enabled
+if(SDL_VULKAN_ENABLED)
+    find_package(SDL2 REQUIRED)
+    message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
+endif()
 
 # Print status messages
-message(STATUS "Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "Building with backends: Vulkan=ON Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
 
@@ -60,12 +62,15 @@ add_library(plume ${PLUME_SOURCES})
 
 # Include directories
 target_include_directories(plume PUBLIC
-    ${SDL2_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/volk
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/VulkanMemoryAllocator/include
     ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Vulkan-Headers/include
 )
+
+if(SDL_VULKAN_ENABLED)
+    target_include_directories(plume PUBLIC ${SDL2_INCLUDE_DIRS})
+endif()
 
 # Platform-specific includes
 if(APPLE)
@@ -78,8 +83,6 @@ endif()
 if(APPLE)
     target_link_libraries(plume "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation -framework IOKit")
 endif()
-
-target_link_libraries(plume ${SDL2_LIBRARIES})
 
 # Add examples
 add_subdirectory(examples) 
