@@ -39,7 +39,7 @@
 
 namespace plume {
     static constexpr size_t MAX_CLEAR_RECTS = 16;
-    static constexpr uint32_t MAX_BINDING_NUMBER = 64;
+    static constexpr uint32_t MAX_BINDING_NUMBER = 128;
     static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 8;
 
     struct MetalInterface;
