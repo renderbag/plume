@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <vector>
+#include <cstring>
 
 // Include the generated shader header files
 #if defined(__APPLE__)
