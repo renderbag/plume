@@ -16,6 +16,11 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND SDL_VULKAN_ENABLED)
     add_compile_definitions("SDL_VULKAN_ENABLED")
 endif()
 
+# Windows-specific definitions
+if(WIN32)
+    add_compile_definitions(NOMINMAX)
+endif()
+
 # Find SDL2 only if Vulkan via SDL is enabled
 if(SDL_VULKAN_ENABLED)
     find_package(SDL2 REQUIRED)
