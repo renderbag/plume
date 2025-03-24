@@ -18,7 +18,8 @@ namespace example {
 enum class RenderBackendType {
     Auto,       // Choose the best backend for the platform (Metal on macOS, Vulkan elsewhere)
     Metal,      // Force Metal backend (macOS only)
-    Vulkan      // Force Vulkan backend
+    Vulkan,     // Force Vulkan backend
+    D3D12       // Force D3D12 backend
 };
 
 // Framework configuration that can be specialized by each example

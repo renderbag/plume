@@ -126,6 +126,7 @@ void run(std::unique_ptr<Example> example) {
     // Set up window flags based on backend preference
     bool useMetalBackend = false;
     bool useVulkanBackend = false;
+    bool useD3D12Backend = false;
     
     // Determine which backend to use based on config and platform support
     switch (config.backendType) {
@@ -133,6 +134,8 @@ void run(std::unique_ptr<Example> example) {
             // Use platform default (Metal on macOS, Vulkan elsewhere)
             #ifdef __APPLE__
             useMetalBackend = true;
+            #elif defined(_WIN32)
+            useD3D12Backend = true;
             #else
             useVulkanBackend = true;
             #endif
@@ -146,7 +149,16 @@ void run(std::unique_ptr<Example> example) {
             useVulkanBackend = true; // Fall back to Vulkan
             #endif
             break;
-            
+
+        case RenderBackendType::D3D12:
+            #ifdef _WIN32
+            useD3D12Backend = true;
+            #else
+            std::cerr << "D3D12 backend requested but not supported on this platform" << std::endl;
+            useVulkanBackend = true; // Fall back to Vulkan
+            #endif
+            break;
+
         case RenderBackendType::Vulkan:
             useVulkanBackend = true;
             break;
@@ -171,6 +183,8 @@ void run(std::unique_ptr<Example> example) {
         windowTitle += " (Metal)";
     } else if (useVulkanBackend) {
         windowTitle += " (Vulkan)";
+    } else if (useD3D12Backend) {
+        windowTitle += " (D3D12)";
     } else {
         windowTitle += " (Auto)";
     }
@@ -216,6 +230,8 @@ void run(std::unique_ptr<Example> example) {
         // Set up the render window for Metal
         renderWindow.window = wmInfo.info.cocoa.window;
         renderWindow.view = SDL_Metal_GetLayer(metalView);
+    #elif defined(_WIN32)
+        windowHandle = wmInfo.info.win.window;
     #elif defined(__linux__) || defined(__ANDROID__)  
         #ifdef SDL_VULKAN_ENABLED
         renderWindow = window;
