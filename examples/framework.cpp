@@ -233,7 +233,7 @@ void run(std::unique_ptr<Example> example) {
         renderWindow.window = wmInfo.info.cocoa.window;
         renderWindow.view = SDL_Metal_GetLayer(metalView);
     #elif defined(_WIN32)
-        windowHandle = wmInfo.info.win.window;
+        renderWindow = wmInfo.info.win.window;
     #elif defined(__linux__) || defined(__ANDROID__)  
         if (!gotWindowInfo) {
             std::cerr << "Failed to get window info: " << SDL_GetError() << std::endl;
