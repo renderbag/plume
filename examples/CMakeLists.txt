@@ -1,6 +1,9 @@
 # Enable SDL Vulkan integration
 set(SDL_VULKAN_ENABLED TRUE)
 
+# Find SDL2 (required for examples)
+find_package(SDL2 REQUIRED)
+
 # Framework sources
 set(FRAMEWORK_SOURCES
     framework.cpp
@@ -16,7 +19,7 @@ include(ShaderCompilation)
 
 # Create framework library
 add_library(plume_example_framework STATIC ${FRAMEWORK_SOURCES})
-target_link_libraries(plume_example_framework plume ${SDL2_LIBRARIES})
+target_link_libraries(plume_example_framework plume)
 target_include_directories(plume_example_framework PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${SDL2_INCLUDE_DIRS}

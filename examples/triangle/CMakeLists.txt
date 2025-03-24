@@ -9,7 +9,7 @@ set(SOURCES
 add_executable(${EXAMPLE_NAME} ${SOURCES})
 
 # Link with framework and SDL2 libraries
-target_link_libraries(${EXAMPLE_NAME} plume_example_framework)
+target_link_libraries(${EXAMPLE_NAME} plume_example_framework ${SDL2_LIBRARIES})
 
 # Include directories
 target_include_directories(${EXAMPLE_NAME} PRIVATE 
