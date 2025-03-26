@@ -6,7 +6,7 @@ include(FetchContent)
 FetchContent_Declare(
     dxc
     GIT_REPOSITORY https://github.com/renderbag/dxc-bin.git
-    GIT_TAG 737ac9f51c3d06f0cd1ee7e14dc065bafd52310d
+    GIT_TAG 781065589d5dba23598b746b3d2e457e985b1442
 )
 FetchContent_MakeAvailable(dxc)
 
