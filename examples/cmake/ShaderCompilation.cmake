@@ -1,15 +1,6 @@
 # Shader compilation functions for Plume
 # Using DXC for HLSL to SPIR-V compilation and Metal for macOS
 
-# Detect platform
-if(APPLE)
-    set(PLUME_PLATFORM "macos")
-elseif(WIN32)
-    set(PLUME_PLATFORM "windows")
-else()
-    set(PLUME_PLATFORM "linux")
-endif()
-
 # Set up DXC paths based on platform
 if(WIN32)
     set(DXC "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxc.exe")
