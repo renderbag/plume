@@ -1,9 +1,6 @@
 [submodule "contrib/volk"]
 	path = contrib/volk
 	url = https://github.com/zeux/volk
-[submodule "contrib/dxc"]
-	path = contrib/dxc
-	url = https://github.com/renderbag/dxc-bin.git
 [submodule "contrib/VulkanMemoryAllocator"]
 	path = contrib/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

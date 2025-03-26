@@ -1,25 +1,34 @@
 # Shader compilation functions for Plume
 # Using DXC for HLSL to SPIR-V compilation and Metal for macOS
 
+# Fetch DXC for shader compilation
+include(FetchContent)
+FetchContent_Declare(
+    dxc
+    GIT_REPOSITORY https://github.com/renderbag/dxc-bin.git
+    GIT_TAG 737ac9f51c3d06f0cd1ee7e14dc065bafd52310d
+)
+FetchContent_MakeAvailable(dxc)
+
 # Set up DXC paths based on platform
 if(WIN32)
-    set(DXC "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxc.exe")
+    set(DXC "${dxc_SOURCE_DIR}/bin/x64/dxc.exe")
     
     # Dependencies that must be next to the DLL if on Windows
-    if(EXISTS "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxcompiler.dll")
-        configure_file("${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxcompiler.dll" "${CMAKE_BINARY_DIR}/bin/dxcompiler.dll" COPYONLY)
+    if(EXISTS "${dxc_SOURCE_DIR}/bin/x64/dxcompiler.dll")
+        configure_file("${dxc_SOURCE_DIR}/bin/x64/dxcompiler.dll" "${CMAKE_BINARY_DIR}/bin/dxcompiler.dll" COPYONLY)
     endif()
-    if(EXISTS "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxil.dll")
-        configure_file("${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxil.dll" "${CMAKE_BINARY_DIR}/bin/dxil.dll" COPYONLY)
+    if(EXISTS "${dxc_SOURCE_DIR}/bin/x64/dxil.dll")
+        configure_file("${dxc_SOURCE_DIR}/bin/x64/dxil.dll" "${CMAKE_BINARY_DIR}/bin/dxil.dll" COPYONLY)
     endif()
 elseif(APPLE)
     # On macOS, find the right DXC binary based on architecture
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxc-macos")
-        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/x64")
+        set(DXC_EXECUTABLE "${dxc_SOURCE_DIR}/bin/x64/dxc-macos")
+        set(DXC_LIB_DIR "${dxc_SOURCE_DIR}/lib/x64")
     else()
-        set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/arm64/dxc-macos")
-        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/arm64")
+        set(DXC_EXECUTABLE "${dxc_SOURCE_DIR}/bin/arm64/dxc-macos")
+        set(DXC_LIB_DIR "${dxc_SOURCE_DIR}/lib/arm64")
     endif()
     
     # Make sure the executable is accessible and has execute permissions
@@ -35,11 +44,11 @@ elseif(APPLE)
 else()
     # Linux
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/x64/dxc-linux")
-        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/x64")
+        set(DXC_EXECUTABLE "${dxc_SOURCE_DIR}/bin/x64/dxc-linux")
+        set(DXC_LIB_DIR "${dxc_SOURCE_DIR}/lib/x64")
     else()
-        set(DXC_EXECUTABLE "${CMAKE_SOURCE_DIR}/contrib/dxc/bin/arm64/dxc-linux")
-        set(DXC_LIB_DIR "${CMAKE_SOURCE_DIR}/contrib/dxc/lib/arm64")
+        set(DXC_EXECUTABLE "${dxc_SOURCE_DIR}/bin/arm64/dxc-linux")
+        set(DXC_LIB_DIR "${dxc_SOURCE_DIR}/lib/arm64")
     endif()
     
     # Make sure the executable is accessible and has execute permissions
