@@ -1169,7 +1169,6 @@ namespace plume {
 
     MetalTextureView::MetalTextureView(MetalTexture *texture, const RenderTextureViewDesc &desc) {
         assert(texture != nullptr);
-        assert(texture->desc.dimension == desc.dimension && "Creating a view with a different dimension is currently not supported.");
 
         this->texture = texture->mtl->newTextureView(
             mapPixelFormat(desc.format),
