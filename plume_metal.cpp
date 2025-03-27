@@ -480,6 +480,8 @@ namespace plume {
                 return MTL::VertexFormatInt2;
             case RenderFormat::R8G8B8A8_UNORM:
                 return MTL::VertexFormatUChar4Normalized;
+            case RenderFormat::B8G8R8A8_UNORM:
+                return MTL::VertexFormatUChar4Normalized_BGRA;
             case RenderFormat::R8G8B8A8_UINT:
                 return MTL::VertexFormatUChar4;
             case RenderFormat::R8G8B8A8_SNORM:
