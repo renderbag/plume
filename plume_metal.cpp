@@ -583,8 +583,10 @@ namespace plume {
             case RenderPrimitiveTopology::POINT_LIST:
                 return MTL::PrimitiveTopologyClassPoint;
             case RenderPrimitiveTopology::LINE_LIST:
+            case RenderPrimitiveTopology::LINE_STRIP:
                 return MTL::PrimitiveTopologyClassLine;
             case RenderPrimitiveTopology::TRIANGLE_LIST:
+            case RenderPrimitiveTopology::TRIANGLE_STRIP:
                 return MTL::PrimitiveTopologyClassTriangle;
             default:
                 assert(false && "Unknown primitive topology type.");
