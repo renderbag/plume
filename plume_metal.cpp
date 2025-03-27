@@ -2049,6 +2049,7 @@ namespace plume {
             }
             case MetalPipeline::Type::Graphics: {
                 const MetalGraphicsPipeline *graphicsPipeline = static_cast<const MetalGraphicsPipeline *>(interfacePipeline);
+                currentPrimitiveType = graphicsPipeline->state.primitiveType;
                 if (activeRenderState != &graphicsPipeline->state) {
                     activeRenderState = &graphicsPipeline->state;
                     dirtyGraphicsState.pipelineState = 1;
