@@ -548,12 +548,16 @@ namespace plume {
         }
     }
 
-    MTL::TextureType mapTextureType(RenderTextureDimension dimension, RenderSampleCounts sampleCount) {
+    MTL::TextureType mapTextureType(RenderTextureDimension dimension, RenderSampleCounts sampleCount, uint32_t arraySize) {
         switch (dimension) {
             case RenderTextureDimension::TEXTURE_1D:
                 assert(sampleCount <= 1 && "Multisampling not supported for 1D textures");
+                if (arraySize > 1)
+                    return MTL::TextureType1DArray;
                 return MTL::TextureType1D;
             case RenderTextureDimension::TEXTURE_2D:
+                if (arraySize > 1)
+                    return (sampleCount > 1) ? MTL::TextureType2DMultisampleArray : MTL::TextureType2DArray;
                 return (sampleCount > 1) ? MTL::TextureType2DMultisample : MTL::TextureType2D;
             case RenderTextureDimension::TEXTURE_3D:
                 assert(sampleCount <= 1 && "Multisampling not supported for 3D textures");
@@ -1120,7 +1124,7 @@ namespace plume {
         this->desc = desc;
 
         MTL::TextureDescriptor *descriptor = MTL::TextureDescriptor::alloc()->init();
-        const MTL::TextureType textureType = mapTextureType(desc.dimension, desc.multisampling.sampleCount);
+        const MTL::TextureType textureType = mapTextureType(desc.dimension, desc.multisampling.sampleCount, desc.arraySize);
 
         descriptor->setTextureType(textureType);
         descriptor->setStorageMode(MTL::StorageModePrivate);
