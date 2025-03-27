@@ -1416,8 +1416,11 @@ namespace plume {
 
         // State variables, initialized here to be reused in encoder re-binding
         MTL::DepthStencilDescriptor *depthStencilDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
-        depthStencilDescriptor->setDepthWriteEnabled(desc.depthWriteEnabled);
-        depthStencilDescriptor->setDepthCompareFunction(desc.depthEnabled ? mapCompareFunction(desc.depthFunction) : MTL::CompareFunctionAlways);
+
+        if (desc.depthTargetFormat != RenderFormat::UNKNOWN) {
+            depthStencilDescriptor->setDepthWriteEnabled(desc.depthWriteEnabled);
+            depthStencilDescriptor->setDepthCompareFunction(desc.depthEnabled ? mapCompareFunction(desc.depthFunction) : MTL::CompareFunctionAlways);
+        }
 
         NS::Error *error = nullptr;
         state.depthStencilState = device->mtl->newDepthStencilState(depthStencilDescriptor);
