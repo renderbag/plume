@@ -314,6 +314,7 @@ namespace plume {
         MTL::IndexType currentIndexType = MTL::IndexTypeUInt32;
         MTL::Buffer *indexBuffer = nullptr;
         uint32_t indexBufferOffset = 0;
+        uint32_t indexTypeSize = 0;
         uint32_t viewCount = 0;
 
         std::vector<MTL::Buffer *> vertexBuffers;

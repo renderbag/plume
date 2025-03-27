@@ -2031,7 +2031,7 @@ namespace plume {
         checkActiveRenderEncoder();
         checkForUpdatesInGraphicsState();
 
-        activeRenderEncoder->drawIndexedPrimitives(currentPrimitiveType, indexCountPerInstance, currentIndexType, indexBuffer, indexBufferOffset + (startIndexLocation * sizeof(uint32_t)), instanceCount, baseVertexLocation, startInstanceLocation);
+        activeRenderEncoder->drawIndexedPrimitives(currentPrimitiveType, indexCountPerInstance, currentIndexType, indexBuffer, indexBufferOffset + (startIndexLocation * indexTypeSize), instanceCount, baseVertexLocation, startInstanceLocation);
     }
 
     void MetalCommandList::setPipeline(const RenderPipeline *pipeline) {
@@ -2185,6 +2185,7 @@ namespace plume {
             indexBuffer = interfaceBuffer->mtl;
             indexBufferOffset = view->buffer.offset;
             currentIndexType = mapIndexFormat(view->format);
+            indexTypeSize = currentIndexType == MTL::IndexTypeUInt32 ? sizeof(uint32_t) : sizeof(uint16_t);
         }
     }
 
