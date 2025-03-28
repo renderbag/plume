@@ -2088,11 +2088,11 @@ namespace plume {
         const RenderPushConstantRange &range = activeComputePipelineLayout->pushConstantRanges[rangeIndex];
         pushConstants.resize(activeComputePipelineLayout->pushConstantRanges.size());
         pushConstants[rangeIndex].data.resize(range.size);
-        memcpy(pushConstants[rangeIndex].data.data(), data, range.size);
+        memcpy(pushConstants[rangeIndex].data.data() + offset, data, size == 0 ? range.size : size);
         pushConstants[rangeIndex].binding = range.binding;
         pushConstants[rangeIndex].set = range.set;
-        pushConstants[rangeIndex].offset = range.offset + offset;
-        pushConstants[rangeIndex].size = alignUp(size == 0 ? range.size : size);
+        pushConstants[rangeIndex].offset = range.offset;
+        pushConstants[rangeIndex].size = range.size;
         pushConstants[rangeIndex].stageFlags = range.stageFlags;
 
         dirtyComputeState.pushConstants = 1;
@@ -2139,11 +2139,11 @@ namespace plume {
         const RenderPushConstantRange &range = activeGraphicsPipelineLayout->pushConstantRanges[rangeIndex];
         pushConstants.resize(activeGraphicsPipelineLayout->pushConstantRanges.size());
         pushConstants[rangeIndex].data.resize(range.size);
-        memcpy(pushConstants[rangeIndex].data.data(), data, range.size);
+        memcpy(pushConstants[rangeIndex].data.data() + offset, data, size == 0 ? range.size : size);
         pushConstants[rangeIndex].binding = range.binding;
         pushConstants[rangeIndex].set = range.set;
-        pushConstants[rangeIndex].offset = range.offset + offset;
-        pushConstants[rangeIndex].size = alignUp(size == 0 ? range.size : size);
+        pushConstants[rangeIndex].offset = range.offset;
+        pushConstants[rangeIndex].size = range.size;
         pushConstants[rangeIndex].stageFlags = range.stageFlags;
 
         dirtyGraphicsState.pushConstants = 1;
