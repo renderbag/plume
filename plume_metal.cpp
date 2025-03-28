@@ -1242,26 +1242,23 @@ namespace plume {
     }
 
     MTL::Function* MetalShader::createFunction(const RenderSpecConstant *specConstants, const uint32_t specConstantsCount) const {
+        MTL::FunctionConstantValues *values = MTL::FunctionConstantValues::alloc()->init();
         if (specConstants != nullptr) {
-            MTL::FunctionConstantValues *values = MTL::FunctionConstantValues::alloc()->init();
             for (uint32_t i = 0; i < specConstantsCount; i++) {
                 const RenderSpecConstant &specConstant = specConstants[i];
                 values->setConstantValue(&specConstant.value, MTL::DataTypeUInt, specConstant.index);
-            }
+            } 
+        }
+        NS::Error *error = nullptr;
+        MTL::Function *function = library->newFunction(functionName, values, &error);
+        values->release();
 
-            NS::Error *error = nullptr;
-            MTL::Function *function = library->newFunction(functionName, values, &error);
-            values->release();
-
-            if (error != nullptr) {
-                fprintf(stderr, "MTLLibrary newFunction: failed with error: %s.\n", error->localizedDescription()->utf8String());
-                return nullptr;
-            }
-
-            return function;
+        if (error != nullptr) {
+            fprintf(stderr, "MTLLibrary newFunction: failed with error: %s.\n", error->localizedDescription()->utf8String());
+            return nullptr;
         }
 
-        return library->newFunction(functionName);
+        return function;
     }
 
     // MetalSampler
