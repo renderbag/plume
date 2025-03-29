@@ -552,13 +552,13 @@ namespace plume {
         switch (dimension) {
             case RenderTextureDimension::TEXTURE_1D:
                 assert(sampleCount <= 1 && "Multisampling not supported for 1D textures");
-                if (arraySize > 1)
-                    return MTL::TextureType1DArray;
-                return MTL::TextureType1D;
+                return (arraySize > 1) ? MTL::TextureType1DArray : MTL::TextureType1D;
             case RenderTextureDimension::TEXTURE_2D:
-                if (arraySize > 1)
+                if (arraySize > 1) {
                     return (sampleCount > 1) ? MTL::TextureType2DMultisampleArray : MTL::TextureType2DArray;
-                return (sampleCount > 1) ? MTL::TextureType2DMultisample : MTL::TextureType2D;
+                } else {
+                    return (sampleCount > 1) ? MTL::TextureType2DMultisample : MTL::TextureType2D;
+                }
             case RenderTextureDimension::TEXTURE_3D:
                 assert(sampleCount <= 1 && "Multisampling not supported for 3D textures");
                 return MTL::TextureType3D;
