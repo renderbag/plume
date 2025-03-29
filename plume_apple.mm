@@ -57,10 +57,10 @@ namespace plume {
             NSRect contentFrame = [[nsWindow contentView] frame];
             CGFloat scaleFactor = [nsWindow backingScaleFactor];
 
-            cachedAttributes.x = contentFrame.origin.x;
-            cachedAttributes.y = contentFrame.origin.y;
-            cachedAttributes.width = contentFrame.size.width * scaleFactor;
-            cachedAttributes.height = contentFrame.size.height * scaleFactor;
+            cachedAttributes.x = (int)round(contentFrame.origin.x);
+            cachedAttributes.y = (int)round(contentFrame.origin.y);
+            cachedAttributes.width = (int)round(contentFrame.size.width * scaleFactor);
+            cachedAttributes.height = (int)round(contentFrame.size.height * scaleFactor);
 
             NSScreen *screen = [nsWindow screen];
             if (@available(macOS 12.0, *)) {
@@ -81,10 +81,10 @@ namespace plume {
             CGFloat scaleFactor = [nsWindow backingScaleFactor];
 
             std::lock_guard<std::mutex> lock(attributesMutex);
-            cachedAttributes.x = contentFrame.origin.x;
-            cachedAttributes.y = contentFrame.origin.y;
-            cachedAttributes.width = contentFrame.size.width * scaleFactor;
-            cachedAttributes.height = contentFrame.size.height * scaleFactor;
+            cachedAttributes.x = (int)round(contentFrame.origin.x);
+            cachedAttributes.y = (int)round(contentFrame.origin.y);
+            cachedAttributes.width = (int)round(contentFrame.size.width * scaleFactor);
+            cachedAttributes.height = (int)round(contentFrame.size.height * scaleFactor);
         };
 
         if (forceSync) {
@@ -118,10 +118,10 @@ namespace plume {
 
             {
                 std::lock_guard<std::mutex> lock(attributesMutex);
-                const_cast<CocoaWindow*>(this)->cachedAttributes.x = contentFrame.origin.x;
-                const_cast<CocoaWindow*>(this)->cachedAttributes.y = contentFrame.origin.y;
-                const_cast<CocoaWindow*>(this)->cachedAttributes.width = contentFrame.size.width * scaleFactor;
-                const_cast<CocoaWindow*>(this)->cachedAttributes.height = contentFrame.size.height * scaleFactor;
+                const_cast<CocoaWindow*>(this)->cachedAttributes.x = (int)round(contentFrame.origin.x);
+                const_cast<CocoaWindow*>(this)->cachedAttributes.y = (int)round(contentFrame.origin.y);
+                const_cast<CocoaWindow*>(this)->cachedAttributes.width = (int)round(contentFrame.size.width * scaleFactor);
+                const_cast<CocoaWindow*>(this)->cachedAttributes.height = (int)round(contentFrame.size.height * scaleFactor);
 
                 *attributes = cachedAttributes;
             }
