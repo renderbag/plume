@@ -8,6 +8,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
 
 #include "plume_render_interface.h"
 #include "plume_apple.h"
@@ -340,6 +341,9 @@ namespace plume {
         const MetalDescriptorSet* renderDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
         const MetalDescriptorSet* computeDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
 
+        std::unordered_set<MetalDescriptorSet*> currentEncoderDescriptorSets;
+        void bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute);
+
         MetalCommandList(const MetalCommandQueue *queue);
         ~MetalCommandList() override;
         void begin() override;
@@ -560,7 +564,7 @@ namespace plume {
 
         MetalPipelineLayout(MetalDevice *device, const RenderPipelineLayoutDesc &desc);
         ~MetalPipelineLayout() override;
-        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex) const;
+        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets) const;
     };
 
     struct MetalDevice : RenderDevice {
