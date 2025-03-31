@@ -40,7 +40,7 @@
 namespace plume {
     static constexpr size_t MAX_CLEAR_RECTS = 16;
     static constexpr uint32_t MAX_BINDING_NUMBER = 128;
-    static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 8;
+    static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 5;
 
     struct MetalInterface;
     struct MetalDevice;
@@ -568,6 +568,8 @@ namespace plume {
         MetalInterface *renderInterface = nullptr;
         RenderDeviceCapabilities capabilities;
         RenderDeviceDescription description;
+
+        std::unique_ptr<RenderBuffer> nullBuffer;
 
         // Resolve functionality
         MTL::ComputePipelineState *resolveTexturePipelineState;
