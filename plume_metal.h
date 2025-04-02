@@ -41,7 +41,7 @@
 namespace plume {
     static constexpr size_t MAX_CLEAR_RECTS = 16;
     static constexpr uint32_t MAX_BINDING_NUMBER = 128;
-    static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 8;
+    static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 4;
 
     struct MetalInterface;
     struct MetalDevice;
@@ -207,6 +207,7 @@ namespace plume {
         std::vector<Descriptor> descriptors;
         MetalArgumentBuffer argumentBuffer;
         std::vector<ResourceEntry> resourceEntries;
+        std::vector<MTL::Resource *> toReleaseOnDestruction;
 
         MetalDescriptorSet(MetalDevice *device, const RenderDescriptorSetDesc &desc);
         MetalDescriptorSet(MetalDevice *device, uint32_t entryCount);

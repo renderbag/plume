@@ -23,13 +23,8 @@ namespace plume {
     // MARK: - Constants
 
     static constexpr size_t MAX_DRAWABLES = 3;
-    static constexpr size_t PUSH_CONSTANT_MAX_INDEX = 15;
+    static constexpr size_t PUSH_CONSTANT_MAX_INDEX = 4;
     static constexpr size_t VERTEX_BUFFER_MAX_INDEX = 30;
-
-    static constexpr uint32_t COLOR_COUNT = DESCRIPTOR_SET_MAX_INDEX;
-    static constexpr uint32_t DEPTH_INDEX = COLOR_COUNT;
-    static constexpr uint32_t STENCIL_INDEX = DEPTH_INDEX + 1;
-    static constexpr uint32_t ATTACHMENT_COUNT = STENCIL_INDEX + 1;
 
     // MARK: - Prototypes
 
@@ -1518,6 +1513,10 @@ namespace plume {
     }
 
     MetalDescriptorSet::~MetalDescriptorSet() {
+        for (const auto resource: toReleaseOnDestruction) {
+            resource->release();
+        }
+
         for (const auto &entry : resourceEntries) {
             if (entry.resource != nullptr) {
                 entry.resource->release();
@@ -1613,8 +1612,7 @@ namespace plume {
 
         if (dtype != MTL::DataTypeSampler) {
             if (resourceEntries[descriptorIndex].resource != nullptr) {
-                resourceEntries[descriptorIndex].resource->release();
-                resourceEntries[descriptorIndex].resource = nullptr;
+                toReleaseOnDestruction.push_back(resourceEntries[descriptorIndex].resource);
             }
         }
 
@@ -2098,7 +2096,7 @@ namespace plume {
         pushConstants[rangeIndex].binding = range.binding;
         pushConstants[rangeIndex].set = range.set;
         pushConstants[rangeIndex].offset = range.offset;
-        pushConstants[rangeIndex].size = range.size;
+        pushConstants[rangeIndex].size = alignUp(range.size);
         pushConstants[rangeIndex].stageFlags = range.stageFlags;
 
         dirtyComputeState.pushConstants = 1;
@@ -2149,7 +2147,7 @@ namespace plume {
         pushConstants[rangeIndex].binding = range.binding;
         pushConstants[rangeIndex].set = range.set;
         pushConstants[rangeIndex].offset = range.offset;
-        pushConstants[rangeIndex].size = range.size;
+        pushConstants[rangeIndex].size = alignUp(range.size);
         pushConstants[rangeIndex].stageFlags = range.stageFlags;
 
         dirtyGraphicsState.pushConstants = 1;
