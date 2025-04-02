@@ -589,6 +589,8 @@ namespace plume {
         // Blit functionality
         MTL::BlitPassDescriptor *sharedBlitDescriptor = nullptr;
 
+        std::unique_ptr<RenderBuffer> nullBuffer;
+
         explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
         ~MetalDevice() override;
         std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) override;
