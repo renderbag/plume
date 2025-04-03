@@ -279,6 +279,31 @@ namespace plume {
         virtual uint32_t getCount() const override;
     };
 
+    enum MetalBarrierStage {
+        NONE = 0,
+        GRAPHICS,
+        COMPUTE,
+        COPY,
+        COUNT
+    };
+
+    static std::string MetalBarrierStageName(MetalBarrierStage stage) {
+        switch (stage) {
+            case MetalBarrierStage::NONE:
+                return "None";
+            case MetalBarrierStage::GRAPHICS:
+                return "Graphics";
+            case MetalBarrierStage::COMPUTE:
+                return "Compute";
+            case MetalBarrierStage::COPY:
+                return "Copy";
+            default:
+                assert(false);
+        }
+    }
+
+    static const uint MetalBarrierFenceCount = 64;
+
     struct MetalCommandList : RenderCommandList {
         struct PushConstantData : RenderPushConstantRange {
             std::vector<uint8_t> data;
@@ -331,6 +356,12 @@ namespace plume {
             float depthBiasClamp;
             float slopeScaledDepthBias;
         } dynamicDepthBias;
+
+        struct {
+            uint32_t updateDirtyBits = ~0;
+            int update[MetalBarrierStage::COUNT] = {};
+            int wait[MetalBarrierStage::COUNT][MetalBarrierStage::COUNT] = {};
+        } fenceSlots;
 
         MetalDevice *device = nullptr;
         const MetalCommandQueue *queue = nullptr;
@@ -401,7 +432,22 @@ namespace plume {
         void prepareClearVertices(const RenderRect& rect, simd::float2* outVertices);
         void checkForUpdatesInGraphicsState();
         void setCommonClearState() const;
+
+        void barrierWait(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder, MTL::RenderStages beforeStages);
+        void barrierWait(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder);
+        void barrierWait(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder);
+
+        void barrierUpdate(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder, MTL::RenderStages beforeStages);
+        void barrierUpdate(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder);
+        void barrierUpdate(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder);
+
+        MTL::Fence* getBarrierStageFence(MetalBarrierStage stage);
+        void setBarrier(uint64_t sourceStageMask, uint64_t destStageMask);
+        void encodeBarrierWaits(MetalBarrierStage stage);
+        void encoderBarrierUpdates();
     };
+
+    static uint64_t toStageMask(RenderBarrierStages stages);
 
     struct MetalCommandFence : RenderCommandFence {
         dispatch_semaphore_t semaphore;
@@ -435,6 +481,7 @@ namespace plume {
         MetalPool *pool = nullptr;
         MetalDevice *device = nullptr;
         RenderBufferDesc desc;
+        RenderBarrierStages barrierStages = RenderBarrierStage::NONE;
 
         MetalBuffer() = default;
         MetalBuffer(MetalDevice *device, MetalPool *pool, const RenderBufferDesc &desc);
@@ -471,6 +518,7 @@ namespace plume {
         RenderTextureLayout layout = RenderTextureLayout::UNKNOWN;
         MetalPool *pool = nullptr;
         MTL::Drawable *drawable = nullptr;
+        RenderBarrierStages barrierStages = RenderBarrierStage::NONE;
 
         MetalTexture() = default;
         MetalTexture(const MetalDevice *device, MetalPool *pool, const RenderTextureDesc &desc);
@@ -589,6 +637,8 @@ namespace plume {
         // Blit functionality
         MTL::BlitPassDescriptor *sharedBlitDescriptor = nullptr;
 
+        MTL::Fence* fences[MetalBarrierStage::COUNT][MetalBarrierFenceCount] = {};
+
         explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
         ~MetalDevice() override;
         std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) override;
@@ -624,6 +674,7 @@ namespace plume {
         void createClearShaderLibrary();
 
         MTL::RenderPipelineState* getOrCreateClearRenderPipelineState(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled = false);
+        MTL::Fence* getFence(MetalBarrierStage stage, uint8_t index) const;
     };
 
     struct MetalInterface : RenderInterface {
