@@ -1502,6 +1502,13 @@ namespace plume {
 
         setLayout = std::make_unique<MetalDescriptorSetLayout>(device, desc);
 
+        if (device->supportsResidencySets()) {
+            MTL::ResidencySetDescriptor* descriptor = MTL::ResidencySetDescriptor::alloc()->init();
+            descriptor->setInitialCapacity(setLayout->descriptorBindingIndices.size());
+
+            residencySet = device->mtl->newResidencySet(descriptor, nullptr);
+        }
+
         uint64_t requiredSize = setLayout->argumentEncoder->encodedLength();
         requiredSize = alignUp(requiredSize, 256);
 
@@ -1522,6 +1529,11 @@ namespace plume {
             if (entry.resource != nullptr) {
                 entry.resource->release();
             }
+        }
+
+        if (residencySet != nullptr) {
+            residencySet->endResidency();
+            residencySet->release();
         }
 
         if (argumentBuffer.mtl != nullptr) {
@@ -1624,6 +1636,9 @@ namespace plume {
                     const TextureDescriptor *textureDescriptor = static_cast<const TextureDescriptor *>(descriptor);
                     nativeResource = textureDescriptor->texture;
                     MTL::Texture *nativeTexture = static_cast<MTL::Texture *>(nativeResource);
+                    if (residencySet != nullptr) {
+                        residencySet->addAllocation(nativeTexture);
+                    }
                     argumentBuffer.argumentEncoder->setTexture(nativeTexture, descriptorIndex - indexBase + bindingIndex);
                     nativeTexture->retain();
                     break;
@@ -1632,6 +1647,9 @@ namespace plume {
                     const BufferDescriptor *bufferDescriptor = static_cast<const BufferDescriptor *>(descriptor);
                     nativeResource = bufferDescriptor->buffer;
                     MTL::Buffer *nativeBuffer = static_cast<MTL::Buffer *>(nativeResource);
+                    if (residencySet != nullptr) {
+                        residencySet->addAllocation(nativeBuffer);
+                    }
                     argumentBuffer.argumentEncoder->setBuffer(nativeBuffer, bufferDescriptor->offset, descriptorIndex - indexBase + bindingIndex);
                     nativeBuffer->retain();
                     break;
@@ -2109,6 +2127,10 @@ namespace plume {
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (computeDescriptorSets[setIndex] != interfaceDescriptorSet) {
+          	if (interfaceDescriptorSet->residencySet != nullptr) {
+                interfaceDescriptorSet->residencySet->commit();
+                mtl->useResidencySet(interfaceDescriptorSet->residencySet);
+            }
             computeDescriptorSets[setIndex] = interfaceDescriptorSet;
             dirtyComputeState.descriptorSets = 1;
             dirtyComputeState.descriptorSetDirtyIndex = std::min(dirtyComputeState.descriptorSetDirtyIndex, setIndex);
@@ -2160,6 +2182,10 @@ namespace plume {
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (renderDescriptorSets[setIndex] != interfaceDescriptorSet) {
+          	if (interfaceDescriptorSet->residencySet != nullptr) {
+                interfaceDescriptorSet->residencySet->commit();
+                mtl->useResidencySet(interfaceDescriptorSet->residencySet);
+            }
             renderDescriptorSets[setIndex] = interfaceDescriptorSet;
             dirtyGraphicsState.descriptorSets = 1;
             dirtyGraphicsState.descriptorSetDirtyIndex = std::min(dirtyGraphicsState.descriptorSetDirtyIndex, setIndex);
@@ -2935,6 +2961,12 @@ namespace plume {
     }
 
     void MetalCommandList::bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute) {
+		// If we support residency sets, they will be used
+        // and useResource should not be called
+        if (device->supportsResidencySets()) {
+            return;
+        }
+
         if (isCompute) {
             auto* computeEncoder = static_cast<MTL::ComputeCommandEncoder*>(encoder);
             for (const auto* descriptorSet : currentEncoderDescriptorSets) {
@@ -3266,6 +3298,15 @@ namespace plume {
         MTL::CaptureManager *manager = MTL::CaptureManager::sharedCaptureManager();
         manager->stopCapture();
         return true;
+    }
+
+    bool MetalDevice::supportsResidencySets() const {
+        NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
+        if (osVersion.majorVersion >= 15) {
+            return mtl->supportsFamily(MTL::GPUFamilyApple6);
+        }
+
+        return false;
     }
 
     void MetalDevice::createResolvePipelineState() {

@@ -207,6 +207,7 @@ namespace plume {
         std::vector<Descriptor> descriptors;
         MetalArgumentBuffer argumentBuffer;
         std::vector<ResourceEntry> resourceEntries;
+        MTL::ResidencySet* residencySet = nullptr;
 
         MetalDescriptorSet(MetalDevice *device, const RenderDescriptorSetDesc &desc);
         MetalDescriptorSet(MetalDevice *device, uint32_t entryCount);
@@ -616,6 +617,7 @@ namespace plume {
         bool isValid() const;
         bool beginCapture() override;
         bool endCapture() override;
+        bool supportsResidencySets() const;
 
         // Shader libraries and pipeline states used for emulated operations
         void createResolvePipelineState();
