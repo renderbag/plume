@@ -2127,7 +2127,7 @@ namespace plume {
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (computeDescriptorSets[setIndex] != interfaceDescriptorSet) {
-          	if (interfaceDescriptorSet->residencySet != nullptr) {
+            if (interfaceDescriptorSet->residencySet != nullptr) {
                 interfaceDescriptorSet->residencySet->commit();
                 mtl->useResidencySet(interfaceDescriptorSet->residencySet);
             }
@@ -2182,7 +2182,7 @@ namespace plume {
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (renderDescriptorSets[setIndex] != interfaceDescriptorSet) {
-          	if (interfaceDescriptorSet->residencySet != nullptr) {
+            if (interfaceDescriptorSet->residencySet != nullptr) {
                 interfaceDescriptorSet->residencySet->commit();
                 mtl->useResidencySet(interfaceDescriptorSet->residencySet);
             }
@@ -2961,7 +2961,7 @@ namespace plume {
     }
 
     void MetalCommandList::bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute) {
-		// If we support residency sets, they will be used
+        // If we support residency sets, they will be used
         // and useResource should not be called
         if (device->supportsResidencySets()) {
             return;
