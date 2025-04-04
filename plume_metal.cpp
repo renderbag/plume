@@ -2196,13 +2196,6 @@ namespace plume {
         if ((views != nullptr) && (viewCount > 0)) {
             assert(inputSlots != nullptr);
 
-            bool needsUpdate = false;
-
-            // First time binding or different count requires full update
-            if (this->viewCount != viewCount) {
-                needsUpdate = true;
-            }
-
             // Resize our storage if needed
             vertexBuffers.resize(viewCount);
             vertexBufferOffsets.resize(viewCount);
@@ -2214,18 +2207,13 @@ namespace plume {
                 const uint64_t newOffset = views[i].buffer.offset;
                 const uint32_t newIndex = startSlot + i;
 
-                // Check if this binding differs from current state
-                needsUpdate = i >= stateCache.lastVertexBuffers.size() || interfaceBuffer->mtl != stateCache.lastVertexBuffers[i] || newOffset != stateCache.lastVertexBufferOffsets[i] || newIndex != stateCache.lastVertexBufferIndices[i];
-
                 vertexBuffers[i] = interfaceBuffer->mtl;
                 vertexBufferOffsets[i] = newOffset;
                 vertexBufferIndices[i] = newIndex;
             }
 
-            if (needsUpdate) {
-                this->viewCount = viewCount;
-                dirtyGraphicsState.vertexBuffers = 1;
-            }
+			this->viewCount = viewCount;
+            dirtyGraphicsState.vertexBuffers = 1;
         }
     }
 
