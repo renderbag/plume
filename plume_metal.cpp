@@ -568,6 +568,28 @@ namespace plume {
         }
     }
 
+    MTL::TextureType mapTextureViewType(RenderTextureViewDimension dimension, RenderSampleCounts sampleCount, uint32_t arraySize) {
+        switch (dimension) {
+            case RenderTextureViewDimension::TEXTURE_1D:
+                assert(sampleCount <= 1 && "Multisampling not supported for 1D textures");
+                return (arraySize > 1) ? MTL::TextureType1DArray : MTL::TextureType1D;
+            case RenderTextureViewDimension::TEXTURE_2D:
+                if (arraySize > 1) {
+                    return (sampleCount > 1) ? MTL::TextureType2DMultisampleArray : MTL::TextureType2DArray;
+                } else {
+                    return (sampleCount > 1) ? MTL::TextureType2DMultisample : MTL::TextureType2D;
+                }
+            case RenderTextureViewDimension::TEXTURE_3D:
+                assert(sampleCount <= 1 && "Multisampling not supported for 3D textures");
+                return MTL::TextureType3D;
+            case RenderTextureViewDimension::TEXTURE_CUBE:
+                return MTL::TextureTypeCube;
+            default:
+                assert(false && "Unknown resource dimension.");
+            return MTL::TextureType2D;
+        }
+    }
+
     MTL::CullMode mapCullMode(RenderCullMode cullMode) {
         switch (cullMode) {
             case RenderCullMode::NONE:
@@ -1178,7 +1200,7 @@ namespace plume {
 
         this->texture = texture->mtl->newTextureView(
             mapPixelFormat(desc.format),
-            texture->mtl->textureType(),
+            mapTextureViewType(desc.dimension, texture->desc.multisampling.sampleCount, texture->desc.arraySize),
             { desc.mipSlice, std::min(desc.mipLevels, texture->desc.mipLevels - desc.mipSlice) },
             { desc.arrayIndex, std::min(desc.arraySize, texture->desc.arraySize - desc.arrayIndex) },
             mapTextureSwizzleChannels(desc.componentMapping)
