@@ -586,7 +586,7 @@ namespace plume {
                 return MTL::TextureTypeCube;
             default:
                 assert(false && "Unknown resource dimension.");
-            return MTL::TextureType2D;
+                return MTL::TextureType2D;
         }
     }
 
