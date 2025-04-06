@@ -2212,7 +2212,7 @@ namespace plume {
                 vertexBufferIndices[i] = newIndex;
             }
 
-			this->viewCount = viewCount;
+            this->viewCount = viewCount;
             dirtyGraphicsState.vertexBuffers = 1;
         }
     }
