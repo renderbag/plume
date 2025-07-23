@@ -287,7 +287,7 @@ namespace plume {
         case RenderTextureViewDimension::TEXTURE_3D:
             return VK_IMAGE_VIEW_TYPE_3D;
         case RenderTextureViewDimension::TEXTURE_CUBE:
-            return arraySize > 1 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+            return arraySize > 6 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
         default:
             assert(false && "Unknown resource dimension.");
             return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
