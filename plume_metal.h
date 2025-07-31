@@ -41,7 +41,9 @@
 namespace plume {
     static constexpr size_t MAX_CLEAR_RECTS = 16;
     static constexpr uint32_t MAX_BINDING_NUMBER = 128;
-    static constexpr size_t DESCRIPTOR_SET_MAX_INDEX = 8;
+    static constexpr uint32_t MAX_DESCRIPTOR_SET_BINDINGS = 8;
+    static constexpr uint32_t MAX_PUSH_CONSTANT_BINDINGS = 4;
+    static constexpr uint32_t MAX_VERTEX_BUFFER_BINDINGS = 19;
 
     struct MetalInterface;
     struct MetalDevice;
@@ -115,6 +117,9 @@ namespace plume {
         // marks from which descriptor set we'll invalidate from
         uint32_t descriptorSetDirtyIndex : 5;
 
+        // Specific dirty vertex buffer slots
+        uint32_t vertexBufferSlots : 19;
+
         void setAll() {
             pipelineState = 1;
             descriptorSets = 1;
@@ -126,6 +131,7 @@ namespace plume {
             depthBias = 1;
 
             descriptorSetDirtyIndex = 0;
+            vertexBufferSlots = ~0;
         }
     };
 
@@ -320,9 +326,6 @@ namespace plume {
             MTL::RenderPipelineState* lastPipelineState = nullptr;
             std::vector<MTL::Viewport> lastViewports;
             std::vector<MTL::ScissorRect> lastScissors;
-            std::vector<MTL::Buffer*> lastVertexBuffers;
-            std::vector<uint32_t> lastVertexBufferOffsets;
-            std::vector<uint32_t> lastVertexBufferIndices;
             std::vector<PushConstantData> lastPushConstants;
         } stateCache;
 
@@ -331,11 +334,9 @@ namespace plume {
         MTL::Buffer *indexBuffer = nullptr;
         uint32_t indexBufferOffset = 0;
         uint32_t indexTypeSize = 0;
-        uint32_t viewCount = 0;
 
-        std::vector<MTL::Buffer *> vertexBuffers;
-        std::vector<uint32_t> vertexBufferOffsets;
-        std::vector<uint32_t> vertexBufferIndices;
+        MTL::Buffer* vertexBuffers[MAX_VERTEX_BUFFER_BINDINGS];
+        uint32_t vertexBufferOffsets[MAX_VERTEX_BUFFER_BINDINGS];
         std::vector<MTL::Viewport> viewportVector;
         std::vector<MTL::ScissorRect> scissorVector;
         std::vector<PushConstantData> pushConstants;
@@ -353,8 +354,8 @@ namespace plume {
         const MetalPipelineLayout *activeGraphicsPipelineLayout = nullptr;
         const MetalRenderState *activeRenderState = nullptr;
         const MetalComputeState *activeComputeState = nullptr;
-        const MetalDescriptorSet* renderDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
-        const MetalDescriptorSet* computeDescriptorSets[DESCRIPTOR_SET_MAX_INDEX + 1] = {};
+        const MetalDescriptorSet* renderDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
+        const MetalDescriptorSet* computeDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
 
         std::unordered_set<MetalDescriptorSet*> currentEncoderDescriptorSets;
         void bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute);

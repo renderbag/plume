@@ -23,8 +23,9 @@ namespace plume {
     // MARK: - Constants
 
     static constexpr size_t MAX_DRAWABLES = 3;
-    static constexpr size_t PUSH_CONSTANT_MAX_INDEX = 15;
-    static constexpr size_t VERTEX_BUFFER_MAX_INDEX = 30;
+    static constexpr size_t DESCRIPTOR_SETS_BINDING_INDEX = 0;
+    static constexpr size_t PUSH_CONSTANTS_BINDING_INDEX = DESCRIPTOR_SETS_BINDING_INDEX + MAX_DESCRIPTOR_SET_BINDINGS;
+    static constexpr size_t VERTEX_BUFFERS_BINDING_INDEX = PUSH_CONSTANTS_BINDING_INDEX + MAX_PUSH_CONSTANT_BINDINGS;
 
     // MARK: - Prototypes
 
@@ -1442,9 +1443,10 @@ namespace plume {
 
         for (uint32_t i = 0; i < desc.inputSlotsCount; i++) {
             const RenderInputSlot &inputSlot = desc.inputSlots[i];
+            assert(inputSlot.index < MAX_VERTEX_BUFFER_BINDINGS && "Vertex binding slot index out of range.");
 
             // Set index right after push constants, clamp at Metal's limit of 31
-            const uint32_t vertexBufferIndex = std::min(PUSH_CONSTANT_MAX_INDEX + 1 + inputSlot.index, VERTEX_BUFFER_MAX_INDEX);
+            const uint32_t vertexBufferIndex = VERTEX_BUFFERS_BINDING_INDEX + inputSlot.index;
             MTL::VertexBufferLayoutDescriptor *layout = vertexDescriptor->layouts()->object(vertexBufferIndex);
             if (inputSlot.stride == 0) {
                 // Metal does not support stride 0, we must provide a
@@ -1461,11 +1463,12 @@ namespace plume {
 
         for (uint32_t i = 0; i < desc.inputElementsCount; i++) {
             const RenderInputElement &inputElement = desc.inputElements[i];
+            assert(inputElement.slotIndex < MAX_VERTEX_BUFFER_BINDINGS && "Vertex attribute slot index out of range.");
 
             MTL::VertexAttributeDescriptor *attributeDescriptor = vertexDescriptor->attributes()->object(inputElement.location);
             attributeDescriptor->setOffset(inputElement.alignedByteOffset);
 
-            const uint32_t vertexBufferIndex = std::min(PUSH_CONSTANT_MAX_INDEX + 1 + inputElement.slotIndex, VERTEX_BUFFER_MAX_INDEX);
+            const uint32_t vertexBufferIndex = VERTEX_BUFFERS_BINDING_INDEX + inputElement.slotIndex;
             attributeDescriptor->setBufferIndex(vertexBufferIndex);
             attributeDescriptor->setFormat(mapVertexFormat(inputElement.format));
         }
@@ -2207,7 +2210,7 @@ namespace plume {
 
         if (oldLayout != activeComputePipelineLayout) {
             // Clear descriptor set bindings since they're no longer valid with the new layout
-            for (uint32_t i = 0; i < DESCRIPTOR_SET_MAX_INDEX; i++) {
+            for (uint32_t i = 0; i < MAX_DESCRIPTOR_SET_BINDINGS; i++) {
                 computeDescriptorSets[i] = nullptr;
             }
 
@@ -2227,6 +2230,8 @@ namespace plume {
         assert(rangeIndex < activeComputePipelineLayout->pushConstantRanges.size());
 
         const RenderPushConstantRange &range = activeComputePipelineLayout->pushConstantRanges[rangeIndex];
+        assert(range.binding < MAX_PUSH_CONSTANT_BINDINGS && "Push constants out of range");
+
         pushConstants.resize(activeComputePipelineLayout->pushConstantRanges.size());
         pushConstants[rangeIndex].data.resize(range.size);
         memcpy(pushConstants[rangeIndex].data.data() + offset, data, size == 0 ? range.size : size);
@@ -2240,7 +2245,7 @@ namespace plume {
     }
 
     void MetalCommandList::setComputeDescriptorSet(RenderDescriptorSet *descriptorSet, uint32_t setIndex) {
-        assert(setIndex < DESCRIPTOR_SET_MAX_INDEX && "Descriptor set index out of range");
+        assert(setIndex < MAX_DESCRIPTOR_SET_BINDINGS && "Descriptor set index out of range");
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (computeDescriptorSets[setIndex] != interfaceDescriptorSet) {
@@ -2258,7 +2263,7 @@ namespace plume {
 
         if (oldLayout != activeGraphicsPipelineLayout) {
             // Clear descriptor set bindings since they're no longer valid with the new layout
-            for (uint32_t i = 0; i < DESCRIPTOR_SET_MAX_INDEX; i++) {
+            for (uint32_t i = 0; i < MAX_DESCRIPTOR_SET_BINDINGS; i++) {
                 renderDescriptorSets[i] = nullptr;
             }
 
@@ -2278,6 +2283,8 @@ namespace plume {
         assert(rangeIndex < activeGraphicsPipelineLayout->pushConstantRanges.size());
 
         const RenderPushConstantRange &range = activeGraphicsPipelineLayout->pushConstantRanges[rangeIndex];
+        assert(range.binding < MAX_PUSH_CONSTANT_BINDINGS && "Push constants out of range");
+
         pushConstants.resize(activeGraphicsPipelineLayout->pushConstantRanges.size());
         pushConstants[rangeIndex].data.resize(range.size);
         memcpy(pushConstants[rangeIndex].data.data() + offset, data, size == 0 ? range.size : size);
@@ -2291,7 +2298,7 @@ namespace plume {
     }
 
     void MetalCommandList::setGraphicsDescriptorSet(RenderDescriptorSet *descriptorSet, uint32_t setIndex) {
-        assert(setIndex < DESCRIPTOR_SET_MAX_INDEX && "Descriptor set index out of range");
+        assert(setIndex < MAX_DESCRIPTOR_SET_BINDINGS && "Descriptor set index out of range");
 
         MetalDescriptorSet *interfaceDescriptorSet = static_cast<MetalDescriptorSet*>(descriptorSet);
         if (renderDescriptorSets[setIndex] != interfaceDescriptorSet) {
@@ -2330,29 +2337,24 @@ namespace plume {
     void MetalCommandList::setVertexBuffers(const uint32_t startSlot, const RenderVertexBufferView *views, const uint32_t viewCount, const RenderInputSlot *inputSlots) {
         if ((views != nullptr) && (viewCount > 0)) {
             assert(inputSlots != nullptr);
-
-            // Resize our storage if needed
-            vertexBuffers.resize(viewCount);
-            vertexBufferOffsets.resize(viewCount);
-            vertexBufferIndices.resize(viewCount);
+            assert(startSlot + viewCount <= MAX_VERTEX_BUFFER_BINDINGS && "Vertex buffer out of range");
 
             // Check for changes in bindings
             for (uint32_t i = 0; i < viewCount; i++) {
                 const MetalBuffer* interfaceBuffer = static_cast<const MetalBuffer*>(views[i].buffer.ref);
                 uint64_t newOffset = views[i].buffer.offset;
-                const uint32_t newIndex = startSlot + i;
 
                 if (interfaceBuffer == nullptr) {
                     interfaceBuffer = static_cast<const MetalBuffer*>(queue->device->nullBuffer.get());
                     newOffset = 0;
                 }
 
-                vertexBuffers[i] = interfaceBuffer->mtl;
-                vertexBufferOffsets[i] = newOffset;
-                vertexBufferIndices[i] = newIndex;
+                const uint32_t bufferIndex = startSlot + i;
+                vertexBuffers[bufferIndex] = interfaceBuffer->mtl;
+                vertexBufferOffsets[bufferIndex] = newOffset;
+                dirtyGraphicsState.vertexBufferSlots |= 1 << bufferIndex;
             }
 
-            this->viewCount = viewCount;
             dirtyGraphicsState.vertexBuffers = 1;
         }
     }
@@ -2868,16 +2870,16 @@ namespace plume {
         }
 
         if (dirtyComputeState.descriptorSets) {
-            activeComputePipelineLayout->bindDescriptorSets(activeComputeEncoder, computeDescriptorSets, DESCRIPTOR_SET_MAX_INDEX, true, dirtyComputeState.descriptorSetDirtyIndex, currentEncoderDescriptorSets);
+            activeComputePipelineLayout->bindDescriptorSets(activeComputeEncoder, computeDescriptorSets, MAX_DESCRIPTOR_SET_BINDINGS, true, dirtyComputeState.descriptorSetDirtyIndex, currentEncoderDescriptorSets);
             dirtyComputeState.descriptorSets = 0;
-            dirtyComputeState.descriptorSetDirtyIndex = DESCRIPTOR_SET_MAX_INDEX + 1;
+            dirtyComputeState.descriptorSetDirtyIndex = MAX_DESCRIPTOR_SET_BINDINGS;
         }
 
         if (dirtyComputeState.pushConstants) {
             for (const PushConstantData &pushConstant : pushConstants) {
                 if (pushConstant.stageFlags & RenderShaderStageFlag::COMPUTE) {
                     // Bind right after the descriptor sets, up till the max push constant index
-                    const uint32_t bindIndex = std::min(DESCRIPTOR_SET_MAX_INDEX + pushConstant.binding, PUSH_CONSTANT_MAX_INDEX);
+                    const uint32_t bindIndex = PUSH_CONSTANTS_BINDING_INDEX + pushConstant.binding;
                     activeComputeEncoder->setBytes(pushConstant.data.data(), pushConstant.size, bindIndex);
                 }
             }
@@ -2984,41 +2986,28 @@ namespace plume {
         }
 
         if (dirtyGraphicsState.vertexBuffers) {
-            std::array<bool, 31> slotUsed{};
-
-            for (uint32_t i = 0; i < viewCount; i++) {
-                // Bind right after the push constants, up till the max vertex buffer index
-                const uint32_t bindIndex = std::min(PUSH_CONSTANT_MAX_INDEX + 1 + vertexBufferIndices[i], VERTEX_BUFFER_MAX_INDEX);
-                activeRenderEncoder->setVertexBuffer(vertexBuffers[i], vertexBufferOffsets[i], bindIndex);
-                slotUsed[bindIndex] = true;
-            }
-
-            // Bind all unbound slots to the null buffer
-            auto nullBuffer = static_cast<const MetalBuffer*>(queue->device->nullBuffer.get());
-            for (uint32_t i = PUSH_CONSTANT_MAX_INDEX + 1; i <= VERTEX_BUFFER_MAX_INDEX; i++) {
-                if (!slotUsed[i]) {
-                    activeRenderEncoder->setVertexBuffer(nullBuffer->mtl, 0, i);
+            for (uint32_t i = 0; i < MAX_VERTEX_BUFFER_BINDINGS; i++) {
+                if (dirtyGraphicsState.vertexBufferSlots & (1 << i)) {
+                    activeRenderEncoder->setVertexBuffer(vertexBuffers[i], vertexBufferOffsets[i], VERTEX_BUFFERS_BINDING_INDEX + i);
                 }
             }
 
-            stateCache.lastVertexBuffers = vertexBuffers;
-            stateCache.lastVertexBufferOffsets = vertexBufferOffsets;
-            stateCache.lastVertexBufferIndices = vertexBufferIndices;
             dirtyGraphicsState.vertexBuffers = 0;
+            dirtyGraphicsState.vertexBufferSlots = 0;
         }
 
         if (dirtyGraphicsState.descriptorSets) {
             if (activeGraphicsPipelineLayout) {
-                activeGraphicsPipelineLayout->bindDescriptorSets(activeRenderEncoder, renderDescriptorSets, DESCRIPTOR_SET_MAX_INDEX, false, dirtyGraphicsState.descriptorSetDirtyIndex, currentEncoderDescriptorSets);
+                activeGraphicsPipelineLayout->bindDescriptorSets(activeRenderEncoder, renderDescriptorSets, MAX_DESCRIPTOR_SET_BINDINGS, false, dirtyGraphicsState.descriptorSetDirtyIndex, currentEncoderDescriptorSets);
             }
             dirtyGraphicsState.descriptorSets = 0;
-            dirtyGraphicsState.descriptorSetDirtyIndex = DESCRIPTOR_SET_MAX_INDEX + 1;
+            dirtyGraphicsState.descriptorSetDirtyIndex = MAX_DESCRIPTOR_SET_BINDINGS + 1;
         }
 
         if (dirtyGraphicsState.pushConstants) {
             for (const PushConstantData &pushConstant : pushConstants) {
                 // Bind right after the descriptor sets, up till the max push constant index
-                const uint32_t bindIndex = std::min(DESCRIPTOR_SET_MAX_INDEX + pushConstant.binding, PUSH_CONSTANT_MAX_INDEX);
+                const uint32_t bindIndex = PUSH_CONSTANTS_BINDING_INDEX + pushConstant.binding;
                 if (pushConstant.stageFlags & RenderShaderStageFlag::VERTEX) {
                     activeRenderEncoder->setVertexBytes(pushConstant.data.data(), pushConstant.size, bindIndex);
                 }
@@ -3047,9 +3036,6 @@ namespace plume {
             stateCache.lastPipelineState = nullptr;
             stateCache.lastViewports.clear();
             stateCache.lastScissors.clear();
-            stateCache.lastVertexBuffers.clear();
-            stateCache.lastVertexBufferOffsets.clear();
-            stateCache.lastVertexBufferIndices.clear();
             stateCache.lastPushConstants.clear();
         }
     }
@@ -3237,10 +3223,10 @@ namespace plume {
 
             // Bind argument buffer
             if (isCompute) {
-                static_cast<MTL::ComputeCommandEncoder*>(encoder)->setBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, i);
+                static_cast<MTL::ComputeCommandEncoder*>(encoder)->setBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, DESCRIPTOR_SETS_BINDING_INDEX + i);
             } else {
-                static_cast<MTL::RenderCommandEncoder*>(encoder)->setFragmentBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, i);
-                static_cast<MTL::RenderCommandEncoder*>(encoder)->setVertexBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, i);
+                static_cast<MTL::RenderCommandEncoder*>(encoder)->setFragmentBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, DESCRIPTOR_SETS_BINDING_INDEX + i);
+                static_cast<MTL::RenderCommandEncoder*>(encoder)->setVertexBuffer(descriptorBuffer.mtl, descriptorBuffer.offset, DESCRIPTOR_SETS_BINDING_INDEX + i);
             }
         }
     }
