@@ -2101,6 +2101,11 @@ namespace plume {
         endActiveComputeEncoder();
 
         targetFramebuffer = nullptr;
+
+        for (uint32_t i = 0; i < MAX_VERTEX_BUFFER_BINDINGS; i++) {
+            vertexBuffers[i] = nullptr;
+            vertexBufferOffsets[i] = 0;
+        }
     }
 
     void MetalCommandList::commit() {
