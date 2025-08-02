@@ -110,7 +110,6 @@ namespace plume {
         uint32_t pushConstants : 1;
         uint32_t viewports : 1;
         uint32_t scissors : 1;
-        uint32_t vertexBuffers : 1;
         uint32_t indexBuffer : 1;
         uint32_t depthBias : 1;
 
@@ -126,12 +125,11 @@ namespace plume {
             pushConstants = 1;
             viewports = 1;
             scissors = 1;
-            vertexBuffers = 1;
             indexBuffer = 1;
             depthBias = 1;
 
             descriptorSetDirtyIndex = 0;
-            vertexBufferSlots = ~0;
+            vertexBufferSlots = (1U << MAX_VERTEX_BUFFER_BINDINGS) - 1;
         }
     };
 
@@ -335,8 +333,8 @@ namespace plume {
         uint32_t indexBufferOffset = 0;
         uint32_t indexTypeSize = 0;
 
-        MTL::Buffer* vertexBuffers[MAX_VERTEX_BUFFER_BINDINGS];
-        uint32_t vertexBufferOffsets[MAX_VERTEX_BUFFER_BINDINGS];
+        MTL::Buffer* vertexBuffers[MAX_VERTEX_BUFFER_BINDINGS] = {};
+        uint32_t vertexBufferOffsets[MAX_VERTEX_BUFFER_BINDINGS] = {};
         std::vector<MTL::Viewport> viewportVector;
         std::vector<MTL::ScissorRect> scissorVector;
         std::vector<PushConstantData> pushConstants;

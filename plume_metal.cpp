@@ -1445,7 +1445,6 @@ namespace plume {
             const RenderInputSlot &inputSlot = desc.inputSlots[i];
             assert(inputSlot.index < MAX_VERTEX_BUFFER_BINDINGS && "Vertex binding slot index out of range.");
 
-            // Set index right after push constants, clamp at Metal's limit of 31
             const uint32_t vertexBufferIndex = VERTEX_BUFFERS_BINDING_INDEX + inputSlot.index;
             MTL::VertexBufferLayoutDescriptor *layout = vertexDescriptor->layouts()->object(vertexBufferIndex);
             if (inputSlot.stride == 0) {
@@ -2359,8 +2358,6 @@ namespace plume {
                 vertexBufferOffsets[bufferIndex] = newOffset;
                 dirtyGraphicsState.vertexBufferSlots |= 1 << bufferIndex;
             }
-
-            dirtyGraphicsState.vertexBuffers = 1;
         }
     }
 
@@ -2990,14 +2987,13 @@ namespace plume {
             dirtyGraphicsState.scissors = 0;
         }
 
-        if (dirtyGraphicsState.vertexBuffers) {
-            for (uint32_t i = 0; i < MAX_VERTEX_BUFFER_BINDINGS; i++) {
-                if (dirtyGraphicsState.vertexBufferSlots & (1 << i)) {
-                    activeRenderEncoder->setVertexBuffer(vertexBuffers[i], vertexBufferOffsets[i], VERTEX_BUFFERS_BINDING_INDEX + i);
-                }
+        if (dirtyGraphicsState.vertexBufferSlots) {
+            uint32_t vertexBufferSlots = dirtyGraphicsState.vertexBufferSlots;
+            while (vertexBufferSlots > 0) {
+                const uint32_t i = __builtin_ctzll(vertexBufferSlots);
+                activeRenderEncoder->setVertexBuffer(vertexBuffers[i], vertexBufferOffsets[i], VERTEX_BUFFERS_BINDING_INDEX + i);
+                vertexBufferSlots &= ~(1U << i);
             }
-
-            dirtyGraphicsState.vertexBuffers = 0;
             dirtyGraphicsState.vertexBufferSlots = 0;
         }
 
