@@ -2144,12 +2144,27 @@ namespace plume {
 
     MetalCommandList::~MetalCommandList() {
         mtl->release();
+
+        for (auto& fenceSet : fences) {
+            for (auto* fence : fenceSet) {
+                fence->release();
+            }
+        }
     }
 
     void MetalCommandList::begin() {
         assert(mtl == nullptr);
         mtl = queue->mtl->commandBufferWithUnretainedReferences();
         mtl->setLabel(MTLSTR("RT64 Command List"));
+
+        // Reset fence waits and updates for new command list.
+        fenceSlots.updateDirtyBits = ~0;
+        for (uint32_t dstStage = 0; dstStage < MetalBarrierStage::COUNT; dstStage++) {
+            for (uint32_t srcStage = 0; srcStage < MetalBarrierStage::COUNT; srcStage++) {
+                fenceSlots.wait[dstStage][srcStage] = -1;
+            }
+            fenceSlots.update[dstStage] = -1;
+        }
     }
 
     void MetalCommandList::end() {
@@ -2174,6 +2189,103 @@ namespace plume {
         mtl = nullptr;
     }
 
+    void MetalCommandList::barrierWait(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder) {
+        constexpr uint32_t beforeStages = MTL::RenderStageVertex | MTL::RenderStageFragment;
+        for (int i = 0; i < MetalBarrierStage::COUNT; ++i) {
+            int &fenceIndex = fenceSlots.wait[stage][i];
+            if (fenceIndex != -1) {
+                const MTL::Fence* fence = fences[i][fenceIndex];
+                encoder->waitForFence(fence, beforeStages);
+                fenceIndex = -1;
+            }
+        }
+    }
+
+    void MetalCommandList::barrierWait(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder) {
+        for (int i = 0; i < MetalBarrierStage::COUNT; ++i) {
+            int &fenceIndex = fenceSlots.wait[stage][i];
+            if (fenceIndex != -1) {
+                const MTL::Fence* fence = fences[i][fenceIndex];
+                encoder->waitForFence(fence);
+                fenceIndex = -1;
+            }
+        }
+    }
+
+    void MetalCommandList::barrierWait(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder) {
+        for (int i = 0; i < MetalBarrierStage::COUNT; ++i) {
+            int &fenceIndex = fenceSlots.wait[stage][i];
+            if (fenceIndex != -1) {
+                const MTL::Fence* fence = fences[i][fenceIndex];
+                encoder->waitForFence(fence);
+                fenceIndex = -1;
+            }
+        }
+    }
+
+    void MetalCommandList::barrierUpdate(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder) {
+        constexpr uint32_t beforeStages = MTL::RenderStageVertex | MTL::RenderStageFragment;
+        const MTL::Fence* fence = getBarrierStageFence(stage);
+        if (fence != nullptr) {
+            encoder->updateFence(fence, beforeStages);
+        }
+    }
+
+    void MetalCommandList::barrierUpdate(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder) {
+        const MTL::Fence* fence = getBarrierStageFence(stage);
+        if (fence != nullptr) {
+            encoder->updateFence(fence);
+        }
+    }
+
+    void MetalCommandList::barrierUpdate(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder) {
+        const MTL::Fence* fence = getBarrierStageFence(stage);
+        if (fence != nullptr) {
+            encoder->updateFence(fence);
+        }
+    }
+
+    MTL::Fence *MetalCommandList::getBarrierStageFence(MetalBarrierStage stage) {
+        const uint32_t dirtyMask = 1 << stage;
+        if ((fenceSlots.updateDirtyBits & dirtyMask) == dirtyMask) {
+            fenceSlots.updateDirtyBits &= ~dirtyMask;
+            ++fenceSlots.update[stage];
+
+            if (fenceSlots.update[stage] >= fences[stage].size()) {
+                MTL::Fence* fence = fences[stage].emplace_back(device->mtl->newFence());
+
+                char label[100];
+                snprintf(label, sizeof(label), "%s Fence %d", MetalBarrierStageName(stage).c_str(), fenceSlots.update[stage]);
+                fence->setLabel(NS::String::string(label, NS::UTF8StringEncoding));
+            }
+        }
+
+        if (fenceSlots.update[stage] < 0) {
+            return nullptr;
+        }
+
+        return fences[stage][fenceSlots.update[stage]];
+    }
+
+    void MetalCommandList::setBarrier(uint64_t sourceStageMask, uint64_t destStageMask) {
+        for (int i = 0; i < MetalBarrierStage::COUNT; ++i) {
+            if ((sourceStageMask & (1 << i)) == 0) {
+                continue;
+            }
+
+            for (int j = 0; j < MetalBarrierStage::COUNT; ++j) {
+                if ((destStageMask & (1 << j)) == 0) {
+                    continue;
+                }
+
+                fenceSlots.wait[j][i] = fenceSlots.update[i];
+            }
+
+            fenceSlots.wait[i][i] = fenceSlots.update[i];
+            fenceSlots.updateDirtyBits |= 1 << i;
+        }
+    }
+
     void MetalCommandList::barriers(RenderBarrierStages stages, const RenderBufferBarrier *bufferBarriers, const uint32_t bufferBarriersCount, const RenderTextureBarrier *textureBarriers, const uint32_t textureBarriersCount) {
         assert(bufferBarriersCount == 0 || bufferBarriers != nullptr);
         assert(textureBarriersCount == 0 || textureBarriers != nullptr);
@@ -2185,6 +2297,46 @@ namespace plume {
         // End render passes on all barriers
         endActiveRenderEncoder();
         handlePendingClears();
+
+        uint64_t srcStageMask = 0;
+
+        for (int i = 0; i < bufferBarriersCount; i++) {
+            const RenderBufferBarrier &bufferBarrier = bufferBarriers[i];
+            MetalBuffer *interfaceBuffer = static_cast<MetalBuffer *>(bufferBarrier.buffer);
+
+            srcStageMask |= toStageMask(interfaceBuffer->barrierStages);
+            interfaceBuffer->barrierStages = stages;
+        }
+
+        for (int i = 0; i < textureBarriersCount; i++) {
+            const RenderTextureBarrier &textureBarrier = textureBarriers[i];
+            MetalTexture *interfaceTexture = static_cast<MetalTexture *>(textureBarrier.texture);
+
+            srcStageMask |= toStageMask(interfaceTexture->barrierStages);
+            interfaceTexture->barrierStages = stages;
+            // Ignore layout transitions on Metal
+            // interfaceTexture->layout = textureBarrier.layout;
+        }
+
+        setBarrier(srcStageMask, toStageMask(stages));
+    }
+
+    static uint64_t toStageMask(RenderBarrierStages stages) {
+        uint64_t mask = 0;
+
+        if (stages & RenderBarrierStage::GRAPHICS) {
+            mask |= 1 << MetalBarrierStage::GRAPHICS;
+        }
+
+        if (stages & RenderBarrierStage::COMPUTE) {
+            mask |= 1 << MetalBarrierStage::COMPUTE;
+        }
+
+        if (stages & RenderBarrierStage::COPY) {
+            mask |= 1 << MetalBarrierStage::COPY;
+        }
+
+        return mask;
     }
 
     void MetalCommandList::dispatch(const uint32_t threadGroupCountX, const uint32_t threadGroupCountY, const uint32_t threadGroupCountZ) {
@@ -2974,6 +3126,8 @@ namespace plume {
             activeComputeEncoder->retain();
             releasePool->release();
 
+            barrierWait(MetalBarrierStage::COMPUTE, activeComputeEncoder);
+
             dirtyComputeState.setAll();
         }
 
@@ -3010,6 +3164,7 @@ namespace plume {
     void MetalCommandList::endActiveComputeEncoder() {
         if (activeComputeEncoder != nullptr) {
             bindEncoderResources(activeComputeEncoder, true);
+            barrierUpdate(MetalBarrierStage::COMPUTE, activeComputeEncoder);
             activeComputeEncoder->endEncoding();
             activeComputeEncoder->release();
             activeComputeEncoder = nullptr;
@@ -3067,6 +3222,8 @@ namespace plume {
 
             activeRenderEncoder = mtl->renderCommandEncoder(renderDescriptor);
             activeRenderEncoder->setLabel(MTLSTR("Graphics Render Encoder"));
+
+            barrierWait(MetalBarrierStage::GRAPHICS, activeRenderEncoder);
 
             activeRenderEncoder->retain();
             releasePool->release();
@@ -3165,6 +3322,7 @@ namespace plume {
     void MetalCommandList::endActiveRenderEncoder() {
         if (activeRenderEncoder != nullptr) {
             bindEncoderResources(activeRenderEncoder, false);
+            barrierUpdate(MetalBarrierStage::GRAPHICS, activeRenderEncoder);
             activeRenderEncoder->endEncoding();
             activeRenderEncoder->release();
             activeRenderEncoder = nullptr;
@@ -3188,11 +3346,14 @@ namespace plume {
         if (activeBlitEncoder == nullptr) {
             activeBlitEncoder = mtl->blitCommandEncoder(device->sharedBlitDescriptor);
             activeBlitEncoder->setLabel(MTLSTR("Copy Blit Encoder"));
+
+            barrierWait(MetalBarrierStage::COPY, activeBlitEncoder);
         }
     }
 
     void MetalCommandList::endActiveBlitEncoder() {
         if (activeBlitEncoder != nullptr) {
+            barrierUpdate(MetalBarrierStage::COPY, activeBlitEncoder);
             activeBlitEncoder->endEncoding();
             activeBlitEncoder->release();
             activeBlitEncoder = nullptr;
@@ -3209,11 +3370,14 @@ namespace plume {
             activeResolveComputeEncoder = mtl->computeCommandEncoder();
             activeResolveComputeEncoder->setLabel(MTLSTR("Resolve Texture Encoder"));
             activeResolveComputeEncoder->setComputePipelineState(device->resolveTexturePipelineState);
+
+            barrierWait(MetalBarrierStage::COPY, activeResolveComputeEncoder);
         }
     }
 
     void MetalCommandList::endActiveResolveTextureComputeEncoder() {
         if (activeResolveComputeEncoder != nullptr) {
+            barrierUpdate(MetalBarrierStage::COPY, activeResolveComputeEncoder);
             activeResolveComputeEncoder->endEncoding();
             activeResolveComputeEncoder->release();
             activeResolveComputeEncoder = nullptr;
@@ -3590,11 +3754,10 @@ namespace plume {
     }
 
     bool MetalDevice::supportsResidencySets() const {
-        // TODO: Enable once barriers are done.
-        /* NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
+        NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
         if (osVersion.majorVersion >= 15) {
             return mtl->supportsFamily(MTL::GPUFamilyApple6);
-        } */
+        }
 
         return false;
     }
@@ -3742,7 +3905,6 @@ namespace plume {
         auto [inserted_it, success] = clearRenderPipelineStates.insert(std::make_pair(pipelineKey, clearPipelineState));
         return inserted_it->second;
     }
-
 
     // MetalInterface
 

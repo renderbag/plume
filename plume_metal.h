@@ -300,6 +300,27 @@ namespace plume {
         virtual uint32_t getCount() const override;
     };
 
+    enum MetalBarrierStage {
+        GRAPHICS = 0,
+        COMPUTE,
+        COPY,
+        COUNT
+    };
+
+    static std::string MetalBarrierStageName(MetalBarrierStage stage) {
+        switch (stage) {
+            case MetalBarrierStage::GRAPHICS:
+                return "Graphics";
+            case MetalBarrierStage::COMPUTE:
+                return "Compute";
+            case MetalBarrierStage::COPY:
+                return "Copy";
+            default:
+                assert(false);
+                return "Unknown";
+        }
+    }
+
     struct MetalCommandList : RenderCommandList {
         union ClearValue {
             RenderColor color;
@@ -362,6 +383,13 @@ namespace plume {
             float depthBiasClamp;
             float slopeScaledDepthBias;
         } dynamicDepthBias;
+
+        struct {
+            uint32_t updateDirtyBits = ~0;
+            int update[MetalBarrierStage::COUNT] = {};
+            int wait[MetalBarrierStage::COUNT][MetalBarrierStage::COUNT] = {};
+        } fenceSlots;
+        std::vector<MTL::Fence*> fences[MetalBarrierStage::COUNT] = {};
 
         MetalDevice *device = nullptr;
         const MetalCommandQueue *queue = nullptr;
@@ -433,7 +461,20 @@ namespace plume {
         void checkForUpdatesInGraphicsState();
         void setCommonClearState() const;
         void handlePendingClears();
+
+        void barrierWait(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder);
+        void barrierWait(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder);
+        void barrierWait(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder);
+
+        void barrierUpdate(MetalBarrierStage stage, MTL::RenderCommandEncoder* encoder);
+        void barrierUpdate(MetalBarrierStage stage, MTL::ComputeCommandEncoder* encoder);
+        void barrierUpdate(MetalBarrierStage stage, MTL::BlitCommandEncoder* encoder);
+
+        MTL::Fence* getBarrierStageFence(MetalBarrierStage stage);
+        void setBarrier(uint64_t sourceStageMask, uint64_t destStageMask);
     };
+
+    static uint64_t toStageMask(RenderBarrierStages stages);
 
     struct MetalCommandFence : RenderCommandFence {
         dispatch_semaphore_t semaphore;
@@ -467,6 +508,7 @@ namespace plume {
         MetalPool *pool = nullptr;
         MetalDevice *device = nullptr;
         RenderBufferDesc desc;
+        RenderBarrierStages barrierStages = RenderBarrierStage::NONE;
 
         MetalBuffer() = default;
         MetalBuffer(MetalDevice *device, MetalPool *pool, const RenderBufferDesc &desc);
@@ -503,6 +545,7 @@ namespace plume {
         RenderTextureLayout layout = RenderTextureLayout::UNKNOWN;
         MetalPool *pool = nullptr;
         MTL::Drawable *drawable = nullptr;
+        RenderBarrierStages barrierStages = RenderBarrierStage::NONE;
 
         MetalTexture() = default;
         MetalTexture(const MetalDevice *device, MetalPool *pool, const RenderTextureDesc &desc);
@@ -628,6 +671,7 @@ namespace plume {
         // Blit functionality
         MTL::BlitPassDescriptor *sharedBlitDescriptor = nullptr;
 
+        // Placeholder null buffer
         std::unique_ptr<RenderBuffer> nullBuffer;
 
         // GPU-addressable resources
