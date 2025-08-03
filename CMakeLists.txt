@@ -12,6 +12,7 @@ string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Linux" IS_LINUX)
 # Project options
 include(CMakeDependentOption)
 cmake_dependent_option(SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF IS_LINUX OFF)
+cmake_dependent_option(D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
 
 # Windows-specific definitions
@@ -28,12 +29,18 @@ if(SDL_VULKAN_ENABLED)
     endif()
 
     message(STATUS "Plume - Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
-    add_compile_definitions("SDL_VULKAN_ENABLED")
+endif()
+
+# Enable D3D12 Agility SDK support
+if(D3D12_AGILITY_SDK_ENABLED)
+    find_package(directx-headers CONFIG REQUIRED)
+    find_package(directx12-agility CONFIG REQUIRED)
 endif()
 
 # Print status messages
 message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "Plume - SDL Vulkan integration: ${SDL_VULKAN_ENABLED}")
+message(STATUS "Plume - D3D12 Agility SDK: ${D3D12_AGILITY_SDK_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 
 # Basic source files that are always included
@@ -76,7 +83,14 @@ if(WIN32)
 endif()
 
 if(SDL_VULKAN_ENABLED)
+    target_compile_definitions(plume PUBLIC SDL_VULKAN_ENABLED)
     target_include_directories(plume PUBLIC ${SDL2_INCLUDE_DIRS})
+endif()
+
+if(D3D12_AGILITY_SDK_ENABLED)
+    target_compile_definitions(plume PUBLIC D3D12_AGILITY_SDK_ENABLED)
+    target_compile_definitions(plume PRIVATE D3D12MA_USING_DIRECTX_HEADERS D3D12MA_OPTIONS16_SUPPORTED)
+    target_link_libraries(plume PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids Microsoft::DirectX12-Agility)
 endif()
 
 # Platform-specific includes
