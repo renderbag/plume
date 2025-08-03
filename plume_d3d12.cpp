@@ -2764,6 +2764,7 @@ namespace plume {
     }
 
     uint64_t D3D12Buffer::getDeviceAddress() const {
+        assert((desc.flags & RenderBufferFlag::DEVICE_ADDRESSABLE) != 0 && "Buffer must have been created with GPU_ADDRESSABLE flag.");
         return d3d->GetGPUVirtualAddress();
     }
 

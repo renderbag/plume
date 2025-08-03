@@ -431,7 +431,8 @@ namespace plume {
             ACCELERATION_STRUCTURE_INPUT = 1U << 6,
             ACCELERATION_STRUCTURE_SCRATCH = 1U << 7,
             SHADER_BINDING_TABLE = 1U << 8,
-            UNORDERED_ACCESS = 1U << 9
+            UNORDERED_ACCESS = 1U << 9,
+            DEVICE_ADDRESSABLE = 1U << 10
         };
     };
 

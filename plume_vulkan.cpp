@@ -908,6 +908,7 @@ namespace plume {
     }
 
     uint64_t VulkanBuffer::getDeviceAddress() const {
+        assert((desc.flags & RenderBufferFlag::DEVICE_ADDRESSABLE) != 0 && "Buffer must have been created with GPU_ADDRESSABLE flag.");
         VkBufferDeviceAddressInfo info;
         info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         info.pNext = nullptr;

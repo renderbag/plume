@@ -213,7 +213,9 @@ namespace plume {
         std::vector<Descriptor> descriptors;
         MetalArgumentBuffer argumentBuffer;
         std::vector<ResourceEntry> resourceEntries;
-        std::vector<MTL::Resource *> toReleaseOnDestruction;
+        MTL::ResidencySet* residencySet = nullptr;
+        std::mutex residencySetWriteMutex;
+        bool needsCommit = false;
 
         MetalDescriptorSet(MetalDevice *device, const RenderDescriptorSetDesc &desc);
         MetalDescriptorSet(MetalDevice *device, uint32_t entryCount);
@@ -224,6 +226,7 @@ namespace plume {
         void setAccelerationStructure(uint32_t descriptorIndex, const RenderAccelerationStructure *accelerationStructure) override;
         void setDescriptor(uint32_t descriptorIndex, const Descriptor *descriptor);
         void bindImmutableSamplers() const;
+        void commit();
         RenderDescriptorRangeType getDescriptorType(uint32_t binding) const;
     };
 
@@ -367,8 +370,8 @@ namespace plume {
         const MetalPipelineLayout *activeGraphicsPipelineLayout = nullptr;
         const MetalRenderState *activeRenderState = nullptr;
         const MetalComputeState *activeComputeState = nullptr;
-        const MetalDescriptorSet* renderDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
-        const MetalDescriptorSet* computeDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
+        MetalDescriptorSet* renderDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
+        MetalDescriptorSet* computeDescriptorSets[MAX_DESCRIPTOR_SET_BINDINGS] = {};
 
         std::unordered_set<MetalDescriptorSet*> currentEncoderDescriptorSets;
         void bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute);
@@ -598,7 +601,7 @@ namespace plume {
 
         MetalPipelineLayout(MetalDevice *device, const RenderPipelineLayoutDesc &desc);
         ~MetalPipelineLayout() override;
-        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets) const;
+        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets, MTL::CommandBuffer* commandBuffer) const;
     };
 
     struct MetalDevice : RenderDevice {
@@ -626,6 +629,11 @@ namespace plume {
         MTL::BlitPassDescriptor *sharedBlitDescriptor = nullptr;
 
         std::unique_ptr<RenderBuffer> nullBuffer;
+
+        // GPU-addressable resources
+        std::vector<MTL::Resource*> gpuAddressableResources;
+        MTL::ResidencySet* gpuAddressableResidencySet;
+        std::mutex gpuAddressableResidencySetMutex;
 
         explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
         ~MetalDevice() override;
@@ -655,6 +663,7 @@ namespace plume {
         bool isValid() const;
         bool beginCapture() override;
         bool endCapture() override;
+        bool supportsResidencySets() const;
 
         // Shader libraries and pipeline states used for emulated operations
         void createResolvePipelineState();
