@@ -3618,6 +3618,7 @@ namespace plume {
         capabilities.resolveModes = false;
         capabilities.scalarBlockLayout = true;
         capabilities.presentWait = true;
+        capabilities.displayTiming = true;
         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
         capabilities.dynamicDepthBias = true;
         capabilities.uma = mtl->hasUnifiedMemory();
