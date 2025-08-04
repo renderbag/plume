@@ -242,7 +242,14 @@ namespace plume {
         RenderWindow renderWindow = {};
         std::unique_ptr<CocoaWindow> windowWrapper;
 
-        MetalSwapChain(MetalCommandQueue *commandQueue, RenderWindow renderWindow, uint32_t textureCount, RenderFormat format);
+        // Present wait
+        uint32_t maxFrameLatency = 0;
+        uint32_t currentPresentId = 0;
+        uint32_t lastPresentedId = 0;
+        std::mutex lastPresentedIdMutex;
+        std::condition_variable lastPresentedIdCondVar;
+
+        MetalSwapChain(MetalCommandQueue *commandQueue, RenderWindow renderWindow, uint32_t textureCount, RenderFormat format, uint32_t maxFrameLatency);
         ~MetalSwapChain() override;
         bool present(uint32_t textureIndex, RenderCommandSemaphore **waitSemaphores, uint32_t waitSemaphoreCount) override;
         void wait() override;

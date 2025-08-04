@@ -1852,12 +1852,13 @@ namespace plume {
 
     // MetalSwapChain
 
-    MetalSwapChain::MetalSwapChain(MetalCommandQueue *commandQueue, const RenderWindow renderWindow, uint32_t textureCount, const RenderFormat format) {
+    MetalSwapChain::MetalSwapChain(MetalCommandQueue *commandQueue, const RenderWindow renderWindow, uint32_t textureCount, const RenderFormat format, uint32_t maxFrameLatency) {
         this->layer = static_cast<CA::MetalLayer*>(renderWindow.view);
         layer->setDevice(commandQueue->device->mtl);
         layer->setPixelFormat(mapPixelFormat(format));
 
         this->commandQueue = commandQueue;
+        this->maxFrameLatency = maxFrameLatency;
 
         // Metal supports a maximum of 3 drawables.
         this->drawables.resize(MAX_DRAWABLES);
@@ -1896,6 +1897,8 @@ namespace plume {
             presentBuffer->encodeWait(interfaceSemaphore->mtl, interfaceSemaphore->mtlEventValue++);
         }
 
+        const uint32_t presentId = ++currentPresentId;
+
         // According to Apple, presenting via scheduled handler is more performant than using the presentDrawable method.
         // We grab the underlying drawable because we might've acquired a new one by now and the old one would have been released.
         CA::MetalDrawable *drawableMtl = drawable.mtl->retain();
@@ -1903,9 +1906,15 @@ namespace plume {
             drawableMtl->present();
         });
 
-        presentBuffer->addCompletedHandler([drawableMtl, this](MTL::CommandBuffer* cmdBuffer) {
+        presentBuffer->addCompletedHandler([drawableMtl, presentId, this](MTL::CommandBuffer* cmdBuffer) {
             currentAvailableDrawableIndex = (currentAvailableDrawableIndex + 1) % MAX_DRAWABLES;
             drawableMtl->release();
+
+            {
+                std::lock_guard lock(lastPresentedIdMutex);
+                lastPresentedId = std::max(lastPresentedId, presentId);
+                lastPresentedIdCondVar.notify_all();
+            }
         });
 
         presentBuffer->commit();
@@ -1916,7 +1925,12 @@ namespace plume {
     }
 
     void MetalSwapChain::wait() {
-        // TODO: New - implement wait
+        if (currentPresentId >= maxFrameLatency) {
+            std::unique_lock lock(lastPresentedIdMutex);
+            lastPresentedIdCondVar.wait_for(lock, std::chrono::seconds(1), [this] {
+                return lastPresentedId >= currentPresentId - (maxFrameLatency - 1);
+            });
+        }
     }
 
     bool MetalSwapChain::resize() {
@@ -3468,9 +3482,8 @@ namespace plume {
         return std::make_unique<MetalCommandList>(this);
     }
 
-    // TODO: NEW - Incorporate maxFrameLatency (new)
     std::unique_ptr<RenderSwapChain> MetalCommandQueue::createSwapChain(RenderWindow renderWindow, uint32_t textureCount, RenderFormat format, uint32_t maxFrameLatency) {
-        return std::make_unique<MetalSwapChain>(this, renderWindow, textureCount, format);
+        return std::make_unique<MetalSwapChain>(this, renderWindow, textureCount, format, maxFrameLatency);
     }
 
     void MetalCommandQueue::executeCommandLists(const RenderCommandList **commandLists, const uint32_t commandListCount, RenderCommandSemaphore **waitSemaphores, const uint32_t waitSemaphoreCount, RenderCommandSemaphore **signalSemaphores, const uint32_t signalSemaphoreCount, RenderCommandFence *signalFence) {
@@ -3604,7 +3617,7 @@ namespace plume {
         capabilities.sampleLocations = mtl->programmableSamplePositionsSupported();
         capabilities.resolveModes = false;
         capabilities.scalarBlockLayout = true;
-        capabilities.presentWait = false;
+        capabilities.presentWait = true;
         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
         capabilities.dynamicDepthBias = true;
         capabilities.uma = mtl->hasUnifiedMemory();
