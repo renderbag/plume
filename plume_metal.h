@@ -652,6 +652,7 @@ namespace plume {
         MetalInterface *renderInterface = nullptr;
         RenderDeviceCapabilities capabilities;
         RenderDeviceDescription description;
+        bool supportsResidencySets;
 
         // Resolve functionality
         MTL::ComputePipelineState *resolveTexturePipelineState;
@@ -707,7 +708,6 @@ namespace plume {
         bool isValid() const;
         bool beginCapture() override;
         bool endCapture() override;
-        bool supportsResidencySets() const;
 
         // Shader libraries and pipeline states used for emulated operations
         void createResolvePipelineState();

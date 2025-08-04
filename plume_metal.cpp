@@ -1637,7 +1637,7 @@ namespace plume {
 
         const uint32_t maxResources = setLayout->descriptorBindingIndices.size();
         // When using more than 128 resources, use residency sets for greater efficiency.
-        if (maxResources > 128 && device->supportsResidencySets()) {
+        if (maxResources > 128 && device->supportsResidencySets) {
             MTL::ResidencySetDescriptor* descriptor = MTL::ResidencySetDescriptor::alloc()->init();
             descriptor->setInitialCapacity(maxResources);
 
@@ -3592,6 +3592,8 @@ namespace plume {
         createResolvePipelineState();
         sharedBlitDescriptor = MTL::BlitPassDescriptor::alloc()->init();
 
+        NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
+
         // Fill capabilities.
         // https://developer.apple.com/documentation/metal/device-inspection
         // TODO: Support Raytracing.
@@ -3599,13 +3601,7 @@ namespace plume {
         capabilities.maxTextureSize = mtl->supportsFamily(MTL::GPUFamilyApple3) ? 16384 : 8192;
         capabilities.sampleLocations = mtl->programmableSamplePositionsSupported();
         capabilities.resolveModes = false;
-#if PLUME_IOS
-        capabilities.descriptorIndexing = mtl->supportsFamily(MTL::GPUFamilyApple3);
-#else
-        capabilities.descriptorIndexing = true;
-#endif
         capabilities.scalarBlockLayout = true;
-        capabilities.bufferDeviceAddress = mtl->supportsFamily(MTL::GPUFamilyApple3);
         capabilities.presentWait = false;
         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
         capabilities.dynamicDepthBias = true;
@@ -3613,9 +3609,19 @@ namespace plume {
         capabilities.gpuUploadHeap = capabilities.uma;
         capabilities.queryPools = false;
 
+#if PLUME_IOS
+        capabilities.descriptorIndexing = mtl->supportsFamily(MTL::GPUFamilyApple3);
+        capabilities.bufferDeviceAddress = osVersion.majorVersion >= 16 && mtl->supportsFamily(MTL::GPUFamilyApple3);
+        supportsResidencySets = osVersion.majorVersion >= 18 && mtl->supportsFamily(MTL::GPUFamilyApple6);
+#else
+        capabilities.descriptorIndexing = true;
+        capabilities.bufferDeviceAddress = osVersion.majorVersion >= 13 && mtl->supportsFamily(MTL::GPUFamilyApple3);
+        supportsResidencySets = osVersion.majorVersion >= 15 && mtl->supportsFamily(MTL::GPUFamilyApple6);
+#endif
+
         nullBuffer = createBuffer(RenderBufferDesc::DefaultBuffer(16, RenderBufferFlag::VERTEX));
 
-        if (supportsResidencySets()) {
+        if (supportsResidencySets) {
             MTL::ResidencySetDescriptor* residencySetDescriptor = MTL::ResidencySetDescriptor::alloc()->init();
             gpuAddressableResidencySet = mtl->newResidencySet(residencySetDescriptor, nullptr);
             residencySetDescriptor->release();
@@ -3755,15 +3761,6 @@ namespace plume {
         MTL::CaptureManager *manager = MTL::CaptureManager::sharedCaptureManager();
         manager->stopCapture();
         return true;
-    }
-
-    bool MetalDevice::supportsResidencySets() const {
-        NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
-        if (osVersion.majorVersion >= 15) {
-            return mtl->supportsFamily(MTL::GPUFamilyApple6);
-        }
-
-        return false;
     }
 
     void MetalDevice::createResolvePipelineState() {
