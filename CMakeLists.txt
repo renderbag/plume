@@ -89,7 +89,7 @@ endif()
 
 if(D3D12_AGILITY_SDK_ENABLED)
     target_compile_definitions(plume PUBLIC D3D12_AGILITY_SDK_ENABLED)
-    target_compile_definitions(plume PRIVATE D3D12MA_USING_DIRECTX_HEADERS D3D12MA_OPTIONS16_SUPPORTED)
+    target_compile_definitions(plume PRIVATE D3D12MA_USING_DIRECTX_HEADERS)
     target_link_libraries(plume PRIVATE Microsoft::DirectX-Headers Microsoft::DirectX-Guids Microsoft::DirectX12-Agility)
 endif()
 
