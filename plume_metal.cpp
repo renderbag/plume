@@ -1635,9 +1635,11 @@ namespace plume {
 
         setLayout = std::make_unique<MetalDescriptorSetLayout>(device, desc);
 
-        if (device->supportsResidencySets()) {
+        const uint32_t maxResources = setLayout->descriptorBindingIndices.size();
+        // When using more than 128 resources, use residency sets for greater efficiency.
+        if (maxResources > 128 && device->supportsResidencySets()) {
             MTL::ResidencySetDescriptor* descriptor = MTL::ResidencySetDescriptor::alloc()->init();
-            descriptor->setInitialCapacity(setLayout->descriptorBindingIndices.size());
+            descriptor->setInitialCapacity(maxResources);
 
             residencySet = device->mtl->newResidencySet(descriptor, nullptr);
 
@@ -1656,7 +1658,7 @@ namespace plume {
         argumentBuffer.argumentEncoder->setArgumentBuffer(argumentBuffer.mtl, argumentBuffer.offset);
         bindImmutableSamplers();
 
-        resourceEntries.resize(setLayout->descriptorBindingIndices.size());
+        resourceEntries.resize(maxResources);
     }
 
     MetalDescriptorSet::~MetalDescriptorSet() {
@@ -3385,33 +3387,35 @@ namespace plume {
     }
 
     void MetalCommandList::bindEncoderResources(MTL::CommandEncoder* encoder, bool isCompute) {
-        // If we support residency sets, they will be used
-        // and useResource should not be called
-        if (device->supportsResidencySets()) {
-            return;
-        }
-
         if (isCompute) {
             auto* computeEncoder = static_cast<MTL::ComputeCommandEncoder*>(encoder);
-            for (const auto* resource : device->gpuAddressableResources) {
-                computeEncoder->useResource(resource, MTL::ResourceUsageRead);
+            if (device->gpuAddressableResidencySet == nullptr) {
+                for (const auto* resource : device->gpuAddressableResources) {
+                    computeEncoder->useResource(resource, MTL::ResourceUsageRead);
+                }
             }
             for (const auto* descriptorSet : currentEncoderDescriptorSets) {
-                for (const auto& entry : descriptorSet->resourceEntries) {
-                    if (entry.resource != nullptr) {
-                        computeEncoder->useResource(entry.resource, mapResourceUsage(entry.type));
+                if (descriptorSet->residencySet == nullptr) {
+                    for (const auto& entry : descriptorSet->resourceEntries) {
+                        if (entry.resource != nullptr) {
+                            computeEncoder->useResource(entry.resource, mapResourceUsage(entry.type));
+                        }
                     }
                 }
             }
         } else {
             auto* renderEncoder = static_cast<MTL::RenderCommandEncoder*>(encoder);
-            for (const auto* resource : device->gpuAddressableResources) {
-                renderEncoder->useResource(resource, MTL::ResourceUsageRead);
+            if (device->gpuAddressableResidencySet == nullptr) {
+                for (const auto* resource : device->gpuAddressableResources) {
+                    renderEncoder->useResource(resource, MTL::ResourceUsageRead);
+                }
             }
             for (const auto* descriptorSet : currentEncoderDescriptorSets) {
-                for (const auto& entry : descriptorSet->resourceEntries) {
-                    if (entry.resource != nullptr) {
-                        renderEncoder->useResource(entry.resource, mapResourceUsage(entry.type), MTL::RenderStageVertex | MTL::RenderStageFragment);
+                if (descriptorSet->residencySet == nullptr) {
+                    for (const auto& entry : descriptorSet->resourceEntries) {
+                        if (entry.resource != nullptr) {
+                            renderEncoder->useResource(entry.resource, mapResourceUsage(entry.type), MTL::RenderStageVertex | MTL::RenderStageFragment);
+                        }
                     }
                 }
             }
