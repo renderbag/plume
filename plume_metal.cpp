@@ -1106,8 +1106,8 @@ namespace plume {
 
         if (desc.flags & RenderBufferFlag::DEVICE_ADDRESSABLE) {
             // If the buffer may be used by device address, we need to make sure it will be resident.
+            std::lock_guard lock(device->gpuAddressableResourcesMutex);
             if (device->gpuAddressableResidencySet != nullptr) {
-                std::lock_guard lock(device->gpuAddressableResidencySetMutex);
                 device->gpuAddressableResidencySet->addAllocation(mtl);
                 device->gpuAddressableResidencySet->commit();
             } else {
@@ -1118,8 +1118,8 @@ namespace plume {
 
     MetalBuffer::~MetalBuffer() {
         if (desc.flags & RenderBufferFlag::DEVICE_ADDRESSABLE) {
+            std::lock_guard lock(device->gpuAddressableResourcesMutex);
             if (device->gpuAddressableResidencySet != nullptr) {
-                std::lock_guard lock(device->gpuAddressableResidencySetMutex);
                 device->gpuAddressableResidencySet->removeAllocation(mtl);
                 device->gpuAddressableResidencySet->commit();
             } else {
@@ -3390,6 +3390,7 @@ namespace plume {
         if (isCompute) {
             auto* computeEncoder = static_cast<MTL::ComputeCommandEncoder*>(encoder);
             if (device->gpuAddressableResidencySet == nullptr) {
+                std::lock_guard lock(device->gpuAddressableResourcesMutex);
                 for (const auto* resource : device->gpuAddressableResources) {
                     computeEncoder->useResource(resource, MTL::ResourceUsageRead);
                 }
@@ -3406,6 +3407,7 @@ namespace plume {
         } else {
             auto* renderEncoder = static_cast<MTL::RenderCommandEncoder*>(encoder);
             if (device->gpuAddressableResidencySet == nullptr) {
+                std::lock_guard lock(device->gpuAddressableResourcesMutex);
                 for (const auto* resource : device->gpuAddressableResources) {
                     renderEncoder->useResource(resource, MTL::ResourceUsageRead);
                 }
