@@ -2183,6 +2183,7 @@ namespace plume {
 
     void MetalCommandList::begin() {
         assert(mtl == nullptr);
+        startedEncoding = false;
         mtl = queue->mtl->commandBufferWithUnretainedReferences();
         mtl->setLabel(MTLSTR("RT64 Command List"));
 
@@ -3141,7 +3142,9 @@ namespace plume {
 
             // Wait for query fence and perform dummy operation to record timestamp.
             const MetalBuffer* nullBuffer = static_cast<const MetalBuffer *>(device->nullBuffer.get());
-            encoder->waitForFence(timestampQueryFence);
+            if (startedEncoding) {
+                encoder->waitForFence(timestampQueryFence);
+            }
             encoder->fillBuffer(nullBuffer->mtl, NS::Range(0, 1), 0);
             encoder->endEncoding();
             encoder->release();
@@ -3188,6 +3191,8 @@ namespace plume {
 
             activeComputeEncoder->retain();
             releasePool->release();
+
+            startedEncoding = true;
 
             barrierWait(MetalBarrierStage::COMPUTE, activeComputeEncoder);
 
@@ -3291,6 +3296,8 @@ namespace plume {
 
             activeRenderEncoder->retain();
             releasePool->release();
+
+            startedEncoding = true;
             
             // Reset pending clears since we've now handled them
             if (pendingClears.active) {
@@ -3412,6 +3419,8 @@ namespace plume {
             activeBlitEncoder = mtl->blitCommandEncoder(device->sharedBlitDescriptor);
             activeBlitEncoder->setLabel(MTLSTR("Copy Blit Encoder"));
 
+            startedEncoding = true;
+
             barrierWait(MetalBarrierStage::COPY, activeBlitEncoder);
         }
     }
@@ -3436,6 +3445,8 @@ namespace plume {
             activeResolveComputeEncoder = mtl->computeCommandEncoder(MTL::DispatchTypeConcurrent);
             activeResolveComputeEncoder->setLabel(MTLSTR("Resolve Texture Encoder"));
             activeResolveComputeEncoder->setComputePipelineState(device->resolveTexturePipelineState);
+
+            startedEncoding = true;
 
             barrierWait(MetalBarrierStage::COPY, activeResolveComputeEncoder);
         }

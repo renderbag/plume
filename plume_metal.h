@@ -299,7 +299,6 @@ namespace plume {
     struct MetalQueryPool : RenderQueryPool {
         MetalDevice *device = nullptr;
         MTL::CounterSampleBuffer *sampleBuffer = nullptr;
-        uint32_t queryIndex = 0;
         std::vector<uint64_t> results;
 
         MetalQueryPool(MetalDevice *device, uint32_t queryCount);
@@ -354,6 +353,7 @@ namespace plume {
 
         MTL::CommandBuffer *mtl = nullptr;
         EncoderType activeType = EncoderType::None;
+        bool startedEncoding = false;
         MTL::RenderCommandEncoder *activeRenderEncoder = nullptr;
         MTL::ComputeCommandEncoder *activeComputeEncoder = nullptr;
         MTL::BlitCommandEncoder *activeBlitEncoder = nullptr;
