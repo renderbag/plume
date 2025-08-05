@@ -244,8 +244,8 @@ namespace plume {
 
         // Present wait
         uint32_t maxFrameLatency = 0;
-        uint32_t currentPresentId = 0;
-        uint32_t lastPresentedId = 0;
+        uint64_t currentPresentId = 0;
+        uint64_t lastPresentedId = 0;
         std::mutex lastPresentedIdMutex;
         std::condition_variable lastPresentedIdCondVar;
 

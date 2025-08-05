@@ -1897,7 +1897,7 @@ namespace plume {
             presentBuffer->encodeWait(interfaceSemaphore->mtl, interfaceSemaphore->mtlEventValue++);
         }
 
-        const uint32_t presentId = ++currentPresentId;
+        const uint64_t presentId = ++currentPresentId;
 
         // According to Apple, presenting via scheduled handler is more performant than using the presentDrawable method.
         // We grab the underlying drawable because we might've acquired a new one by now and the old one would have been released.
