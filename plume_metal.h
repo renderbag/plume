@@ -677,7 +677,7 @@ namespace plume {
 
         // GPU-addressable resources
         std::vector<MTL::Resource*> gpuAddressableResources;
-        MTL::ResidencySet* gpuAddressableResidencySet;
+        MTL::ResidencySet* gpuAddressableResidencySet = nullptr;
         std::mutex gpuAddressableResourcesMutex;
 
         explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
