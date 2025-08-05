@@ -1913,8 +1913,8 @@ namespace plume {
             {
                 std::lock_guard lock(lastPresentedIdMutex);
                 lastPresentedId = std::max(lastPresentedId, presentId);
-                lastPresentedIdCondVar.notify_all();
             }
+            lastPresentedIdCondVar.notify_all();
         });
 
         presentBuffer->commit();
