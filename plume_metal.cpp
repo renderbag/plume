@@ -603,6 +603,18 @@ namespace plume {
         }
     }
 
+    MTL::Winding mapFrontFace(RenderFrontFace frontFace) {
+        switch (frontFace) {
+            case RenderFrontFace::CLOCKWISE:
+                return MTL::WindingClockwise;
+            case RenderFrontFace::COUNTER_CLOCKWISE:
+                return MTL::WindingCounterClockwise;
+            default:
+                assert(false && "Unknown front face.");
+                return MTL::WindingClockwise;
+        }
+    }
+
     MTL::PrimitiveTopologyClass mapPrimitiveTopologyClass(RenderPrimitiveTopology topology) {
         switch (topology) {
             case RenderPrimitiveTopology::POINT_LIST:
@@ -1558,7 +1570,7 @@ namespace plume {
         state.depthStencilState = device->mtl->newDepthStencilState(depthStencilDescriptor);
         state.cullMode = mapCullMode(desc.cullMode);
         state.depthClipMode = (desc.depthClipEnabled) ? MTL::DepthClipModeClip : MTL::DepthClipModeClamp;
-        state.winding = MTL::WindingClockwise;
+        state.winding = mapFrontFace(desc.frontFace);
         state.renderPipelineState = device->mtl->newRenderPipelineState(descriptor, &error);
         state.primitiveType = mapPrimitiveType(desc.primitiveTopology);
         state.stencilReference = desc.stencilEnabled ? desc.stencilReference : 0;

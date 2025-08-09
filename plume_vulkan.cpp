@@ -321,6 +321,18 @@ namespace plume {
         }
     }
 
+    static VkFrontFace toVk(RenderFrontFace frontFace) {
+        switch (frontFace) {
+        case RenderFrontFace::CLOCKWISE:
+            return VK_FRONT_FACE_CLOCKWISE;
+        case RenderFrontFace::COUNTER_CLOCKWISE:
+            return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        default:
+            assert(false && "Unknown front face.");
+            return VK_FRONT_FACE_CLOCKWISE;
+        }
+    }
+
     static VkPrimitiveTopology toVk(RenderPrimitiveTopology topology) {
         switch (topology) {
         case RenderPrimitiveTopology::POINT_LIST:
@@ -1499,7 +1511,7 @@ namespace plume {
         rasterization.polygonMode = VK_POLYGON_MODE_FILL;
         rasterization.lineWidth = 1.0f;
         rasterization.cullMode = toVk(desc.cullMode);
-        rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterization.frontFace = toVk(desc.frontFace);
 
         if (desc.dynamicDepthBiasEnabled) {
             rasterization.depthBiasEnable = true;

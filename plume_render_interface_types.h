@@ -202,6 +202,12 @@ namespace plume {
         BACK
     };
 
+    enum class RenderFrontFace {
+        UNKNOWN,
+        CLOCKWISE,
+        COUNTER_CLOCKWISE
+    };
+
     enum class RenderComparisonFunction {
         UNKNOWN,
         NEVER,
@@ -1266,6 +1272,7 @@ namespace plume {
         bool alphaToCoverageEnabled = false;
         RenderPrimitiveTopology primitiveTopology = RenderPrimitiveTopology::TRIANGLE_LIST;
         RenderCullMode cullMode = RenderCullMode::NONE;
+        RenderFrontFace frontFace = RenderFrontFace::CLOCKWISE;
         RenderFormat renderTargetFormat[MaxRenderTargets] = {};
         RenderBlendDesc renderTargetBlend[MaxRenderTargets] = {};
         uint32_t renderTargetCount = 0;
