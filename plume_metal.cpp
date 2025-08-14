@@ -2353,11 +2353,8 @@ namespace plume {
             return;
         }
 
-        // End render passes on all barriers
-        endActiveRenderEncoder();
-        handlePendingClears();
-
         uint64_t srcStageMask = 0;
+        const uint64_t destStageMask = toStageMask(stages);
 
         for (int i = 0; i < bufferBarriersCount; i++) {
             const RenderBufferBarrier &bufferBarrier = bufferBarriers[i];
@@ -2377,7 +2374,11 @@ namespace plume {
             // interfaceTexture->layout = textureBarrier.layout;
         }
 
-        setBarrier(srcStageMask, toStageMask(stages));
+        // End passes on all barriers to finish work and update the appropriate barrier fences.
+        endOtherEncoders(EncoderType::None);
+        handlePendingClears();
+
+        setBarrier(srcStageMask, destStageMask);
     }
 
     static uint64_t toStageMask(RenderBarrierStages stages) {
