@@ -2120,7 +2120,8 @@ namespace plume {
             height = firstTexture->desc.height;
 
             sampleCount = firstTexture->desc.multisampling.sampleCount;
-            if (firstTexture->desc.multisampling.sampleCount > 1) {
+            samplePositionsEnabled = sampleCount > 1 && firstTexture->desc.multisampling.sampleLocationsEnabled;
+            if (samplePositionsEnabled) {
                 for (uint32_t i = 0; i < firstTexture->desc.multisampling.sampleCount; i++) {
                     // Normalize from [-8, 7] to [0,1) range
                     float normalizedX = firstTexture->desc.multisampling.sampleLocations[i].x / 16.0f + 0.5f;
@@ -3323,7 +3324,7 @@ namespace plume {
                 }
             }
 
-            if (targetFramebuffer->sampleCount > 1) {
+            if (targetFramebuffer->samplePositionsEnabled) {
                 renderDescriptor->setSamplePositions(targetFramebuffer->samplePositions, targetFramebuffer->sampleCount);
             }
 

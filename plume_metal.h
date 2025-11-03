@@ -289,6 +289,7 @@ namespace plume {
 
         MTL::SamplePosition samplePositions[16] = {};
         uint32_t sampleCount = 0;
+        bool samplePositionsEnabled = false;
 
         MetalFramebuffer(const MetalDevice *device, const RenderFramebufferDesc &desc);
         ~MetalFramebuffer() override;
