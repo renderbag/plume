@@ -2255,7 +2255,6 @@ namespace plume {
             if (fenceIndex != -1) {
                 const MTL::Fence* fence = fences[i][fenceIndex];
                 encoder->waitForFence(fence, beforeStages);
-                fenceIndex = -1;
             }
         }
     }
@@ -2266,7 +2265,6 @@ namespace plume {
             if (fenceIndex != -1) {
                 const MTL::Fence* fence = fences[i][fenceIndex];
                 encoder->waitForFence(fence);
-                fenceIndex = -1;
             }
         }
     }
@@ -2277,7 +2275,6 @@ namespace plume {
             if (fenceIndex != -1) {
                 const MTL::Fence* fence = fences[i][fenceIndex];
                 encoder->waitForFence(fence);
-                fenceIndex = -1;
             }
         }
     }
