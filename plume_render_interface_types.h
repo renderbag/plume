@@ -19,7 +19,7 @@
 #include <Windows.h>
 #elif defined(__ANDROID__)
 #include "android/native_window.h"
-#elif defined(__linux__)
+#elif defined(__linux__) && !defined(PLUME_SDL_VULKAN_ENABLED)
 #include "X11/Xlib.h"
 #undef None
 #undef Status

@@ -53,7 +53,9 @@ namespace plume {
 #   elif defined(__ANDROID__)
         VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
 #   elif defined(__linux__)
+#   if !defined(PLUME_SDL_VULKAN_ENABLED)
         VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#   endif
 #   elif defined(__APPLE__)
         VK_EXT_METAL_SURFACE_EXTENSION_NAME,
 #   endif
