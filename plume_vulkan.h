@@ -184,13 +184,11 @@ namespace plume {
 
     struct VulkanGraphicsPipeline : VulkanPipeline {
         VkPipeline vk = VK_NULL_HANDLE;
-        VkRenderPass renderPass = VK_NULL_HANDLE;
 
         VulkanGraphicsPipeline(VulkanDevice *device, const RenderGraphicsPipelineDesc &desc);
         ~VulkanGraphicsPipeline() override;
         void setName(const std::string &name) override;
         RenderPipelineProgram getProgram(const std::string &name) const override;
-        static VkRenderPass createRenderPass(VulkanDevice *device, const VkFormat *renderTargetFormat, uint32_t renderTargetCount, VkFormat depthTargetFormat, VkSampleCountFlagBits sampleCount);
     };
 
     struct VulkanRaytracingPipeline : VulkanPipeline {
@@ -264,9 +262,6 @@ namespace plume {
     };
 
     struct VulkanFramebuffer : RenderFramebuffer {
-        VulkanDevice *device = nullptr;
-        VkFramebuffer vk = VK_NULL_HANDLE;
-        VkRenderPass renderPass = VK_NULL_HANDLE;
         std::vector<const VulkanTexture *> colorAttachments;
         const VulkanTexture *depthAttachment = nullptr;
         std::unique_ptr<VulkanTextureView> depthAttachmentView = nullptr;
@@ -274,8 +269,8 @@ namespace plume {
         uint32_t width = 0;
         uint32_t height = 0;
 
-        VulkanFramebuffer(VulkanDevice *device, const RenderFramebufferDesc &desc);
-        ~VulkanFramebuffer() override;
+        VulkanFramebuffer(const RenderFramebufferDesc &desc);
+        ~VulkanFramebuffer() override = default;
         uint32_t getWidth() const override;
         uint32_t getHeight() const override;
         bool contains(const VulkanTexture *attachment) const;
@@ -301,7 +296,7 @@ namespace plume {
         const VulkanPipelineLayout *activeComputePipelineLayout = nullptr;
         const VulkanPipelineLayout *activeGraphicsPipelineLayout = nullptr;
         const VulkanPipelineLayout *activeRaytracingPipelineLayout = nullptr;
-        VkRenderPass activeRenderPass = VK_NULL_HANDLE;
+        bool isRendering = false;
 
         VulkanCommandList(VulkanCommandQueue *queue);
         ~VulkanCommandList() override;

@@ -70,6 +70,7 @@ namespace plume {
     
     static const std::unordered_set<std::string> RequiredDeviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     };
     
     static const std::unordered_set<std::string> OptionalDeviceExtensions = {
@@ -1627,14 +1628,22 @@ namespace plume {
             renderTargetFormats[i] = toVk(desc.renderTargetFormat[i]);
         }
 
-        renderPass = createRenderPass(device, renderTargetFormats.data(), desc.renderTargetCount, toVk(desc.depthTargetFormat), VkSampleCountFlagBits(desc.multisampling.sampleCount));
-        if (renderPass == VK_NULL_HANDLE) {
-            return;
+        VkPipelineRenderingCreateInfo renderingInfo = {};
+        renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        renderingInfo.colorAttachmentCount = uint32_t(renderTargetFormats.size());
+        renderingInfo.pColorAttachmentFormats = renderTargetFormats.data();
+
+        if (desc.depthTargetFormat != RenderFormat::UNKNOWN) {
+            renderingInfo.depthAttachmentFormat = toVk(desc.depthTargetFormat);
+            if (RenderFormatIsStencil(desc.depthTargetFormat)) {
+                renderingInfo.stencilAttachmentFormat = renderingInfo.depthAttachmentFormat;
+            }
         }
 
         const VulkanPipelineLayout *pipelineLayout = static_cast<const VulkanPipelineLayout *>(desc.pipelineLayout);
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext = &renderingInfo;
         pipelineInfo.pStages = stages.data();
         pipelineInfo.stageCount = uint32_t(stages.size());
         pipelineInfo.pVertexInputState = &vertexInput;
@@ -1646,7 +1655,6 @@ namespace plume {
         pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipelineLayout->vk;
-        pipelineInfo.renderPass = renderPass;
 
         VkResult res = vkCreateGraphicsPipelines(device->vk, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vk);
         if (res != VK_SUCCESS) {
@@ -1659,10 +1667,6 @@ namespace plume {
         if (vk != VK_NULL_HANDLE) {
             vkDestroyPipeline(device->vk, vk, nullptr);
         }
-
-        if (renderPass != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(device->vk, renderPass, nullptr);
-        }
     }
 
     void VulkanGraphicsPipeline::setName(const std::string &name) {
@@ -1672,71 +1676,6 @@ namespace plume {
     RenderPipelineProgram VulkanGraphicsPipeline::getProgram(const std::string &name) const {
         assert(false && "Graphics pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
-    }
-
-    VkRenderPass VulkanGraphicsPipeline::createRenderPass(VulkanDevice *device, const VkFormat *renderTargetFormat, uint32_t renderTargetCount, VkFormat depthTargetFormat, VkSampleCountFlagBits sampleCount) {
-        VkRenderPass renderPass = VK_NULL_HANDLE;
-        VkSubpassDescription subpass = {};
-        VkAttachmentReference depthReference = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-        thread_local std::vector<VkAttachmentDescription> attachments;
-        thread_local std::vector<VkAttachmentReference> colorReferences;
-        attachments.clear();
-        colorReferences.clear();
-        for (uint32_t i = 0; i < renderTargetCount; i++) {
-            VkAttachmentReference reference = {};
-            reference.attachment = uint32_t(attachments.size());
-            reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            colorReferences.emplace_back(reference);
-
-            VkAttachmentDescription attachment = {};
-            attachment.format = renderTargetFormat[i];
-            attachment.samples = sampleCount;
-            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-            attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            attachments.emplace_back(attachment);
-        }
-
-        subpass.pColorAttachments = !colorReferences.empty() ? colorReferences.data() : nullptr;
-        subpass.colorAttachmentCount = uint32_t(colorReferences.size());
-
-        if (depthTargetFormat != VK_FORMAT_UNDEFINED) {
-            depthReference.attachment = uint32_t(attachments.size());
-            depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            subpass.pDepthStencilAttachment = &depthReference;
-
-            VkAttachmentDescription attachment = {};
-            attachment.format = depthTargetFormat;
-            attachment.samples = sampleCount;
-            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-            attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            attachment.stencilLoadOp = attachment.loadOp;
-            attachment.stencilStoreOp = attachment.storeOp;
-            attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            attachments.emplace_back(attachment);
-        }
-
-        VkRenderPassCreateInfo passInfo = {};
-        passInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        passInfo.pAttachments = !attachments.empty() ? attachments.data() : nullptr;
-        passInfo.attachmentCount = uint32_t(attachments.size());
-        passInfo.pSubpasses = &subpass;
-        passInfo.subpassCount = 1;
-
-        VkResult res = vkCreateRenderPass(device->vk, &passInfo, nullptr, &renderPass);
-        if (res == VK_SUCCESS) {
-            return renderPass;
-        }
-        else {
-            fprintf(stderr, "vkCreateRenderPass failed with error code 0x%X.\n", res);
-            return VK_NULL_HANDLE;
-        }
     }
 
     // VulkanRaytracingPipeline
@@ -2505,68 +2444,35 @@ namespace plume {
 
     // VulkanFramebuffer
     
-    VulkanFramebuffer::VulkanFramebuffer(VulkanDevice *device, const RenderFramebufferDesc &desc) {
+    VulkanFramebuffer::VulkanFramebuffer(const RenderFramebufferDesc &desc) {
         assert(device != nullptr);
-
-        this->device = device;
         depthAttachmentReadOnly = desc.depthAttachmentReadOnly;
 
-        VkResult res;
-        std::vector<VkAttachmentDescription> attachments;
-        std::vector<VkAttachmentReference> colorReferences;
-        std::vector<VkImageView> imageViews;
-        VkAttachmentReference depthReference = {};
         for (uint32_t i = 0; i < desc.colorAttachmentsCount; i++) {
             const VulkanTexture *colorAttachment;
-            VkImageView colorAttachmentImageView;
-            RenderFormat colorAttachmentFormat;
             if (desc.colorAttachmentViews && desc.colorAttachmentViews[i]) {
                 const VulkanTextureView* colorAttachmentView = static_cast<const VulkanTextureView *>(desc.colorAttachmentViews[i]);
                 colorAttachment = colorAttachmentView->texture;
-                colorAttachmentImageView = colorAttachmentView->vk;
-                colorAttachmentFormat = colorAttachmentView->desc.format;
             } else {
                 colorAttachment = static_cast<const VulkanTexture *>(desc.colorAttachments[i]);
-                colorAttachmentImageView = colorAttachment->imageView;
-                colorAttachmentFormat = colorAttachment->desc.format;
             }
             assert((colorAttachment->desc.flags & RenderTextureFlag::RENDER_TARGET) && "Color attachment must be a render target.");
             colorAttachments.emplace_back(colorAttachment);
-            imageViews.emplace_back(colorAttachmentImageView);
 
             if (i == 0) {
                 width = uint32_t(colorAttachment->desc.width);
                 height = colorAttachment->desc.height;
             }
-
-            VkAttachmentReference reference = {};
-            reference.attachment = uint32_t(attachments.size());
-            reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            colorReferences.emplace_back(reference);
-
-            VkAttachmentDescription attachment = {};
-            attachment.format = toVk(colorAttachmentFormat);
-            attachment.samples = VkSampleCountFlagBits(colorAttachment->desc.multisampling.sampleCount);
-            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-            attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            attachments.emplace_back(attachment);
         }
 
         if (desc.depthAttachment != nullptr || desc.depthAttachmentView != nullptr) {
-            VkImageView depthAttachmentImageView;
             RenderTextureViewDesc depthAttachmentViewDesc;
             if (desc.depthAttachmentView != nullptr) {
                 const VulkanTextureView* depthAttachmentView = static_cast<const VulkanTextureView *>(desc.depthAttachmentView);
                 depthAttachment = depthAttachmentView->texture;
-                depthAttachmentImageView = depthAttachmentView->vk;
                 depthAttachmentViewDesc = depthAttachmentView->desc;
             } else {
                 depthAttachment = static_cast<const VulkanTexture *>(desc.depthAttachment);
-                depthAttachmentImageView = depthAttachment->imageView;
                 depthAttachmentViewDesc.format = depthAttachment->desc.format;
                 depthAttachmentViewDesc.dimension = RenderTextureDimensionToView(depthAttachment->desc.dimension);
             }
@@ -2574,79 +2480,13 @@ namespace plume {
                 // Base image view is configured for sampling depth. For framebuffer attachment,
                 // create a separate view configured for both depth and stencil.
                 depthAttachmentView = std::make_unique<VulkanTextureView>(depthAttachment, depthAttachmentViewDesc);
-                depthAttachmentImageView = depthAttachmentView->vk;
             }
             assert((depthAttachment->desc.flags & RenderTextureFlag::DEPTH_TARGET) && "Depth attachment must be a depth target.");
-            imageViews.emplace_back(depthAttachmentImageView);
 
             if (desc.colorAttachmentsCount == 0) {
                 width = uint32_t(depthAttachment->desc.width);
                 height = depthAttachment->desc.height;
             }
-
-            depthReference.attachment = uint32_t(attachments.size());
-            depthReference.layout = desc.depthAttachmentReadOnly ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-            // Upgrade the operations to NONE if supported. Fixes the following validation issue: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2349
-            // We prefer to just ignore this potential hazard on older Vulkan versions as it just seems to be an edge case for some hardware.
-            const bool preferNoneForReadOnly = desc.depthAttachmentReadOnly && device->loadStoreOpNoneSupported;
-            VkAttachmentDescription attachment = {};
-            attachment.format = toVk(depthAttachmentViewDesc.format);
-            attachment.samples = VkSampleCountFlagBits(depthAttachment->desc.multisampling.sampleCount);
-            attachment.loadOp = preferNoneForReadOnly ? VK_ATTACHMENT_LOAD_OP_NONE_EXT : VK_ATTACHMENT_LOAD_OP_LOAD;
-            attachment.storeOp = preferNoneForReadOnly ? VK_ATTACHMENT_STORE_OP_NONE_EXT : VK_ATTACHMENT_STORE_OP_STORE;
-            attachment.stencilLoadOp = attachment.loadOp;
-            attachment.stencilStoreOp = attachment.storeOp;
-            attachment.initialLayout = depthReference.layout;
-            attachment.finalLayout = depthReference.layout;
-            attachments.emplace_back(attachment);
-        }
-
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.pColorAttachments = !colorReferences.empty() ? colorReferences.data() : nullptr;
-        subpass.colorAttachmentCount = uint32_t(colorReferences.size());
-
-        if (desc.depthAttachment != nullptr || desc.depthAttachmentView != nullptr) {
-            subpass.pDepthStencilAttachment = &depthReference;
-        }
-
-        VkRenderPassCreateInfo passInfo = {};
-        passInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        passInfo.pAttachments = attachments.data();
-        passInfo.attachmentCount = uint32_t(attachments.size());
-        passInfo.pSubpasses = &subpass;
-        passInfo.subpassCount = 1;
-
-        res = vkCreateRenderPass(device->vk, &passInfo, nullptr, &renderPass);
-        if (res != VK_SUCCESS) {
-            fprintf(stderr, "vkCreateRenderPass failed with error code 0x%X.\n", res);
-            return;
-        }
-        
-        VkFramebufferCreateInfo fbInfo = {};
-        fbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbInfo.renderPass = renderPass;
-        fbInfo.pAttachments = imageViews.data();
-        fbInfo.attachmentCount = uint32_t(imageViews.size());
-        fbInfo.width = width;
-        fbInfo.height = height;
-        fbInfo.layers = 1;
-
-        res = vkCreateFramebuffer(device->vk, &fbInfo, nullptr, &vk);
-        if (res != VK_SUCCESS) {
-            fprintf(stderr, "vkCreateFramebuffer failed with error code 0x%X.\n", res);
-            return;
-        }
-    }
-
-    VulkanFramebuffer::~VulkanFramebuffer() {
-        if (vk != VK_NULL_HANDLE) {
-            vkDestroyFramebuffer(device->vk, vk, nullptr);
-        }
-
-        if (renderPass != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(device->vk, renderPass, nullptr);
         }
     }
 
@@ -3461,23 +3301,59 @@ namespace plume {
 
     void VulkanCommandList::checkActiveRenderPass() {
         assert(targetFramebuffer != nullptr);
+        if (isRendering) return;
+
+        std::vector<VkRenderingAttachmentInfoKHR> colorInfos;
+        const auto &fb = *targetFramebuffer;
         
-        if (activeRenderPass == VK_NULL_HANDLE) {
-            VkRenderPassBeginInfo beginInfo = {};
-            beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            beginInfo.renderPass = targetFramebuffer->renderPass;
-            beginInfo.framebuffer = targetFramebuffer->vk;
-            beginInfo.renderArea.extent.width = targetFramebuffer->width;
-            beginInfo.renderArea.extent.height = targetFramebuffer->height;
-            vkCmdBeginRenderPass(vk, &beginInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
-            activeRenderPass = targetFramebuffer->renderPass;
+        for (size_t i = 0; i < fb.colorAttachments.size(); i++) {
+            VkRenderingAttachmentInfoKHR info = {};
+            info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+            info.imageView = fb.colorAttachments[i]->imageView;
+            info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            info.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            colorInfos.push_back(info);
         }
+
+        VkRenderingAttachmentInfoKHR depthInfo = {};
+        const bool hasDepth = (fb.depthAttachment != nullptr);
+        if (hasDepth) {
+            depthInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+            if (fb.depthAttachmentView) {
+                depthInfo.imageView = fb.depthAttachmentView->vk;
+            } else {
+                depthInfo.imageView = fb.depthAttachment->imageView;
+            }
+            depthInfo.imageLayout = fb.depthAttachmentReadOnly
+                                        ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+                                        : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depthInfo.loadOp  = VK_ATTACHMENT_LOAD_OP_LOAD;
+            depthInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        }
+
+        VkRenderingInfoKHR renderInfo = {};
+        renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+        renderInfo.renderArea = { {0, 0}, {fb.width, fb.height} };
+        renderInfo.layerCount = 1;
+        renderInfo.colorAttachmentCount = static_cast<uint32_t>(colorInfos.size());
+        renderInfo.pColorAttachments = colorInfos.data();
+
+        if (hasDepth) {
+            renderInfo.pDepthAttachment = &depthInfo;
+            if (RenderFormatIsStencil(fb.depthAttachment->desc.format)) {
+                renderInfo.pStencilAttachment = &depthInfo;
+            }
+        }
+
+        vkCmdBeginRenderingKHR(vk, &renderInfo);
+        isRendering = true;
     }
 
     void VulkanCommandList::endActiveRenderPass() {
-        if (activeRenderPass != VK_NULL_HANDLE) {
-            vkCmdEndRenderPass(vk);
-            activeRenderPass = VK_NULL_HANDLE;
+        if (isRendering) {
+            vkCmdEndRenderingKHR(vk);
+            isRendering = false;
         }
     }
 
@@ -3889,6 +3765,11 @@ namespace plume {
             featuresChain = &accelerationStructureFeatures;
         }
 
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures = {};
+        dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+        dynamicRenderingFeatures.pNext = featuresChain;
+        featuresChain = &dynamicRenderingFeatures;
+
         VkPhysicalDeviceFeatures2 deviceFeatures = {};
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         deviceFeatures.pNext = featuresChain;
@@ -3935,6 +3816,11 @@ namespace plume {
         if (scalarBlockLayoutSupported) {
             layoutFeatures.pNext = createDeviceChain;
             createDeviceChain = &layoutFeatures;
+        }
+
+        if (dynamicRenderingFeatures.dynamicRendering) {
+            dynamicRenderingFeatures.pNext = createDeviceChain;
+            createDeviceChain = &dynamicRenderingFeatures;
         }
 
         const bool presentWaitSupported = presentIdFeatures.presentId && presentWaitFeatures.presentWait;
@@ -4210,7 +4096,7 @@ namespace plume {
     }
 
     std::unique_ptr<RenderFramebuffer> VulkanDevice::createFramebuffer(const RenderFramebufferDesc &desc) {
-        return std::make_unique<VulkanFramebuffer>(this, desc);
+        return std::make_unique<VulkanFramebuffer>(desc);
     }
 
     std::unique_ptr<RenderQueryPool> VulkanDevice::createQueryPool(uint32_t queryCount) {
