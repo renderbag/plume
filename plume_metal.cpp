@@ -1327,6 +1327,7 @@ namespace plume {
 
         if (error != nullptr) {
             fprintf(stderr, "MTLDevice newLibraryWithSource: failed with error %s.\n", error->localizedDescription()->utf8String());
+            error->release();
             return;
         }
     }
@@ -1361,6 +1362,7 @@ namespace plume {
 
         if (error != nullptr) {
             fprintf(stderr, "MTLLibrary newFunction: failed with error: %s.\n", error->localizedDescription()->utf8String());
+            error->release();
             return nullptr;
         }
 
@@ -1434,6 +1436,7 @@ namespace plume {
 
         if (error != nullptr) {
             fprintf(stderr, "MTLDevice newComputePipelineStateWithDescriptor: failed with error %s.\n", error->localizedDescription()->utf8String());
+            error->release();
             return;
         }
 
@@ -1587,6 +1590,7 @@ namespace plume {
 
         if (error != nullptr) {
             fprintf(stderr, "MTLDevice newRenderPipelineState: failed with error %s.\n", error->localizedDescription()->utf8String());
+            error->release();
             return;
         }
 
@@ -1930,6 +1934,13 @@ namespace plume {
     }
 
     MetalSwapChain::~MetalSwapChain() {
+        // Release all retained drawables
+        for (auto& drawable : drawables) {
+            if (drawable.mtl) {
+                drawable.mtl->release();
+                drawable.mtl = nullptr;
+            }
+        }
     }
 
     bool MetalSwapChain::present(const uint32_t textureIndex, RenderCommandSemaphore **waitSemaphores, const uint32_t waitSemaphoreCount) {
@@ -3685,6 +3696,8 @@ namespace plume {
         assert(commandLists != nullptr);
         assert(commandListCount > 0);
 
+        NS::AutoreleasePool *releasePool = NS::AutoreleasePool::alloc()->init();
+
         // Create a new command buffer to encode the wait semaphores into
         MTL::CommandBuffer* cmdBuffer = mtl->commandBufferWithUnretainedReferences();
         cmdBuffer->setLabel(MTLSTR("Wait Command Buffer"));
@@ -3725,6 +3738,8 @@ namespace plume {
 
         MetalCommandList *mutableCommandList = const_cast<MetalCommandList*>(interfaceCommandList);
         mutableCommandList->commit();
+
+        releasePool->release();
     }
 
     void MetalCommandQueue::waitForCommandFence(RenderCommandFence *fence) {
@@ -3858,6 +3873,9 @@ namespace plume {
         clearVertexFunction->release();
         clearColorFunction->release();
         clearDepthFunction->release();
+        clearDepthState->release();
+        clearDepthStencilState->release();
+        clearStencilState->release();
         sharedBlitDescriptor->release();
 
         if (gpuAddressableResidencySet != nullptr) {
@@ -4084,6 +4102,7 @@ namespace plume {
         MTL::Library *clearShaderLibrary = mtl->newLibrary(NS::String::string(clear_shader, NS::UTF8StringEncoding), nullptr, &error);
         if (error != nullptr) {
             fprintf(stderr, "Error: %s\n", error->localizedDescription()->utf8String());
+            error->release();
         }
         assert(clearShaderLibrary != nullptr && "Failed to create clear color library");
 
@@ -4147,11 +4166,12 @@ namespace plume {
         releasePool->release();
 
         // Fill device names.
-        const NS::Array* devices = MTL::CopyAllDevices();
+        NS::Array* devices = MTL::CopyAllDevices();
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
             deviceNames.push_back(std::string(deviceName->utf8String()));
         }
+        devices->release();
     }
 
     MetalInterface::~MetalInterface() {}
