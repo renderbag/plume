@@ -465,7 +465,7 @@ namespace plume {
         }
     }
 
-    static D3D12_HEAP_TYPE toD3D12(RenderHeapType type) {
+    static D3D12_HEAP_TYPE toD3D12(RenderHeapType type, bool gpuUploadHeapFallback) {
         switch (type) {
         case RenderHeapType::DEFAULT:
             return D3D12_HEAP_TYPE_DEFAULT;
@@ -474,6 +474,9 @@ namespace plume {
         case RenderHeapType::READBACK:
             return D3D12_HEAP_TYPE_READBACK;
         case RenderHeapType::GPU_UPLOAD:
+            if (gpuUploadHeapFallback) {
+                return D3D12_HEAP_TYPE_UPLOAD;
+            }
             return D3D12_HEAP_TYPE_GPU_UPLOAD;
         default:
             assert(false && "Unknown heap type.");
@@ -2757,7 +2760,7 @@ namespace plume {
 
         D3D12MA::ALLOCATION_DESC allocationDesc = {};
         allocationDesc.Flags = desc.committed ? D3D12MA::ALLOCATION_FLAG_COMMITTED : D3D12MA::ALLOCATION_FLAG_NONE;
-        allocationDesc.HeapType = toD3D12(desc.heapType);
+        allocationDesc.HeapType = toD3D12(desc.heapType, device->gpuUploadHeapFallback);
         allocationDesc.CustomPool = (pool != nullptr) ? pool->d3d : nullptr;
 
         HRESULT res = device->allocator->CreateResource(&allocationDesc, &resourceDesc, resourceStates, nullptr, &allocation, IID_PPV_ARGS(&d3d));
@@ -2931,7 +2934,7 @@ namespace plume {
             poolDesc.HeapProperties = device->d3d->GetCustomHeapProperties(0, D3D12_HEAP_TYPE_UPLOAD);
         }
         else {
-            poolDesc.HeapProperties.Type = toD3D12(desc.heapType);
+            poolDesc.HeapProperties.Type = toD3D12(desc.heapType, gpuUploadHeapFallback);
         }
 
         poolDesc.MinBlockCount = desc.minBlockCount;
