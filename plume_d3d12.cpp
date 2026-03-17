@@ -474,10 +474,7 @@ namespace plume {
         case RenderHeapType::READBACK:
             return D3D12_HEAP_TYPE_READBACK;
         case RenderHeapType::GPU_UPLOAD:
-            if (gpuUploadHeapFallback) {
-                return D3D12_HEAP_TYPE_UPLOAD;
-            }
-            return D3D12_HEAP_TYPE_GPU_UPLOAD;
+            return gpuUploadHeapFallback ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_GPU_UPLOAD;
         default:
             assert(false && "Unknown heap type.");
             return D3D12_HEAP_TYPE_DEFAULT;
