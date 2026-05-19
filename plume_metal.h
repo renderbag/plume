@@ -732,7 +732,7 @@ namespace plume {
         std::mutex gpuAddressableResourcesMutex;
 
         // Counter sets for query pools
-        const MTL::CounterSet* timestampCounterSet = nullptr;
+        MTL::CounterSet* timestampCounterSet = nullptr;
 
         explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
         ~MetalDevice() override;
@@ -763,7 +763,7 @@ namespace plume {
         bool beginCapture() override;
         bool endCapture() override;
 
-        const MTL::CounterSet* findTimestampCounterSet() const;
+        MTL::CounterSet* findTimestampCounterSet() const;
 
         // Shader libraries and pipeline states used for emulated operations
         void createResolvePipelineState();
