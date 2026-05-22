@@ -1196,8 +1196,6 @@ namespace plume {
         // Create texture with configured descriptor and alignment
         MTL::TextureDescriptor *descriptor = MTL::TextureDescriptor::textureBufferDescriptor(pixelFormat, width, options, usage);
         this->texture = buffer->mtl->newTexture(descriptor, 0, bytesPerRow);
-
-        descriptor->release();
     }
 
     MetalBufferFormattedView::~MetalBufferFormattedView() {
