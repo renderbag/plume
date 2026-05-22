@@ -3554,6 +3554,7 @@ namespace plume {
         if (activeBlitEncoder == nullptr) {
             activeBlitEncoder = mtl->blitCommandEncoder(device->sharedBlitDescriptor);
             activeBlitEncoder->setLabel(MTLSTR("Copy Blit Encoder"));
+            activeBlitEncoder->retain();
 
             startedEncoding = true;
 
