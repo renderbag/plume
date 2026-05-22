@@ -2238,7 +2238,9 @@ namespace plume {
     }
 
     MetalCommandList::~MetalCommandList() {
-        mtl->release();
+        if (mtl != nullptr) {
+            mtl->release();
+        }
 
         for (auto& fenceSet : fences) {
             for (auto* fence : fenceSet) {
@@ -2253,6 +2255,7 @@ namespace plume {
         assert(mtl == nullptr);
         startedEncoding = false;
         mtl = queue->mtl->commandBufferWithUnretainedReferences();
+        mtl->retain();
         mtl->setLabel(MTLSTR("RT64 Command List"));
 
         // Reset fence waits and updates for new command list.
