@@ -216,9 +216,6 @@ namespace plume {
         std::vector<Descriptor> descriptors;
         MetalArgumentBuffer argumentBuffer;
         std::vector<ResourceEntry> resourceEntries;
-        MTL::ResidencySet* residencySet = nullptr;
-        std::mutex residencySetWriteMutex;
-        bool needsCommit = false;
 
         MetalDescriptorSet(MetalDevice *device, const RenderDescriptorSetDesc &desc);
         MetalDescriptorSet(MetalDevice *device, uint32_t entryCount);
@@ -229,7 +226,6 @@ namespace plume {
         void setAccelerationStructure(uint32_t descriptorIndex, const RenderAccelerationStructure *accelerationStructure) override;
         void setDescriptor(uint32_t descriptorIndex, const Descriptor *descriptor);
         void bindImmutableSamplers() const;
-        void commit();
         RenderDescriptorRangeType getDescriptorType(uint32_t binding) const;
     };
 
@@ -559,6 +555,7 @@ namespace plume {
         MetalDevice *device = nullptr;
         RenderBufferDesc desc;
         RenderBarrierStages barrierStages = RenderBarrierStage::NONE;
+        bool addressable = false;
 
         MetalBuffer() = default;
         MetalBuffer(MetalDevice *device, MetalPool *pool, const RenderBufferDesc &desc);
@@ -589,13 +586,14 @@ namespace plume {
     };
 
     struct MetalTexture : ExtendedRenderTexture {
+        MetalDevice *device = nullptr;
         MTL::Texture *mtl = nullptr;
         RenderTextureLayout layout = RenderTextureLayout::UNKNOWN;
         MetalPool *pool = nullptr;
         MTL::Drawable *drawable = nullptr;
 
         MetalTexture() = default;
-        MetalTexture(const MetalDevice *device, MetalPool *pool, const RenderTextureDesc &desc);
+        MetalTexture(MetalDevice *device, MetalPool *pool, const RenderTextureDesc &desc);
         ~MetalTexture() override;
         std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const override;
         void setName(const std::string &name) override;
@@ -691,7 +689,7 @@ namespace plume {
 
         MetalPipelineLayout(MetalDevice *device, const RenderPipelineLayoutDesc &desc);
         ~MetalPipelineLayout() override;
-        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets, MTL::CommandBuffer* commandBuffer) const;
+        void bindDescriptorSets(MTL::CommandEncoder* encoder, const MetalDescriptorSet* const* descriptorSets, uint32_t descriptorSetCount, bool isCompute, uint32_t startIndex, std::unordered_set<MetalDescriptorSet*>& encoderDescriptorSets, bool usingResidencySets) const;
     };
 
     struct MetalDevice : RenderDevice {
@@ -699,7 +697,6 @@ namespace plume {
         MetalInterface *renderInterface = nullptr;
         RenderDeviceCapabilities capabilities;
         RenderDeviceDescription description;
-        bool supportsResidencySets;
         bool useArgumentBuffersTier2 = false;
         bool useDirectBufferAddresses = false;
 
@@ -724,10 +721,10 @@ namespace plume {
         // Placeholder null buffer
         std::unique_ptr<RenderBuffer> nullBuffer;
 
-        // GPU-addressable resources
+        // Resource residency management
         std::vector<MTL::Resource*> gpuAddressableResources;
-        MTL::ResidencySet* gpuAddressableResidencySet = nullptr;
-        std::mutex gpuAddressableResourcesMutex;
+        MTL::ResidencySet* residencySet = nullptr;
+        std::mutex resourcesMutex;
 
         // Counter sets for query pools
         MTL::CounterSet* timestampCounterSet = nullptr;
@@ -768,6 +765,9 @@ namespace plume {
         void createClearShaderLibrary();
 
         MTL::RenderPipelineState* getOrCreateClearRenderPipelineState(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled = false, bool stencilWriteEnabled = false);
+
+        void addResource(MTL::Resource *resource, bool addressable = false);
+        void removeResource(MTL::Resource *resource, bool addressable = false);
     };
 
     struct MetalInterface : RenderInterface {
