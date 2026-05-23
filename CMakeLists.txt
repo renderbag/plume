@@ -54,6 +54,8 @@ message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 set(PLUME_SOURCES
     plume_vulkan.cpp
     plume_vulkan.h
+    plume_c.cpp
+    plume_c.h
 )
 
 # Platform-specific files

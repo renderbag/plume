@@ -265,4 +265,6 @@ namespace plume {
     extern void TestShutdown();
 };
 
+#ifdef __cplusplus
 #include "plume_render_interface_builders.h"
+#endif

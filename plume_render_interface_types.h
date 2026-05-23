@@ -107,6 +107,7 @@ typedef struct RenderDeviceDescription RenderDeviceDescription;
 typedef struct RenderDeviceCapabilities RenderDeviceCapabilities;
 typedef struct RenderWindow RenderWindow;
 typedef struct RenderInterfaceCapabilities RenderInterfaceCapabilities;
+typedef struct RenderBufferFormattedView RenderBufferFormattedView;
 #endif
 
 #ifdef __cplusplus
