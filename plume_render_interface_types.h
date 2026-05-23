@@ -7,13 +7,18 @@
 
 #pragma once
 
-#include <cassert>
+#include <assert.h>
+#include <float.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
-#include <cfloat>
-#include <cstdint>
+#else
+#include <stdbool.h>
+#endif
 
 #if defined(_WIN64)
 #include <Windows.h>
@@ -33,7 +38,80 @@
 #include <SDL_vulkan.h>
 #endif
 
+#ifdef __cplusplus
+#define PLUME_ENUM_BEGIN(NAME) enum class NAME {
+#define PLUME_ENUM_END(NAME) };
+#define PLUME_ENUM_VALUE(NAME, VAL) VAL
+#define PLUME_DEFAULT(value) = value
+#else
+#define PLUME_ENUM_BEGIN(NAME) typedef enum {
+#define PLUME_ENUM_END(NAME) } NAME;
+#define PLUME_ENUM_VALUE(NAME, VAL) NAME##_##VAL
+#define PLUME_DEFAULT(value)
+#endif
+
+#ifndef __cplusplus
+typedef struct RenderColor RenderColor;
+typedef struct RenderAffineTransform RenderAffineTransform;
+typedef struct RenderDepth RenderDepth;
+typedef struct RenderMultisamplingLocation RenderMultisamplingLocation;
+typedef struct RenderMultisampling RenderMultisampling;
+typedef struct RenderBufferReference RenderBufferReference;
+typedef struct RenderBufferBarrier RenderBufferBarrier;
+typedef struct RenderBufferStructuredView RenderBufferStructuredView;
+typedef struct RenderTextureBarrier RenderTextureBarrier;
+typedef struct RenderClearValue RenderClearValue;
+typedef struct RenderBufferDesc RenderBufferDesc;
+typedef struct RenderTextureDesc RenderTextureDesc;
+typedef struct RenderComponentMapping RenderComponentMapping;
+typedef struct RenderTextureViewDesc RenderTextureViewDesc;
+typedef struct RenderAccelerationStructureDesc RenderAccelerationStructureDesc;
+typedef struct RenderTextureCopyLocation RenderTextureCopyLocation;
+typedef struct RenderPoolDesc RenderPoolDesc;
+typedef struct RenderSwapChainDesc RenderSwapChainDesc;
+typedef struct RenderInputSlot RenderInputSlot;
+typedef struct RenderInputElement RenderInputElement;
+typedef struct RenderBlendDesc RenderBlendDesc;
+typedef struct RenderStencilFaceDesc RenderStencilFaceDesc;
+typedef struct RenderSpecConstant RenderSpecConstant;
+typedef struct RenderComputePipelineDesc RenderComputePipelineDesc;
+typedef struct RenderGraphicsPipelineDesc RenderGraphicsPipelineDesc;
+typedef struct RenderRaytracingPipelineLibrarySymbol RenderRaytracingPipelineLibrarySymbol;
+typedef struct RenderRaytracingPipelineLibrary RenderRaytracingPipelineLibrary;
+typedef struct RenderRaytracingPipelineHitGroup RenderRaytracingPipelineHitGroup;
+typedef struct RenderRaytracingPipelineDesc RenderRaytracingPipelineDesc;
+typedef struct RenderPipelineProgram RenderPipelineProgram;
+typedef struct RenderSamplerDesc RenderSamplerDesc;
+typedef struct RenderDescriptorRange RenderDescriptorRange;
+typedef struct RenderDescriptorSetDesc RenderDescriptorSetDesc;
+typedef struct RenderPushConstantRange RenderPushConstantRange;
+typedef struct RenderRootDescriptorDesc RenderRootDescriptorDesc;
+typedef struct RenderPipelineLayoutDesc RenderPipelineLayoutDesc;
+typedef struct RenderIndexBufferView RenderIndexBufferView;
+typedef struct RenderVertexBufferView RenderVertexBufferView;
+typedef struct RenderViewport RenderViewport;
+typedef struct RenderRect RenderRect;
+typedef struct RenderBox RenderBox;
+typedef struct RenderRange RenderRange;
+typedef struct RenderFramebufferDesc RenderFramebufferDesc;
+typedef struct RenderBottomLevelASMesh RenderBottomLevelASMesh;
+typedef struct RenderBottomLevelASBuildInfo RenderBottomLevelASBuildInfo;
+typedef struct RenderTopLevelASInstance RenderTopLevelASInstance;
+typedef struct RenderTopLevelASBuildInfo RenderTopLevelASBuildInfo;
+typedef struct RenderShaderBindingGroup RenderShaderBindingGroup;
+typedef struct RenderShaderBindingGroups RenderShaderBindingGroups;
+typedef struct RenderShaderBindingGroupInfo RenderShaderBindingGroupInfo;
+typedef struct RenderShaderBindingGroupsInfo RenderShaderBindingGroupsInfo;
+typedef struct RenderShaderBindingTableInfo RenderShaderBindingTableInfo;
+typedef struct RenderDeviceDescription RenderDeviceDescription;
+typedef struct RenderDeviceCapabilities RenderDeviceCapabilities;
+typedef struct RenderWindow RenderWindow;
+typedef struct RenderInterfaceCapabilities RenderInterfaceCapabilities;
+#endif
+
+#ifdef __cplusplus
 namespace plume {
+#endif
 #if defined(_WIN64)
     // Native HWND handle to the target window.
     typedef HWND RenderWindow;
@@ -45,229 +123,383 @@ namespace plume {
     struct RenderWindow {
         Display* display;
         Window window;
+
+    #ifdef __cplusplus
         bool operator==(const struct RenderWindow& rhs) const {
             return display == rhs.display && window == rhs.window;
         }
         bool operator!=(const struct RenderWindow& rhs) const { return !(*this == rhs); }
+    #endif
     };
 #elif defined(__APPLE__)
     struct RenderWindow {
         void* window;
         void* view;
 
+    #ifdef __cplusplus
         bool operator==(const struct RenderWindow& rhs) const {
             return window == rhs.window && view == rhs.view;
         }
         bool operator!=(const struct RenderWindow& rhs) const { return !(*this == rhs); }
+    #endif
     };
 #else
     static_assert(false, "RenderWindow was not defined for this platform.");
 #endif
 
-    struct RenderBuffer;
-    struct RenderDescriptorSet;
-    struct RenderPipeline;
-    struct RenderPipelineLayout;
-    struct RenderSampler;
-    struct RenderShader;
-    struct RenderTexture;
-    struct RenderTextureView;
-    struct RenderQueryPool;
+    typedef struct RenderBuffer RenderBuffer;
+    typedef struct RenderDescriptorSet RenderDescriptorSet;
+    typedef struct RenderPipeline RenderPipeline;
+    typedef struct RenderPipelineLayout RenderPipelineLayout;
+    typedef struct RenderSampler RenderSampler;
+    typedef struct RenderShader RenderShader;
+    typedef struct RenderTexture RenderTexture;
+    typedef struct RenderTextureView RenderTextureView;
+    typedef struct RenderQueryPool RenderQueryPool;
 
     // Enums.
 
-    enum class RenderDeviceVendor {
-        UNKNOWN = 0x0,
-        AMD = 0x1002,
-        NVIDIA = 0x10DE,
-        INTEL = 0x8086,
-        APPLE = 0x106B,
-    };
-    
-    enum class RenderFormat {
-        UNKNOWN,
-        R32G32B32A32_TYPELESS,
-        R32G32B32A32_FLOAT,
-        R32G32B32A32_UINT,
-        R32G32B32A32_SINT,
-        R32G32B32_TYPELESS,
-        R32G32B32_FLOAT,
-        R32G32B32_UINT,
-        R32G32B32_SINT,
-        R16G16B16A16_TYPELESS,
-        R16G16B16A16_FLOAT,
-        R16G16B16A16_UNORM,
-        R16G16B16A16_UINT,
-        R16G16B16A16_SNORM,
-        R16G16B16A16_SINT,
-        R32G32_TYPELESS,
-        R32G32_FLOAT,
-        R32G32_UINT,
-        R32G32_SINT,
-        R8G8B8A8_TYPELESS,
-        R8G8B8A8_UNORM,
-        R8G8B8A8_UINT,
-        R8G8B8A8_SNORM,
-        R8G8B8A8_SINT,
-        B8G8R8A8_UNORM,
-        R16G16_TYPELESS,
-        R16G16_FLOAT,
-        R16G16_UNORM,
-        R16G16_UINT,
-        R16G16_SNORM,
-        R16G16_SINT,
-        R32_TYPELESS,
-        D32_FLOAT,
-        D32_FLOAT_S8_UINT,
-        R32_FLOAT,
-        R32_UINT,
-        R32_SINT,
-        R8G8_TYPELESS,
-        R8G8_UNORM,
-        R8G8_UINT,
-        R8G8_SNORM,
-        R8G8_SINT,
-        R16_TYPELESS,
-        R16_FLOAT,
-        D16_UNORM,
-        R16_UNORM,
-        R16_UINT,
-        R16_SNORM,
-        R16_SINT,
-        R8_TYPELESS,
-        R8_UNORM,
-        R8_UINT,
-        R8_SNORM,
-        R8_SINT,
-        BC1_TYPELESS,
-        BC1_UNORM,
-        BC1_UNORM_SRGB,
-        BC2_TYPELESS,
-        BC2_UNORM,
-        BC2_UNORM_SRGB,
-        BC3_TYPELESS,
-        BC3_UNORM,
-        BC3_UNORM_SRGB,
-        BC4_TYPELESS,
-        BC4_UNORM,
-        BC4_SNORM,
-        BC5_TYPELESS,
-        BC5_UNORM,
-        BC5_SNORM,
-        BC6H_TYPELESS,
-        BC6H_UF16,
-        BC6H_SF16,
-        BC7_TYPELESS,
-        BC7_UNORM,
-        BC7_UNORM_SRGB,
-        MAX
-    };
+    PLUME_ENUM_BEGIN(RenderDeviceVendor)
+        PLUME_ENUM_VALUE(RenderDeviceVencor, UNKNOWN) = 0x0,
+        PLUME_ENUM_VALUE(RenderDeviceVencor, AMD) = 0x1002,
+        PLUME_ENUM_VALUE(RenderDeviceVencor, NVIDIA) = 0x10DE,
+        PLUME_ENUM_VALUE(RenderDeviceVencor, INTEL) = 0x8086,
+        PLUME_ENUM_VALUE(RenderDeviceVencor, APPLE) = 0x106B,
+    PLUME_ENUM_END(RenderDeviceVendor)
 
-    enum class RenderTextureDimension {
-        UNKNOWN,
-        TEXTURE_1D,
-        TEXTURE_2D,
-        TEXTURE_3D
-    };
+    PLUME_ENUM_BEGIN(RenderFormat)
+        PLUME_ENUM_VALUE(RenderFormat, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32A32_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32A32_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32A32_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32A32_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32B32_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16B16A16_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32G32_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8B8A8_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8B8A8_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8B8A8_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8B8A8_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8B8A8_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, B8G8R8A8_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16G16_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, D32_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, D32_FLOAT_S8_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, R32_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R32_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8G8_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R16_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R16_FLOAT),
+        PLUME_ENUM_VALUE(RenderFormat, D16_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R16_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R16_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, R8_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8_UINT),
+        PLUME_ENUM_VALUE(RenderFormat, R8_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, R8_SINT),
+        PLUME_ENUM_VALUE(RenderFormat, BC1_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC1_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC1_UNORM_SRGB),
+        PLUME_ENUM_VALUE(RenderFormat, BC2_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC2_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC2_UNORM_SRGB),
+        PLUME_ENUM_VALUE(RenderFormat, BC3_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC3_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC3_UNORM_SRGB),
+        PLUME_ENUM_VALUE(RenderFormat, BC4_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC4_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC4_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC5_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC5_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC5_SNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC6H_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC6H_UF16),
+        PLUME_ENUM_VALUE(RenderFormat, BC6H_SF16),
+        PLUME_ENUM_VALUE(RenderFormat, BC7_TYPELESS),
+        PLUME_ENUM_VALUE(RenderFormat, BC7_UNORM),
+        PLUME_ENUM_VALUE(RenderFormat, BC7_UNORM_SRGB),
+        PLUME_ENUM_VALUE(RenderFormat, MAX)
+    PLUME_ENUM_END(RenderFormat)
 
-    enum class RenderTextureViewDimension {
-        UNKNOWN,
-        TEXTURE_1D,
-        TEXTURE_2D,
-        TEXTURE_3D,
-        TEXTURE_CUBE
-    };
+    PLUME_ENUM_BEGIN(RenderTextureDimension)
+        PLUME_ENUM_VALUE(RenderTextureDimension, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureDimension, TEXTURE_1D),
+        PLUME_ENUM_VALUE(RenderTextureDimension, TEXTURE_2D),
+        PLUME_ENUM_VALUE(RenderTextureDimension, TEXTURE_3D)
+    PLUME_ENUM_END(RenderTextureDimension)
 
-    enum class RenderCommandListType {
-        UNKNOWN,
-        DIRECT,
-        COMPUTE,
-        COPY
-    };
+    PLUME_ENUM_BEGIN(RenderTextureViewDimension)
+        PLUME_ENUM_VALUE(RenderTextureViewDimension, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureViewDimension, TEXTURE_1D),
+        PLUME_ENUM_VALUE(RenderTextureViewDimension, TEXTURE_2D),
+        PLUME_ENUM_VALUE(RenderTextureViewDimension, TEXTURE_3D),
+        PLUME_ENUM_VALUE(RenderTextureViewDimension, TEXTURE_CUBE)
+    PLUME_ENUM_END(RenderTextureViewDimension)
 
-    enum class RenderPrimitiveTopology {
-        UNKNOWN,
-        POINT_LIST,
-        LINE_LIST,
-        LINE_STRIP,
-        TRIANGLE_LIST,
-        TRIANGLE_STRIP,
-        TRIANGLE_FAN
-    };
+    PLUME_ENUM_BEGIN(RenderCommandListType)
+        PLUME_ENUM_VALUE(RenderCommandListType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderCommandListType, DIRECT),
+        PLUME_ENUM_VALUE(RenderCommandListType, COMPUTE),
+        PLUME_ENUM_VALUE(RenderCommandListType, COPY)
+    PLUME_ENUM_END(RenderCommandListType)
 
-    enum class RenderCullMode {
-        UNKNOWN,
-        NONE,
-        FRONT,
-        BACK
-    };
+    PLUME_ENUM_BEGIN(RenderPrimitiveTopology)
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, POINT_LIST),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, LINE_LIST),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, LINE_STRIP),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, TRIANGLE_LIST),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, TRIANGLE_STRIP),
+        PLUME_ENUM_VALUE(RenderPrimitiveTopology, TRIANGLE_FAN)
+    PLUME_ENUM_END(RenderPrimitiveTopology)
 
-    enum class RenderFrontFace {
-        UNKNOWN,
-        CLOCKWISE,
-        COUNTER_CLOCKWISE
-    };
+    PLUME_ENUM_BEGIN(RenderCullMode)
+        PLUME_ENUM_VALUE(RenderCullMode, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderCullMode, NONE),
+        PLUME_ENUM_VALUE(RenderCullMode, FRONT),
+        PLUME_ENUM_VALUE(RenderCullMode, BACK)
+    PLUME_ENUM_END(RenderCullMode)
 
-    enum class RenderComparisonFunction {
-        UNKNOWN,
-        NEVER,
-        LESS,
-        EQUAL,
-        LESS_EQUAL,
-        GREATER,
-        NOT_EQUAL,
-        GREATER_EQUAL,
-        ALWAYS
-    };
+    PLUME_ENUM_BEGIN(RenderFrontFace)
+        PLUME_ENUM_VALUE(RenderFrontFace, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderFrontFace, CLOCKWISE),
+        PLUME_ENUM_VALUE(RenderFrontFace, COUNTER_CLOCKWISE)
+    PLUME_ENUM_END(RenderFrontFace)
 
-    enum class RenderStencilOp {
-        UNKNOWN,
-        KEEP,
-        ZERO,
-        REPLACE,
-        INCREMENT_AND_CLAMP,
-        DECREMENT_AND_CLAMP,
-        INVERT,
-        INCREMENT_AND_WRAP,
-        DECREMENT_AND_WRAP
-    };
+    PLUME_ENUM_BEGIN(RenderComparisonFunction)
+        PLUME_ENUM_VALUE(RenderComparisonFunction, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, NEVER),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, LESS),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, EQUAL),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, LESS_EQUAL),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, GREATER),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, NOT_EQUAL),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, GREATER_EQUAL),
+        PLUME_ENUM_VALUE(RenderComparisonFunction, ALWAYS)
+    PLUME_ENUM_END(RenderComparisonFunction)
 
-    enum class RenderInputSlotClassification {
-        UNKNOWN,
-        PER_VERTEX_DATA,
-        PER_INSTANCE_DATA
-    };
+    PLUME_ENUM_BEGIN(RenderStencilOp)
+        PLUME_ENUM_VALUE(RenderStencilOp, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderStencilOp, KEEP),
+        PLUME_ENUM_VALUE(RenderStencilOp, ZERO),
+        PLUME_ENUM_VALUE(RenderStencilOp, REPLACE),
+        PLUME_ENUM_VALUE(RenderStencilOp, INCREMENT_AND_CLAMP),
+        PLUME_ENUM_VALUE(RenderStencilOp, DECREMENT_AND_CLAMP),
+        PLUME_ENUM_VALUE(RenderStencilOp, INVERT),
+        PLUME_ENUM_VALUE(RenderStencilOp, INCREMENT_AND_WRAP),
+        PLUME_ENUM_VALUE(RenderStencilOp, DECREMENT_AND_WRAP)
+    PLUME_ENUM_END(RenderStencilOp)
 
-    enum class RenderBlend {
-        UNKNOWN,
-        ZERO,
-        ONE,
-        SRC_COLOR,
-        INV_SRC_COLOR,
-        SRC_ALPHA,
-        INV_SRC_ALPHA,
-        DEST_ALPHA,
-        INV_DEST_ALPHA,
-        DEST_COLOR,
-        INV_DEST_COLOR,
-        SRC_ALPHA_SAT,
-        BLEND_FACTOR,
-        INV_BLEND_FACTOR,
-        SRC1_COLOR,
-        INV_SRC1_COLOR,
-        SRC1_ALPHA,
-        INV_SRC1_ALPHA
-    };
+    PLUME_ENUM_BEGIN(RenderInputSlotClassification)
+        PLUME_ENUM_VALUE(RenderInputSlotClassification, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderInputSlotClassification, PER_VERTEX_DATA),
+        PLUME_ENUM_VALUE(RenderInputSlotClassification, PER_INSTANCE_DATA)
+    PLUME_ENUM_END(RenderInputSlotClassification)
 
-    enum class RenderBlendOperation {
-        UNKNOWN,
-        ADD,
-        SUBTRACT,
-        REV_SUBTRACT,
-        MIN,
-        MAX
-    };
+    PLUME_ENUM_BEGIN(RenderBlend)
+        PLUME_ENUM_VALUE(RenderBlend, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderBlend, ZERO),
+        PLUME_ENUM_VALUE(RenderBlend, ONE),
+        PLUME_ENUM_VALUE(RenderBlend, SRC_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, INV_SRC_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, SRC_ALPHA),
+        PLUME_ENUM_VALUE(RenderBlend, INV_SRC_ALPHA),
+        PLUME_ENUM_VALUE(RenderBlend, DEST_ALPHA),
+        PLUME_ENUM_VALUE(RenderBlend, INV_DEST_ALPHA),
+        PLUME_ENUM_VALUE(RenderBlend, DEST_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, INV_DEST_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, SRC_ALPHA_SAT),
+        PLUME_ENUM_VALUE(RenderBlend, BLEND_FACTOR),
+        PLUME_ENUM_VALUE(RenderBlend, INV_BLEND_FACTOR),
+        PLUME_ENUM_VALUE(RenderBlend, SRC1_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, INV_SRC1_COLOR),
+        PLUME_ENUM_VALUE(RenderBlend, SRC1_ALPHA),
+        PLUME_ENUM_VALUE(RenderBlend, INV_SRC1_ALPHA)
+    PLUME_ENUM_END(RenderBlend)
 
+    PLUME_ENUM_BEGIN(RenderBlendOperation)
+        PLUME_ENUM_VALUE(RenderBlendOperation, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderBlendOperation, ADD),
+        PLUME_ENUM_VALUE(RenderBlendOperation, SUBTRACT),
+        PLUME_ENUM_VALUE(RenderBlendOperation, REV_SUBTRACT),
+        PLUME_ENUM_VALUE(RenderBlendOperation, MIN),
+        PLUME_ENUM_VALUE(RenderBlendOperation, MAX)
+    PLUME_ENUM_END(RenderBlendOperation)
+
+    PLUME_ENUM_BEGIN(RenderLogicOperation)
+        PLUME_ENUM_VALUE(RenderLogicOperation, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderLogicOperation, CLEAR),
+        PLUME_ENUM_VALUE(RenderLogicOperation, SET),
+        PLUME_ENUM_VALUE(RenderLogicOperation, COPY),
+        PLUME_ENUM_VALUE(RenderLogicOperation, COPY_INVERTED),
+        PLUME_ENUM_VALUE(RenderLogicOperation, NOOP),
+        PLUME_ENUM_VALUE(RenderLogicOperation, INVERT),
+        PLUME_ENUM_VALUE(RenderLogicOperation, AND),
+        PLUME_ENUM_VALUE(RenderLogicOperation, NAND),
+        PLUME_ENUM_VALUE(RenderLogicOperation, OR),
+        PLUME_ENUM_VALUE(RenderLogicOperation, NOR),
+        PLUME_ENUM_VALUE(RenderLogicOperation, XOR),
+        PLUME_ENUM_VALUE(RenderLogicOperation, EQUIV),
+        PLUME_ENUM_VALUE(RenderLogicOperation, AND_REVERSE),
+        PLUME_ENUM_VALUE(RenderLogicOperation, AND_INVERTED),
+        PLUME_ENUM_VALUE(RenderLogicOperation, OR_REVERSE),
+        PLUME_ENUM_VALUE(RenderLogicOperation, OR_INVERTED)
+    PLUME_ENUM_END(RenderLogicOperation)
+
+    PLUME_ENUM_BEGIN(RenderFilter)
+        PLUME_ENUM_VALUE(RenderFilter, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderFilter, NEAREST),
+        PLUME_ENUM_VALUE(RenderFilter, LINEAR)
+    PLUME_ENUM_END(RenderFilter)
+
+    PLUME_ENUM_BEGIN(RenderMipmapMode)
+        PLUME_ENUM_VALUE(RenderMipmapMode, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderMipmapMode, NEAREST),
+        PLUME_ENUM_VALUE(RenderMipmapMode, LINEAR)
+    PLUME_ENUM_END(RenderMipmapMode)
+
+    PLUME_ENUM_BEGIN(RenderTextureAddressMode)
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, WRAP),
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, MIRROR),
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, CLAMP),
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, BORDER),
+        PLUME_ENUM_VALUE(RenderTextureAddressMode, MIRROR_ONCE)
+    PLUME_ENUM_END(RenderTextureAddressMode)
+
+    PLUME_ENUM_BEGIN(RenderBorderColor)
+        PLUME_ENUM_VALUE(RenderBorderColor, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderBorderColor, TRANSPARENT_BLACK),
+        PLUME_ENUM_VALUE(RenderBorderColor, OPAQUE_BLACK),
+        PLUME_ENUM_VALUE(RenderBorderColor, OPAQUE_WHITE)
+    PLUME_ENUM_END(RenderBorderColor)
+
+    PLUME_ENUM_BEGIN(RenderShaderVisibility)
+        PLUME_ENUM_VALUE(RenderShaderVisibility, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderShaderVisibility, ALL),
+        PLUME_ENUM_VALUE(RenderShaderVisibility, VERTEX),
+        PLUME_ENUM_VALUE(RenderShaderVisibility, GEOMETRY),
+        PLUME_ENUM_VALUE(RenderShaderVisibility, PIXEL)
+    PLUME_ENUM_END(RenderShaderVisibility)
+
+    PLUME_ENUM_BEGIN(RenderDescriptorRangeType)
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, CONSTANT_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, FORMATTED_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, READ_WRITE_FORMATTED_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, TEXTURE),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, READ_WRITE_TEXTURE),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, SAMPLER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, STRUCTURED_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, READ_WRITE_STRUCTURED_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, BYTE_ADDRESS_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, READ_WRITE_BYTE_ADDRESS_BUFFER),
+        PLUME_ENUM_VALUE(RenderDescriptorRangeType, ACCELERATION_STRUCTURE)
+    PLUME_ENUM_END(RenderDescriptorRangeType)
+
+    PLUME_ENUM_BEGIN(RenderRootDescriptorType)
+        PLUME_ENUM_VALUE(RenderRootDescriptorType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderRootDescriptorType, CONSTANT_BUFFER),
+        PLUME_ENUM_VALUE(RenderRootDescriptorType, SHADER_RESOURCE),
+        PLUME_ENUM_VALUE(RenderRootDescriptorType, UNORDERED_ACCESS)
+    PLUME_ENUM_END(RenderRootDescriptorType)
+
+    PLUME_ENUM_BEGIN(RenderHeapType)
+        PLUME_ENUM_VALUE(RenderHeapType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderHeapType, DEFAULT),
+        PLUME_ENUM_VALUE(RenderHeapType, UPLOAD),
+        PLUME_ENUM_VALUE(RenderHeapType, READBACK),
+        PLUME_ENUM_VALUE(RenderHeapType, GPU_UPLOAD)
+    PLUME_ENUM_END(RenderHeapType)
+
+    PLUME_ENUM_BEGIN(RenderTextureArrangement)
+        PLUME_ENUM_VALUE(RenderTextureArrangement, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureArrangement, ROW_MAJOR)
+    PLUME_ENUM_END(RenderTextureArrangement)
+
+    PLUME_ENUM_BEGIN(RenderShaderFormat)
+        PLUME_ENUM_VALUE(RenderShaderFormat, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderShaderFormat, DXIL),
+        PLUME_ENUM_VALUE(RenderShaderFormat, SPIRV),
+        PLUME_ENUM_VALUE(RenderShaderFormat, METAL)
+    PLUME_ENUM_END(RenderShaderFormat)
+
+    PLUME_ENUM_BEGIN(RenderRaytracingPipelineLibrarySymbolType)
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, RAYGEN),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, MISS),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, CLOSEST_HIT),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, ANY_HIT),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, INTERSECTION),
+        PLUME_ENUM_VALUE(RenderRaytracingPipelineLibrarySymbolType, CALLABLE)
+    PLUME_ENUM_END(RenderRaytracingPipelineLibrarySymbolType)
+
+    PLUME_ENUM_BEGIN(RenderAccelerationStructureType)
+        PLUME_ENUM_VALUE(RenderAccelerationStructureType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderAccelerationStructureType, TOP_LEVEL),
+        PLUME_ENUM_VALUE(RenderAccelerationStructureType, BOTTOM_LEVEL)
+    PLUME_ENUM_END(RenderAccelerationStructureType)
+
+    PLUME_ENUM_BEGIN(RenderTextureLayout)
+        PLUME_ENUM_VALUE(RenderTextureLayout, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureLayout, GENERAL),
+        PLUME_ENUM_VALUE(RenderTextureLayout, SHADER_READ),
+        PLUME_ENUM_VALUE(RenderTextureLayout, COLOR_WRITE),
+        PLUME_ENUM_VALUE(RenderTextureLayout, DEPTH_WRITE),
+        PLUME_ENUM_VALUE(RenderTextureLayout, DEPTH_READ),
+        PLUME_ENUM_VALUE(RenderTextureLayout, COPY_SOURCE),
+        PLUME_ENUM_VALUE(RenderTextureLayout, COPY_DEST),
+        PLUME_ENUM_VALUE(RenderTextureLayout, RESOLVE_SOURCE),
+        PLUME_ENUM_VALUE(RenderTextureLayout, RESOLVE_DEST),
+        PLUME_ENUM_VALUE(RenderTextureLayout, PRESENT)
+    PLUME_ENUM_END(RenderTextureLayout)
+
+    PLUME_ENUM_BEGIN(RenderDeviceType)
+        PLUME_ENUM_VALUE(RenderDeviceType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderDeviceType, INTEGRATED),
+        PLUME_ENUM_VALUE(RenderDeviceType, DISCRETE),
+        PLUME_ENUM_VALUE(RenderDeviceType, VIRTUAL),
+        PLUME_ENUM_VALUE(RenderDeviceType, CPU)
+    PLUME_ENUM_END(RenderDeviceType)
+
+    PLUME_ENUM_BEGIN(RenderResolveMode)
+        PLUME_ENUM_VALUE(RenderResolveMode, MIN),
+        PLUME_ENUM_VALUE(RenderResolveMode, MAX),
+        PLUME_ENUM_VALUE(RenderResolveMode, AVERAGE)
+    PLUME_ENUM_END(RenderResolveMode)
+
+    PLUME_ENUM_BEGIN(RenderTextureCopyType)
+        PLUME_ENUM_VALUE(RenderTextureCopyType, UNKNOWN),
+        PLUME_ENUM_VALUE(RenderTextureCopyType, SUBRESOURCE),
+        PLUME_ENUM_VALUE(RenderTextureCopyType, PLACED_FOOTPRINT)
+    PLUME_ENUM_END(RenderTextureCopyType)
+
+    #ifdef __cplusplus
     enum class RenderColorWriteEnable : uint8_t {
         UNKNOWN = 0x0,
         RED = 0x1,
@@ -276,121 +508,41 @@ namespace plume {
         ALPHA = 0x8,
         ALL = RED | GREEN | BLUE | ALPHA
     };
+    #else
+    typedef enum {
+        RenderColorWriteEnable_UNKNOWN = 0x0,
+        RenderColorWriteEnable_RED = 0x1,
+        RenderColorWriteEnable_GREEN = 0x2,
+        RenderColorWriteEnable_BLUE = 0x4,
+        RenderColorWriteEnable_ALPHA = 0x8,
+        RenderColorWriteEnable_ALL = RenderColorWriteEnable_RED | RenderColorWriteEnable_GREEN | RenderColorWriteEnable_BLUE | RenderColorWriteEnable_ALPHA
+    } RenderColorWriteEnable;
+    #endif
 
-    enum class RenderLogicOperation {
-        UNKNOWN,
-        CLEAR,
-        SET,
-        COPY,
-        COPY_INVERTED,
-        NOOP,
-        INVERT,
-        AND,
-        NAND,
-        OR,
-        NOR,
-        XOR,
-        EQUIV,
-        AND_REVERSE,
-        AND_INVERTED,
-        OR_REVERSE,
-        OR_INVERTED
+    #ifdef __cplusplus
+    enum class RenderSwizzle : uint8_t
+    {
+        IDENTITY = 0,
+        ZERO = 1,
+        ONE = 2,
+        R = 3,
+        G = 4,
+        B = 5,
+        A = 6
     };
+    #else
+    typedef enum {
+        RenderSwizzle_IDENTITY = 0,
+        RenderSwizzle_ZERO = 1,
+        RenderSwizzle_ONE = 2,
+        RenderSwizzle_R = 3,
+        RenderSwizzle_G = 4,
+        RenderSwizzle_B = 5,
+        RenderSwizzle_A = 6
+    } RenderSwizzle;
+    #endif
 
-    enum class RenderFilter {
-        UNKNOWN,
-        NEAREST,
-        LINEAR
-    };
-
-    enum class RenderMipmapMode {
-        UNKNOWN,
-        NEAREST,
-        LINEAR
-    };
-
-    enum class RenderTextureAddressMode {
-        UNKNOWN,
-        WRAP,
-        MIRROR,
-        CLAMP,
-        BORDER,
-        MIRROR_ONCE
-    };
-
-    enum class RenderBorderColor {
-        UNKNOWN,
-        TRANSPARENT_BLACK,
-        OPAQUE_BLACK,
-        OPAQUE_WHITE
-    };
-
-    enum class RenderShaderVisibility {
-        UNKNOWN,
-        ALL,
-        VERTEX,
-        GEOMETRY,
-        PIXEL
-    };
-
-    enum class RenderDescriptorRangeType {
-        UNKNOWN,
-        CONSTANT_BUFFER,
-        FORMATTED_BUFFER,
-        READ_WRITE_FORMATTED_BUFFER,
-        TEXTURE,
-        READ_WRITE_TEXTURE,
-        SAMPLER,
-        STRUCTURED_BUFFER,
-        READ_WRITE_STRUCTURED_BUFFER,
-        BYTE_ADDRESS_BUFFER,
-        READ_WRITE_BYTE_ADDRESS_BUFFER,
-        ACCELERATION_STRUCTURE
-    };
-
-    enum class RenderRootDescriptorType {
-        UNKNOWN,
-        CONSTANT_BUFFER,
-        SHADER_RESOURCE,
-        UNORDERED_ACCESS
-    };
-
-    enum class RenderHeapType {
-        UNKNOWN,
-        DEFAULT,
-        UPLOAD,
-        READBACK,
-        GPU_UPLOAD
-    };
-
-    enum class RenderTextureArrangement {
-        UNKNOWN,
-        ROW_MAJOR
-    };
-
-    enum class RenderShaderFormat {
-        UNKNOWN,
-        DXIL,
-        SPIRV,
-        METAL
-    };
-
-    enum class RenderRaytracingPipelineLibrarySymbolType {
-        UNKNOWN,
-        RAYGEN,
-        MISS,
-        CLOSEST_HIT,
-        ANY_HIT,
-        INTERSECTION,
-        CALLABLE
-    };
-
-    enum class RenderAccelerationStructureType {
-        UNKNOWN,
-        TOP_LEVEL,
-        BOTTOM_LEVEL
-    };
-
+    #ifdef __cplusplus
     namespace RenderShaderStageFlag {
         enum Bits : uint32_t {
             NONE = 0U,
@@ -406,9 +558,25 @@ namespace plume {
             CALLABLE = 1U << 9
         };
     };
+    #else
+    enum RenderShaderStageFlag {
+        RenderShaderStageFlag_NONE = 0U,
+        RenderShaderStageFlag_VERTEX = 1U << 0,
+        RenderShaderStageFlag_GEOMETRY = 1U << 1,
+        RenderShaderStageFlag_PIXEL = 1U << 2,
+        RenderShaderStageFlag_COMPUTE = 1U << 3,
+        RenderShaderStageFlag_RAYGEN = 1U << 4,
+        RenderShaderStageFlag_ANY_HIT = 1U << 5,
+        RenderShaderStageFlag_CLOSEST_HIT = 1U << 6,
+        RenderShaderStageFlag_MISS = 1U << 7,
+        RenderShaderStageFlag_INTERSECTION = 1U << 8,
+        RenderShaderStageFlag_CALLABLE = 1U << 9
+    };
+    #endif
 
     typedef uint32_t RenderShaderStageFlags;
 
+    #ifdef __cplusplus
     namespace RenderBufferFlag {
         enum Bits : uint32_t {
             NONE = 0U,
@@ -425,9 +593,25 @@ namespace plume {
             DEVICE_ADDRESSABLE = 1U << 10
         };
     };
-
+    #else
+    enum RenderBufferFlag {
+        RenderBufferFlag_NONE = 0U,
+        RenderBufferFlag_VERTEX = 1U << 0,
+        RenderBufferFlag_INDEX = 1U << 1,
+        RenderBufferFlag_STORAGE = 1U << 2,
+        RenderBufferFlag_CONSTANT = 1U << 3,
+        RenderBufferFlag_FORMATTED = 1U << 4,
+        RenderBufferFlag_ACCELERATION_STRUCTURE = 1U << 5,
+        RenderBufferFlag_ACCELERATION_STRUCTURE_INPUT = 1U << 6,
+        RenderBufferFlag_ACCELERATION_STRUCTURE_SCRATCH = 1U << 7,
+        RenderBufferFlag_SHADER_BINDING_TABLE = 1U << 8,
+        RenderBufferFlag_UNORDERED_ACCESS = 1U << 9,
+        RenderBufferFlag_DEVICE_ADDRESSABLE = 1U << 10
+    };
+    #endif
     typedef uint32_t RenderBufferFlags;
 
+    #ifdef __cplusplus
     namespace RenderTextureFlag {
         enum Bits : uint32_t {
             NONE = 0U,
@@ -438,9 +622,20 @@ namespace plume {
             CUBE = 1U << 4
         };
     };
+    #else
+    enum RenderTextureFlag {
+        RenderTextureFlag_NONE = 0U,
+        RenderTextureFlag_RENDER_TARGET = 1U << 0,
+        RenderTextureFlag_DEPTH_TARGET = 1U << 1,
+        RenderTextureFlag_STORAGE = 1U << 2,
+        RenderTextureFlag_UNORDERED_ACCESS = 1U << 3,
+        RenderTextureFlag_CUBE = 1U << 4
+    };
+    #endif
 
     typedef uint32_t RenderTextureFlags;
 
+    #if __cplusplus
     namespace RenderBarrierStage {
         enum Bits : uint32_t {
             NONE = 0U,
@@ -451,9 +646,20 @@ namespace plume {
             ALL = GRAPHICS | COMPUTE | COPY
         };
     };
+    #else
+    enum RenderBarrierStage {
+        RenderBarrierStage_NONE = 0U,
+        RenderBarrierStage_GRAPHICS = 1U << 0,
+        RenderBarrierStage_COMPUTE = 1U << 1,
+        RenderBarrierStage_COPY = 1U << 2,
+        RenderBarrierStage_GRAPHICS_AND_COMPUTE = RenderBarrierStage_GRAPHICS | RenderBarrierStage_COMPUTE,
+        RenderBarrierStage_ALL = RenderBarrierStage_GRAPHICS | RenderBarrierStage_COMPUTE | RenderBarrierStage_COPY
+    };
+    #endif
 
     typedef uint32_t RenderBarrierStages;
 
+    #ifdef __cplusplus
     namespace RenderBufferAccess {
         enum Bits : uint32_t {
             NONE = 0U,
@@ -461,23 +667,17 @@ namespace plume {
             WRITE = 1U << 1
         };
     };
+    #else
+    enum RenderBufferAccess {
+        RenderBufferAccess_NONE = 0U,
+        RenderBufferAccess_READ = 1U << 0,
+        RenderBufferAccess_WRITE = 1U << 1
+    };
+    #endif
 
     typedef uint32_t RenderBufferAccessBits;
 
-    enum class RenderTextureLayout {
-        UNKNOWN,
-        GENERAL,
-        SHADER_READ,
-        COLOR_WRITE,
-        DEPTH_WRITE,
-        DEPTH_READ,
-        COPY_SOURCE,
-        COPY_DEST,
-        RESOLVE_SOURCE,
-        RESOLVE_DEST,
-        PRESENT
-    };
-    
+    #ifdef __cplusplus
     namespace RenderSampleCount {
         enum Bits : uint32_t {
             COUNT_0 = 0x0,
@@ -491,25 +691,25 @@ namespace plume {
             COUNT_MAX = COUNT_64
         };
     };
+    #else
+    enum RenderSampleCount {
+        RenderSampleCount_COUNT_0 = 0x0,
+        RenderSampleCount_COUNT_1 = 0x1,
+        RenderSampleCount_COUNT_2 = 0x2,
+        RenderSampleCount_COUNT_4 = 0x4,
+        RenderSampleCount_COUNT_8 = 0x8,
+        RenderSampleCount_COUNT_16 = 0x10,
+        RenderSampleCount_COUNT_32 = 0x20,
+        RenderSampleCount_COUNT_64 = 0x40,
+        RenderSampleCount_COUNT_MAX = RenderSampleCount_COUNT_64
+    };
+    #endif
 
     typedef uint32_t RenderSampleCounts;
 
-    enum class RenderDeviceType {
-        UNKNOWN,
-        INTEGRATED,
-        DISCRETE,
-        VIRTUAL,
-        CPU
-    };
-
-    enum class RenderResolveMode {
-        MIN,
-        MAX,
-        AVERAGE
-    };
-
     // Global functions.
 
+#ifdef __cplusplus
     constexpr uint32_t RenderFormatSize(RenderFormat format) {
         switch (format) {
         case RenderFormat::R32G32B32A32_TYPELESS:
@@ -711,6 +911,7 @@ namespace plume {
                 return RenderTextureViewDimension::UNKNOWN;
         }
     }
+#endif
 
     // Concrete structs.
 
@@ -728,6 +929,7 @@ namespace plume {
             };
         };
 
+    #ifdef __cplusplus
         RenderColor() {
             r = 0.0f;
             g = 0.0f;
@@ -741,33 +943,39 @@ namespace plume {
             this->b = b;
             this->a = a;
         }
+    #endif
     };
 
     struct RenderAffineTransform {
-        float m[3][4] = {};
+        float m[3][4] PLUME_DEFAULT({});
 
+    #ifdef __cplusplus
         RenderAffineTransform() {
             m[0][0] = 1.0f;
             m[1][1] = 1.0f;
             m[2][2] = 1.0f;
         }
+    #endif
     };
 
     struct RenderDepth {
-        float depth = 1.0f;
+        float depth PLUME_DEFAULT(1.0f);
 
+    #ifdef __cplusplus
         RenderDepth() = default;
 
         RenderDepth(float depth) {
             this->depth = depth;
         }
+    #endif
     };
-    
+
     struct RenderMultisamplingLocation {
         // Valid range is [-8, 7].
-        int8_t x = 0;
-        int8_t y = 0;
+        int8_t x PLUME_DEFAULT(0);
+        int8_t y PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         bool operator==(const RenderMultisamplingLocation& other) const {
             return x == other.x && y == other.y;
         }
@@ -775,24 +983,28 @@ namespace plume {
         bool operator!=(const RenderMultisamplingLocation& other) const {
             return !(*this == other);
         }
+    #endif
     };
 
     struct RenderMultisampling {
-        RenderSampleCounts sampleCount = RenderSampleCount::COUNT_1;
-        RenderMultisamplingLocation sampleLocations[16] = {};
-        bool sampleLocationsEnabled = false;
+        RenderSampleCounts sampleCount PLUME_DEFAULT(RenderSampleCount::COUNT_1);
+        RenderMultisamplingLocation sampleLocations[16] PLUME_DEFAULT({});
+        bool sampleLocationsEnabled PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderMultisampling() = default;
 
         RenderMultisampling(RenderSampleCounts sampleCount) {
             this->sampleCount = sampleCount;
         }
+    #endif
     };
 
     struct RenderBufferReference {
-        const RenderBuffer *ref = nullptr;
-        uint64_t offset = 0;
+        const RenderBuffer *ref PLUME_DEFAULT(nullptr);
+        uint64_t offset PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderBufferReference() = default;
 
         RenderBufferReference(const RenderBuffer *ref) {
@@ -812,51 +1024,59 @@ namespace plume {
         bool operator!=(const RenderBufferReference& rhs) const {
             return !(*this == rhs);
         }
+    #endif
     };
 
     struct RenderBufferBarrier {
-        RenderBuffer *buffer = nullptr;
-        RenderBufferAccessBits accessBits = RenderBufferAccess::NONE;
+        RenderBuffer *buffer PLUME_DEFAULT(nullptr);
+        RenderBufferAccessBits accessBits PLUME_DEFAULT(RenderBufferAccess::NONE);
 
+    #ifdef __cplusplus
         RenderBufferBarrier() = default;
 
         RenderBufferBarrier(RenderBuffer *buffer, RenderBufferAccessBits accessBits) {
             this->buffer = buffer;
             this->accessBits = accessBits;
         }
+    #endif
     };
 
     struct RenderBufferStructuredView {
-        uint32_t structureByteStride = 0;
-        uint32_t firstElement = 0;
+        uint32_t structureByteStride PLUME_DEFAULT(0);
+        uint32_t firstElement PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderBufferStructuredView() = default;
 
         RenderBufferStructuredView(uint32_t structureByteStride, uint32_t firstElement = 0) {
             this->structureByteStride = structureByteStride;
             this->firstElement = firstElement;
         }
+    #endif
     };
 
     struct RenderTextureBarrier {
-        RenderTexture *texture = nullptr;
-        RenderTextureLayout layout = RenderTextureLayout::UNKNOWN;
+        RenderTexture *texture PLUME_DEFAULT(nullptr);
+        RenderTextureLayout layout PLUME_DEFAULT(RenderTextureLayout::UNKNOWN);
 
+    #ifdef __cplusplus
         RenderTextureBarrier() = default;
 
         RenderTextureBarrier(RenderTexture *texture, RenderTextureLayout layout) {
             this->texture = texture;
             this->layout = layout;
         }
+    #endif
     };
 
     struct RenderClearValue {
-        RenderFormat format = RenderFormat::UNKNOWN;
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
         union {
             RenderColor color;
             RenderDepth depth;
         };
 
+    #ifdef __cplusplus
         RenderClearValue() : color{} {}
 
         static RenderClearValue Color(RenderColor color, RenderFormat format) {
@@ -872,14 +1092,16 @@ namespace plume {
             clear.depth = depth;
             return clear;
         }
+    #endif
     };
 
     struct RenderBufferDesc {
-        uint64_t size = 0;
-        RenderHeapType heapType = RenderHeapType::UNKNOWN;
-        RenderBufferFlags flags = RenderBufferFlag::NONE;
-        bool committed = false;
+        uint64_t size PLUME_DEFAULT(0);
+        RenderHeapType heapType PLUME_DEFAULT(RenderHeapType::UNKNOWN);
+        RenderBufferFlags flags PLUME_DEFAULT(RenderBufferFlag::NONE);
+        bool committed PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderBufferDesc() = default;
 
         static RenderBufferDesc DefaultBuffer(uint64_t size, RenderBufferFlags flags = RenderBufferFlag::NONE) {
@@ -929,22 +1151,24 @@ namespace plume {
             desc.flags = RenderBufferFlag::ACCELERATION_STRUCTURE;
             return desc;
         }
+    #endif
     };
 
     struct RenderTextureDesc {
-        RenderTextureDimension dimension = RenderTextureDimension::UNKNOWN;
-        uint32_t width = 0;
-        uint32_t height = 0;
-        uint32_t depth = 0;
-        uint32_t mipLevels = 0;
-        uint32_t arraySize = 0;
+        RenderTextureDimension dimension PLUME_DEFAULT(RenderTextureDimension::UNKNOWN);
+        uint32_t width PLUME_DEFAULT(0);
+        uint32_t height PLUME_DEFAULT(0);
+        uint32_t depth PLUME_DEFAULT(0);
+        uint32_t mipLevels PLUME_DEFAULT(0);
+        uint32_t arraySize PLUME_DEFAULT(0);
         RenderMultisampling multisampling;
-        RenderFormat format = RenderFormat::UNKNOWN;
-        RenderTextureArrangement textureArrangement = RenderTextureArrangement::UNKNOWN;
-        const RenderClearValue *optimizedClearValue = nullptr;
-        RenderTextureFlags flags = RenderTextureFlag::NONE;
-        bool committed = false;
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        RenderTextureArrangement textureArrangement PLUME_DEFAULT(RenderTextureArrangement::UNKNOWN);
+        const RenderClearValue *optimizedClearValue PLUME_DEFAULT(nullptr);
+        RenderTextureFlags flags PLUME_DEFAULT(RenderTextureFlag::NONE);
+        bool committed PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderTextureDesc() = default;
 
         static RenderTextureDesc Texture(RenderTextureDimension dimension, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipLevels, uint32_t arraySize, RenderFormat format, RenderTextureFlags flags = RenderTextureFlag::NONE) {
@@ -1003,39 +1227,32 @@ namespace plume {
             desc.optimizedClearValue = optimizedClearValue;
             return desc;
         }
-    };
-
-    enum class RenderSwizzle : uint8_t
-    {
-        IDENTITY = 0,
-        ZERO = 1,
-        ONE = 2,
-        R = 3,
-        G = 4,
-        B = 5,
-        A = 6
+    #endif
     };
 
     struct RenderComponentMapping
     {
-        RenderSwizzle r = RenderSwizzle::IDENTITY;
-        RenderSwizzle g = RenderSwizzle::IDENTITY;
-        RenderSwizzle b = RenderSwizzle::IDENTITY;
-        RenderSwizzle a = RenderSwizzle::IDENTITY;
+        RenderSwizzle r PLUME_DEFAULT(RenderSwizzle::IDENTITY);
+        RenderSwizzle g PLUME_DEFAULT(RenderSwizzle::IDENTITY);
+        RenderSwizzle b PLUME_DEFAULT(RenderSwizzle::IDENTITY);
+        RenderSwizzle a PLUME_DEFAULT(RenderSwizzle::IDENTITY);
 
+    #ifdef __cplusplus
         RenderComponentMapping() = default;
         RenderComponentMapping(RenderSwizzle r, RenderSwizzle g, RenderSwizzle b, RenderSwizzle a) : r(r), g(g), b(b), a(a) {}
+    #endif
     };
 
     struct RenderTextureViewDesc {
-        RenderFormat format = RenderFormat::UNKNOWN;
-        RenderTextureViewDimension dimension = RenderTextureViewDimension::UNKNOWN;
-        uint32_t mipLevels = UINT32_MAX;
-        uint32_t mipSlice = 0;
-        uint32_t arraySize = UINT32_MAX;
-        uint32_t arrayIndex = 0;
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        RenderTextureViewDimension dimension PLUME_DEFAULT(RenderTextureViewDimension::UNKNOWN);
+        uint32_t mipLevels PLUME_DEFAULT(UINT32_MAX);
+        uint32_t mipSlice PLUME_DEFAULT(0);
+        uint32_t arraySize PLUME_DEFAULT(UINT32_MAX);
+        uint32_t arrayIndex PLUME_DEFAULT(0);
         RenderComponentMapping componentMapping;
 
+    #ifdef __cplusplus
         RenderTextureViewDesc() = default;
 
         static RenderTextureViewDesc Texture1D(RenderFormat format) {
@@ -1057,21 +1274,23 @@ namespace plume {
             viewDesc.format = format;
             viewDesc.dimension = RenderTextureViewDimension::TEXTURE_3D;
             return viewDesc;
-        }      
-        
+        }
+
         static RenderTextureViewDesc TextureCube(RenderFormat format) {
             RenderTextureViewDesc viewDesc;
             viewDesc.format = format;
             viewDesc.dimension = RenderTextureViewDimension::TEXTURE_CUBE;
             return viewDesc;
         }
+    #endif
     };
 
     struct RenderAccelerationStructureDesc {
-        RenderAccelerationStructureType type = RenderAccelerationStructureType::UNKNOWN;
+        RenderAccelerationStructureType type PLUME_DEFAULT(RenderAccelerationStructureType::UNKNOWN);
         RenderBufferReference buffer;
-        uint64_t size = 0;
+        uint64_t size PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderAccelerationStructureDesc() = default;
 
         RenderAccelerationStructureDesc(RenderAccelerationStructureType type, RenderBufferReference buffer, uint64_t size) {
@@ -1079,18 +1298,13 @@ namespace plume {
             this->buffer = buffer;
             this->size = size;
         }
-    };
-
-    enum class RenderTextureCopyType {
-        UNKNOWN,
-        SUBRESOURCE,
-        PLACED_FOOTPRINT
+    #endif
     };
 
     struct RenderTextureCopyLocation {
-        const RenderTexture *texture = nullptr;
-        const RenderBuffer *buffer = nullptr;
-        RenderTextureCopyType type = RenderTextureCopyType::UNKNOWN;
+        const RenderTexture *texture PLUME_DEFAULT(nullptr);
+        const RenderBuffer *buffer PLUME_DEFAULT(nullptr);
+        RenderTextureCopyType type PLUME_DEFAULT(RenderTextureCopyType::UNKNOWN);
 
         union {
             struct {
@@ -1108,6 +1322,7 @@ namespace plume {
             } subresource;
         };
 
+    #ifdef __cplusplus
         static RenderTextureCopyLocation PlacedFootprint(const RenderBuffer *buffer, RenderFormat format, uint32_t width, uint32_t height, uint32_t depth, uint32_t rowWidth, uint64_t offset = 0) {
             RenderTextureCopyLocation loc;
             loc.buffer = buffer;
@@ -1129,25 +1344,27 @@ namespace plume {
             loc.subresource.arrayIndex = arrayIndex;
             return loc;
         }
+    #endif
     };
 
     struct RenderPoolDesc {
-        RenderHeapType heapType = RenderHeapType::UNKNOWN;
-        uint32_t minBlockCount = 0;
-        uint32_t maxBlockCount = 0;
-        bool useLinearAlgorithm = false;
-        bool allowOnlyBuffers = false;
+        RenderHeapType heapType PLUME_DEFAULT(RenderHeapType::UNKNOWN);
+        uint32_t minBlockCount PLUME_DEFAULT(0);
+        uint32_t maxBlockCount PLUME_DEFAULT(0);
+        bool useLinearAlgorithm PLUME_DEFAULT(false);
+        bool allowOnlyBuffers PLUME_DEFAULT(false);
     };
 
     struct RenderSwapChainDesc {
-        RenderWindow renderWindow = {};
-        RenderFormat format = RenderFormat::UNKNOWN;
-        uint32_t textureCount = 0;
+        RenderWindow renderWindow PLUME_DEFAULT({});
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        uint32_t textureCount PLUME_DEFAULT(0);
 
         // The capability for presentWait must be supported by the RenderDevice.
-        bool enablePresentWait = false;
-        uint32_t maxFrameLatency = 0;
+        bool enablePresentWait PLUME_DEFAULT(false);
+        uint32_t maxFrameLatency PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderSwapChainDesc() = default;
 
         RenderSwapChainDesc(RenderWindow renderWindow, RenderFormat format, uint32_t textureCount, bool enablePresentWait = false, uint32_t maxFrameLatency = 0) {
@@ -1157,13 +1374,15 @@ namespace plume {
             this->enablePresentWait = enablePresentWait;
             this->maxFrameLatency = maxFrameLatency;
         }
+    #endif
     };
 
     struct RenderInputSlot {
-        uint32_t index = 0;
-        uint32_t stride = 0;
-        RenderInputSlotClassification classification = RenderInputSlotClassification::UNKNOWN;
+        uint32_t index PLUME_DEFAULT(0);
+        uint32_t stride PLUME_DEFAULT(0);
+        RenderInputSlotClassification classification PLUME_DEFAULT(RenderInputSlotClassification::UNKNOWN);
 
+    #ifdef __cplusplus
         RenderInputSlot() = default;
 
         RenderInputSlot(uint32_t index, uint32_t stride, RenderInputSlotClassification classification = RenderInputSlotClassification::PER_VERTEX_DATA) {
@@ -1171,17 +1390,19 @@ namespace plume {
             this->stride = stride;
             this->classification = classification;
         }
+    #endif
     };
 
     struct RenderInputElement {
         // Semantic name and index and location must be specified for both backends, but each attribute will only be read by the backend that uses them.
-        const char *semanticName = nullptr;
-        uint32_t semanticIndex = 0;
-        uint32_t location = 0;
-        RenderFormat format = RenderFormat::UNKNOWN;
-        uint32_t slotIndex = 0;
-        uint32_t alignedByteOffset = 0;
+        const char *semanticName PLUME_DEFAULT(nullptr);
+        uint32_t semanticIndex PLUME_DEFAULT(0);
+        uint32_t location PLUME_DEFAULT(0);
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        uint32_t slotIndex PLUME_DEFAULT(0);
+        uint32_t alignedByteOffset PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderInputElement() = default;
 
         RenderInputElement(const char *semanticName, uint32_t semanticIndex, uint32_t location, RenderFormat format, uint32_t slotIndex, uint32_t alignedByteOffset) {
@@ -1192,18 +1413,20 @@ namespace plume {
             this->slotIndex = slotIndex;
             this->alignedByteOffset = alignedByteOffset;
         }
+    #endif
     };
 
     struct RenderBlendDesc {
-        bool blendEnabled = false;
-        RenderBlend srcBlend = RenderBlend::UNKNOWN;
-        RenderBlend dstBlend = RenderBlend::UNKNOWN;
-        RenderBlendOperation blendOp = RenderBlendOperation::UNKNOWN;
-        RenderBlend srcBlendAlpha = RenderBlend::UNKNOWN;
-        RenderBlend dstBlendAlpha = RenderBlend::UNKNOWN;
-        RenderBlendOperation blendOpAlpha = RenderBlendOperation::UNKNOWN;
-        uint8_t renderTargetWriteMask = uint8_t(RenderColorWriteEnable::ALL);
+        bool blendEnabled PLUME_DEFAULT(false);
+        RenderBlend srcBlend PLUME_DEFAULT(RenderBlend::UNKNOWN);
+        RenderBlend dstBlend PLUME_DEFAULT(RenderBlend::UNKNOWN);
+        RenderBlendOperation blendOp PLUME_DEFAULT(RenderBlendOperation::UNKNOWN);
+        RenderBlend srcBlendAlpha PLUME_DEFAULT(RenderBlend::UNKNOWN);
+        RenderBlend dstBlendAlpha PLUME_DEFAULT(RenderBlend::UNKNOWN);
+        RenderBlendOperation blendOpAlpha PLUME_DEFAULT(RenderBlendOperation::UNKNOWN);
+        uint8_t renderTargetWriteMask PLUME_DEFAULT(uint8_t(RenderColorWriteEnable::ALL));
 
+    #ifdef __cplusplus
         static RenderBlendDesc Copy() {
             RenderBlendDesc desc;
             desc.srcBlend = RenderBlend::ONE;
@@ -1226,36 +1449,40 @@ namespace plume {
             desc.blendOpAlpha = RenderBlendOperation::ADD;
             return desc;
         }
+    #endif
     };
 
     struct RenderStencilFaceDesc {
-        RenderStencilOp passOp = RenderStencilOp::KEEP;
-        RenderStencilOp failOp = RenderStencilOp::KEEP;
-        RenderStencilOp depthFailOp = RenderStencilOp::KEEP;
-        RenderComparisonFunction compareFunction = RenderComparisonFunction::ALWAYS;
+        RenderStencilOp passOp PLUME_DEFAULT(RenderStencilOp::KEEP);
+        RenderStencilOp failOp PLUME_DEFAULT(RenderStencilOp::KEEP);
+        RenderStencilOp depthFailOp PLUME_DEFAULT(RenderStencilOp::KEEP);
+        RenderComparisonFunction compareFunction PLUME_DEFAULT(RenderComparisonFunction::ALWAYS);
     };
 
     struct RenderSpecConstant {
-        uint32_t index = 0;
-        uint32_t value = 0;
+        uint32_t index PLUME_DEFAULT(0);
+        uint32_t value PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderSpecConstant() = default;
 
         RenderSpecConstant(uint32_t index, uint32_t value) {
             this->index = index;
             this->value = value;
         }
+    #endif
     };
 
     struct RenderComputePipelineDesc {
-        const RenderPipelineLayout *pipelineLayout = nullptr;
-        const RenderShader *computeShader = nullptr;
-        const RenderSpecConstant *specConstants = nullptr;
-        uint32_t specConstantsCount = 0;
-        uint32_t threadGroupSizeX = 0;
-        uint32_t threadGroupSizeY = 0;
-        uint32_t threadGroupSizeZ = 0;
+        const RenderPipelineLayout *pipelineLayout PLUME_DEFAULT(nullptr);
+        const RenderShader *computeShader PLUME_DEFAULT(nullptr);
+        const RenderSpecConstant *specConstants PLUME_DEFAULT(nullptr);
+        uint32_t specConstantsCount PLUME_DEFAULT(0);
+        uint32_t threadGroupSizeX PLUME_DEFAULT(0);
+        uint32_t threadGroupSizeY PLUME_DEFAULT(0);
+        uint32_t threadGroupSizeZ PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderComputePipelineDesc() = default;
 
         RenderComputePipelineDesc(const RenderPipelineLayout *pipelineLayout, const RenderShader *computeShader, uint32_t threadGroupSizeX, uint32_t threadGroupSizeY, uint32_t threadGroupSizeZ) {
@@ -1265,55 +1492,57 @@ namespace plume {
             this->threadGroupSizeY = threadGroupSizeY;
             this->threadGroupSizeZ = threadGroupSizeZ;
         }
+    #endif
     };
 
-    struct RenderGraphicsPipelineDesc {
-        static const uint32_t MaxRenderTargets = 8;
+    #define MAX_RENDER_TARGETS 8
 
-        const RenderPipelineLayout *pipelineLayout = nullptr;
-        const RenderShader *vertexShader = nullptr;
-        const RenderShader *geometryShader = nullptr;
-        const RenderShader *pixelShader = nullptr;
-        RenderComparisonFunction depthFunction = RenderComparisonFunction::NEVER;
-        bool depthClipEnabled = false;
-        int32_t depthBias = 0;
-        float depthBiasClamp = 0.0f;
-        float slopeScaledDepthBias = 0.0f;
-        bool dynamicDepthBiasEnabled = false;
-        bool depthEnabled = false;
-        bool depthWriteEnabled = false;
-        bool stencilEnabled = false;
-        uint32_t stencilReadMask = 0xFFFFFFFF;
-        uint32_t stencilWriteMask = 0xFFFFFFFF;
-        uint32_t stencilReference = 0;
+    struct RenderGraphicsPipelineDesc {
+        const RenderPipelineLayout *pipelineLayout PLUME_DEFAULT(nullptr);
+        const RenderShader *vertexShader PLUME_DEFAULT(nullptr);
+        const RenderShader *geometryShader PLUME_DEFAULT(nullptr);
+        const RenderShader *pixelShader PLUME_DEFAULT(nullptr);
+        RenderComparisonFunction depthFunction PLUME_DEFAULT(RenderComparisonFunction::NEVER);
+        bool depthClipEnabled PLUME_DEFAULT(false);
+        int32_t depthBias PLUME_DEFAULT(0);
+        float depthBiasClamp PLUME_DEFAULT(0.0f);
+        float slopeScaledDepthBias PLUME_DEFAULT(0.0f);
+        bool dynamicDepthBiasEnabled PLUME_DEFAULT(false);
+        bool depthEnabled PLUME_DEFAULT(false);
+        bool depthWriteEnabled PLUME_DEFAULT(false);
+        bool stencilEnabled PLUME_DEFAULT(false);
+        uint32_t stencilReadMask PLUME_DEFAULT(0xFFFFFFFF);
+        uint32_t stencilWriteMask PLUME_DEFAULT(0xFFFFFFFF);
+        uint32_t stencilReference PLUME_DEFAULT(0);
         RenderStencilFaceDesc stencilFrontFace;
         RenderStencilFaceDesc stencilBackFace;
         RenderMultisampling multisampling;
-        bool alphaToCoverageEnabled = false;
-        RenderPrimitiveTopology primitiveTopology = RenderPrimitiveTopology::TRIANGLE_LIST;
-        RenderCullMode cullMode = RenderCullMode::NONE;
-        RenderFrontFace frontFace = RenderFrontFace::CLOCKWISE;
-        RenderFormat renderTargetFormat[MaxRenderTargets] = {};
-        RenderBlendDesc renderTargetBlend[MaxRenderTargets] = {};
-        uint32_t renderTargetCount = 0;
-        bool logicOpEnabled = false;
-        RenderLogicOperation logicOp = RenderLogicOperation::NOOP;
-        RenderFormat depthTargetFormat = RenderFormat::UNKNOWN;
-        const RenderInputSlot *inputSlots = nullptr;
-        uint32_t inputSlotsCount = 0;
-        const RenderInputElement *inputElements = nullptr;
-        uint32_t inputElementsCount = 0;
-        const RenderSpecConstant *specConstants = nullptr;
-        uint32_t specConstantsCount = 0;
+        bool alphaToCoverageEnabled PLUME_DEFAULT(false);
+        RenderPrimitiveTopology primitiveTopology PLUME_DEFAULT(RenderPrimitiveTopology::TRIANGLE_LIST);
+        RenderCullMode cullMode PLUME_DEFAULT(RenderCullMode::NONE);
+        RenderFrontFace frontFace PLUME_DEFAULT(RenderFrontFace::CLOCKWISE);
+        RenderFormat renderTargetFormat[MAX_RENDER_TARGETS] PLUME_DEFAULT({});
+        RenderBlendDesc renderTargetBlend[MAX_RENDER_TARGETS] PLUME_DEFAULT({});
+        uint32_t renderTargetCount PLUME_DEFAULT(0);
+        bool logicOpEnabled PLUME_DEFAULT(false);
+        RenderLogicOperation logicOp PLUME_DEFAULT(RenderLogicOperation::NOOP);
+        RenderFormat depthTargetFormat PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        const RenderInputSlot *inputSlots PLUME_DEFAULT(nullptr);
+        uint32_t inputSlotsCount PLUME_DEFAULT(0);
+        const RenderInputElement *inputElements PLUME_DEFAULT(nullptr);
+        uint32_t inputElementsCount PLUME_DEFAULT(0);
+        const RenderSpecConstant *specConstants PLUME_DEFAULT(nullptr);
+        uint32_t specConstantsCount PLUME_DEFAULT(0);
     };
 
     struct RenderRaytracingPipelineLibrarySymbol {
-        const char *importName = nullptr;
-        RenderRaytracingPipelineLibrarySymbolType type = RenderRaytracingPipelineLibrarySymbolType::UNKNOWN;
-        const char *exportName = nullptr;
-        const RenderSpecConstant *specConstants = nullptr;
-        uint32_t specConstantsCount = 0;
+        const char *importName PLUME_DEFAULT(nullptr);
+        RenderRaytracingPipelineLibrarySymbolType type PLUME_DEFAULT(RenderRaytracingPipelineLibrarySymbolType::UNKNOWN);
+        const char *exportName PLUME_DEFAULT(nullptr);
+        const RenderSpecConstant *specConstants PLUME_DEFAULT(nullptr);
+        uint32_t specConstantsCount PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderRaytracingPipelineLibrarySymbol() = default;
 
         RenderRaytracingPipelineLibrarySymbol(const char *importName, RenderRaytracingPipelineLibrarySymbolType type, const char *exportName = nullptr, const RenderSpecConstant *specConstants = nullptr, uint32_t specConstantsCount = 0) {
@@ -1323,13 +1552,15 @@ namespace plume {
             this->exportName = exportName;
             this->specConstantsCount = specConstantsCount;
         }
+    #endif
     };
 
     struct RenderRaytracingPipelineLibrary {
-        const RenderShader *shader = nullptr;
-        const RenderRaytracingPipelineLibrarySymbol *symbols = nullptr;
-        uint32_t symbolsCount = 0;
+        const RenderShader *shader PLUME_DEFAULT(nullptr);
+        const RenderRaytracingPipelineLibrarySymbol *symbols PLUME_DEFAULT(nullptr);
+        uint32_t symbolsCount PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderRaytracingPipelineLibrary() = default;
 
         RenderRaytracingPipelineLibrary(const RenderShader *shader, const RenderRaytracingPipelineLibrarySymbol *symbols, uint32_t symbolsCount) {
@@ -1337,14 +1568,16 @@ namespace plume {
             this->symbols = symbols;
             this->symbolsCount = symbolsCount;
         }
+    #endif
     };
 
     struct RenderRaytracingPipelineHitGroup {
-        const char *hitGroupName = nullptr;
-        const char *closestHitName = nullptr;
-        const char *anyHitName = nullptr;
-        const char *intersectionName = nullptr;
+        const char *hitGroupName PLUME_DEFAULT(nullptr);
+        const char *closestHitName PLUME_DEFAULT(nullptr);
+        const char *anyHitName PLUME_DEFAULT(nullptr);
+        const char *intersectionName PLUME_DEFAULT(nullptr);
 
+    #ifdef __cplusplus
         RenderRaytracingPipelineHitGroup() = default;
 
         RenderRaytracingPipelineHitGroup(const char *hitGroupName, const char *closestHitName = nullptr, const char *anyHitName = nullptr, const char *intersectionName = nullptr) {
@@ -1353,68 +1586,74 @@ namespace plume {
             this->anyHitName = anyHitName;
             this->intersectionName = intersectionName;
         }
+    #endif
     };
 
     struct RenderRaytracingPipelineDesc {
-        const RenderRaytracingPipelineLibrary *libraries = nullptr;
-        uint32_t librariesCount = 0;
-        const RenderRaytracingPipelineHitGroup *hitGroups = nullptr;
-        uint32_t hitGroupsCount = 0;
-        const RenderPipelineLayout *pipelineLayout = nullptr;
-        uint32_t maxPayloadSize = 0;
-        uint32_t maxAttributeSize = 2 * sizeof(float);
-        uint32_t maxRecursionDepth = 1;
+        const RenderRaytracingPipelineLibrary *libraries PLUME_DEFAULT(nullptr);
+        uint32_t librariesCount PLUME_DEFAULT(0);
+        const RenderRaytracingPipelineHitGroup *hitGroups PLUME_DEFAULT(nullptr);
+        uint32_t hitGroupsCount PLUME_DEFAULT(0);
+        const RenderPipelineLayout *pipelineLayout PLUME_DEFAULT(nullptr);
+        uint32_t maxPayloadSize PLUME_DEFAULT(0);
+        uint32_t maxAttributeSize PLUME_DEFAULT(2 * sizeof(float));
+        uint32_t maxRecursionDepth PLUME_DEFAULT(1);
 
         // IMPORTANT: State update support must be true for this option to work. The pipeline creation will not work if this option
         // is enabled and the device doesn't support it. This option is only supported by Raytracing Tier 1.1 devices.
-        bool stateUpdateEnabled = false;
+        bool stateUpdateEnabled PLUME_DEFAULT(false);
     };
 
     struct RenderPipelineProgram {
-        uint32_t programIndex = 0;
+        uint32_t programIndex PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderPipelineProgram() = default;
 
         RenderPipelineProgram(uint32_t programIndex) {
             this->programIndex = programIndex;
         }
+    #endif
     };
 
     struct RenderSamplerDesc {
-        RenderFilter minFilter = RenderFilter::LINEAR;
-        RenderFilter magFilter = RenderFilter::LINEAR;
-        RenderMipmapMode mipmapMode = RenderMipmapMode::LINEAR;
-        RenderTextureAddressMode addressU = RenderTextureAddressMode::WRAP;
-        RenderTextureAddressMode addressV = RenderTextureAddressMode::WRAP;
-        RenderTextureAddressMode addressW = RenderTextureAddressMode::WRAP;
-        float mipLODBias = 0.0f;
-        uint32_t maxAnisotropy = 16;
-        bool anisotropyEnabled = false;
-        RenderComparisonFunction comparisonFunc = RenderComparisonFunction::NEVER;
-        bool comparisonEnabled = false;
-        RenderBorderColor borderColor = RenderBorderColor::OPAQUE_BLACK;
-        float minLOD = 0.0f;
-        float maxLOD = FLT_MAX;
-        RenderShaderVisibility shaderVisibility = RenderShaderVisibility::ALL;
+        RenderFilter minFilter PLUME_DEFAULT(RenderFilter::LINEAR);
+        RenderFilter magFilter PLUME_DEFAULT(RenderFilter::LINEAR);
+        RenderMipmapMode mipmapMode PLUME_DEFAULT(RenderMipmapMode::LINEAR);
+        RenderTextureAddressMode addressU PLUME_DEFAULT(RenderTextureAddressMode::WRAP);
+        RenderTextureAddressMode addressV PLUME_DEFAULT(RenderTextureAddressMode::WRAP);
+        RenderTextureAddressMode addressW PLUME_DEFAULT(RenderTextureAddressMode::WRAP);
+        float mipLODBias PLUME_DEFAULT(0.0f);
+        uint32_t maxAnisotropy PLUME_DEFAULT(16);
+        bool anisotropyEnabled PLUME_DEFAULT(false);
+        RenderComparisonFunction comparisonFunc PLUME_DEFAULT(RenderComparisonFunction::NEVER);
+        bool comparisonEnabled PLUME_DEFAULT(false);
+        RenderBorderColor borderColor PLUME_DEFAULT(RenderBorderColor::OPAQUE_BLACK);
+        float minLOD PLUME_DEFAULT(0.0f);
+        float maxLOD PLUME_DEFAULT(FLT_MAX);
+        RenderShaderVisibility shaderVisibility PLUME_DEFAULT(RenderShaderVisibility::ALL);
 
+    #ifdef __cplusplus
         RenderSamplerDesc() = default;
+    #endif
     };
 
     struct RenderDescriptorRange {
         // The type of descriptor range. The descriptor can't change this during its lifetime.
-        RenderDescriptorRangeType type = RenderDescriptorRangeType::UNKNOWN;
+        RenderDescriptorRangeType type PLUME_DEFAULT(RenderDescriptorRangeType::UNKNOWN);
 
         // How many descriptors should be assigned and allocated for this range. When the range
         // is boundless (see RenderDescriptorSetDesc::lastRangeIsBoundless), this indicates the upper
         // bound of the variable sized array (TBD if this implies additional memory consumption).
-        uint32_t count = 0;
+        uint32_t count PLUME_DEFAULT(0);
 
         // The shader binding number the descriptor will correspond to.
-        uint32_t binding = 0;
+        uint32_t binding PLUME_DEFAULT(0);
 
         // An optional immutable sampler to build in statically into the pipeline layout.
-        const RenderSampler **immutableSampler = nullptr;
+        const RenderSampler **immutableSampler PLUME_DEFAULT(nullptr);
 
+    #ifdef __cplusplus
         RenderDescriptorRange() = default;
 
         RenderDescriptorRange(RenderDescriptorRangeType type, uint32_t binding, uint32_t count, const RenderSampler **immutableSampler = nullptr) {
@@ -1423,31 +1662,35 @@ namespace plume {
             this->count = count;
             this->immutableSampler = immutableSampler;
         }
+    #endif
     };
-    
-    struct RenderDescriptorSetDesc {
-        const RenderDescriptorRange *descriptorRanges = nullptr;
-        uint32_t descriptorRangesCount = 0;
-        bool lastRangeIsBoundless = false;
-        uint32_t boundlessRangeSize = 0;
 
+    struct RenderDescriptorSetDesc {
+        const RenderDescriptorRange *descriptorRanges PLUME_DEFAULT(nullptr);
+        uint32_t descriptorRangesCount PLUME_DEFAULT(0);
+        bool lastRangeIsBoundless PLUME_DEFAULT(false);
+        uint32_t boundlessRangeSize PLUME_DEFAULT(0);
+
+    #ifdef __cplusplus
         RenderDescriptorSetDesc() = default;
-        
+
         RenderDescriptorSetDesc(const RenderDescriptorRange *descriptorRanges, uint32_t descriptorRangesCount, bool lastRangeIsBoundless = false, uint32_t boundlessRangeSize = 0) {
             this->descriptorRanges = descriptorRanges;
             this->descriptorRangesCount = descriptorRangesCount;
             this->lastRangeIsBoundless = lastRangeIsBoundless;
             this->boundlessRangeSize = boundlessRangeSize;
         }
+    #endif
     };
 
     struct RenderPushConstantRange {
-        uint32_t binding = 0;
-        uint32_t set = 0;
-        uint32_t offset = 0; // Must be aligned to 4-bytes for DX12.
-        uint32_t size = 0;
-        RenderShaderStageFlags stageFlags = RenderShaderStageFlag::NONE;
+        uint32_t binding PLUME_DEFAULT(0);
+        uint32_t set PLUME_DEFAULT(0);
+        uint32_t offset PLUME_DEFAULT(0); // Must be aligned to 4-bytes for DX12.
+        uint32_t size PLUME_DEFAULT(0);
+        RenderShaderStageFlags stageFlags PLUME_DEFAULT(RenderShaderStageFlag::NONE);
 
+    #ifdef __cplusplus
         RenderPushConstantRange() = default;
 
         RenderPushConstantRange(uint32_t binding, uint32_t set, uint32_t offset, uint32_t size, RenderShaderStageFlags stageFlags) {
@@ -1457,14 +1700,16 @@ namespace plume {
             this->size = size;
             this->stageFlags = stageFlags;
         }
+    #endif
     };
 
     // D3D12 only.
     struct RenderRootDescriptorDesc {
-        uint32_t shaderRegister = 0;
-        uint32_t registerSpace = 0;
-        RenderRootDescriptorType type = RenderRootDescriptorType::UNKNOWN;
+        uint32_t shaderRegister PLUME_DEFAULT(0);
+        uint32_t registerSpace PLUME_DEFAULT(0);
+        RenderRootDescriptorType type PLUME_DEFAULT(RenderRootDescriptorType::UNKNOWN);
 
+    #ifdef __cplusplus
         RenderRootDescriptorDesc() = default;
 
         RenderRootDescriptorDesc(uint32_t shaderRegister, uint32_t registerSpace, RenderRootDescriptorType type) {
@@ -1472,18 +1717,20 @@ namespace plume {
             this->registerSpace = registerSpace;
             this->type = type;
         }
+    #endif
     };
 
     struct RenderPipelineLayoutDesc {
-        const RenderPushConstantRange *pushConstantRanges = nullptr;
-        uint32_t pushConstantRangesCount = 0;
-        const RenderDescriptorSetDesc *descriptorSetDescs = nullptr;
-        uint32_t descriptorSetDescsCount = 0;
-        const RenderRootDescriptorDesc* rootDescriptorDescs = nullptr;
-        uint32_t rootDescriptorDescsCount = 0;
-        bool isLocal = false;
-        bool allowInputLayout = false;
+        const RenderPushConstantRange *pushConstantRanges PLUME_DEFAULT(nullptr);
+        uint32_t pushConstantRangesCount PLUME_DEFAULT(0);
+        const RenderDescriptorSetDesc *descriptorSetDescs PLUME_DEFAULT(nullptr);
+        uint32_t descriptorSetDescsCount PLUME_DEFAULT(0);
+        const RenderRootDescriptorDesc* rootDescriptorDescs PLUME_DEFAULT(nullptr);
+        uint32_t rootDescriptorDescsCount PLUME_DEFAULT(0);
+        bool isLocal PLUME_DEFAULT(false);
+        bool allowInputLayout PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderPipelineLayoutDesc() = default;
 
         RenderPipelineLayoutDesc(const RenderPushConstantRange *pushConstantRanges, uint32_t pushConstantRangesCount, const RenderDescriptorSetDesc *descriptorSetDescs, uint32_t descriptorSetDescsCount, bool isLocal = false, bool allowInputLayout = false) {
@@ -1494,13 +1741,15 @@ namespace plume {
             this->isLocal = isLocal;
             this->allowInputLayout = allowInputLayout;
         }
+    #endif
     };
 
     struct RenderIndexBufferView {
         RenderBufferReference buffer;
-        uint32_t size = 0;
-        RenderFormat format = RenderFormat::UNKNOWN;
+        uint32_t size PLUME_DEFAULT(0);
+        RenderFormat format PLUME_DEFAULT(RenderFormat::UNKNOWN);
 
+    #ifdef __cplusplus
         RenderIndexBufferView() = default;
 
         RenderIndexBufferView(RenderBufferReference buffer, uint32_t size, RenderFormat format) {
@@ -1508,28 +1757,32 @@ namespace plume {
             this->size = size;
             this->format = format;
         }
+    #endif
     };
 
     struct RenderVertexBufferView {
         RenderBufferReference buffer;
-        uint32_t size = 0;
+        uint32_t size PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderVertexBufferView() = default;
 
         RenderVertexBufferView(RenderBufferReference buffer, uint32_t size) {
             this->buffer = buffer;
             this->size = size;
         }
+    #endif
     };
 
     struct RenderViewport {
-        float x = 0.0f;
-        float y = 0.0f;
-        float width = 0.0f;
-        float height = 0.0f;
-        float minDepth = 0.0f;
-        float maxDepth = 1.0f;
+        float x PLUME_DEFAULT(0.0f);
+        float y PLUME_DEFAULT(0.0f);
+        float width PLUME_DEFAULT(0.0f);
+        float height PLUME_DEFAULT(0.0f);
+        float minDepth PLUME_DEFAULT(0.0f);
+        float maxDepth PLUME_DEFAULT(1.0f);
 
+    #ifdef __cplusplus
         RenderViewport() = default;
 
         RenderViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) {
@@ -1552,14 +1805,16 @@ namespace plume {
         bool isEmpty() const {
             return (width <= 0.0f) || (height <= 0.0f);
         }
+    #endif
     };
 
     struct RenderRect {
-        int32_t left = 0;
-        int32_t top = 0;
-        int32_t right = 0;
-        int32_t bottom = 0;
+        int32_t left PLUME_DEFAULT(0);
+        int32_t top PLUME_DEFAULT(0);
+        int32_t right PLUME_DEFAULT(0);
+        int32_t bottom PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderRect() = default;
 
         RenderRect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
@@ -1580,16 +1835,18 @@ namespace plume {
         bool isEmpty() const {
             return (left >= right) || (top >= bottom);
         }
+    #endif
     };
 
     struct RenderBox {
-        int32_t left = 0;
-        int32_t top = 0;
-        int32_t front = 0;
-        int32_t right = 0;
-        int32_t bottom = 0;
-        int32_t back = 0;
+        int32_t left PLUME_DEFAULT(0);
+        int32_t top PLUME_DEFAULT(0);
+        int32_t front PLUME_DEFAULT(0);
+        int32_t right PLUME_DEFAULT(0);
+        int32_t bottom PLUME_DEFAULT(0);
+        int32_t back PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderBox() = default;
 
         RenderBox(int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front = 0, int32_t back = 1) {
@@ -1600,28 +1857,32 @@ namespace plume {
             this->bottom = bottom;
             this->back = back;
         }
+    #endif
     };
 
     struct RenderRange {
-        uint64_t begin = 0;
-        uint64_t end = 0;
+        uint64_t begin PLUME_DEFAULT(0);
+        uint64_t end PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderRange() = default;
 
         RenderRange(uint64_t begin, uint64_t end) {
             this->begin = begin;
             this->end = end;
         }
+    #endif
     };
 
     struct RenderFramebufferDesc {
-        const RenderTexture **colorAttachments = nullptr;
-        const RenderTextureView **colorAttachmentViews = nullptr;
-        uint32_t colorAttachmentsCount = 0;
-        const RenderTexture *depthAttachment = nullptr;
-        const RenderTextureView *depthAttachmentView = nullptr;
-        bool depthAttachmentReadOnly = false;
+        const RenderTexture **colorAttachments PLUME_DEFAULT(nullptr);
+        const RenderTextureView **colorAttachmentViews PLUME_DEFAULT(nullptr);
+        uint32_t colorAttachmentsCount PLUME_DEFAULT(0);
+        const RenderTexture *depthAttachment PLUME_DEFAULT(nullptr);
+        const RenderTextureView *depthAttachmentView PLUME_DEFAULT(nullptr);
+        bool depthAttachmentReadOnly PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderFramebufferDesc() = default;
 
         RenderFramebufferDesc(const RenderTexture **colorAttachments, uint32_t colorAttachmentsCount, const RenderTexture *depthAttachment = nullptr, bool depthAttachmentReadOnly = false) {
@@ -1630,18 +1891,20 @@ namespace plume {
             this->depthAttachment = depthAttachment;
             this->depthAttachmentReadOnly = depthAttachmentReadOnly;
         }
+    #endif
     };
 
     struct RenderBottomLevelASMesh {
         RenderBufferReference indexBuffer;
         RenderBufferReference vertexBuffer;
-        RenderFormat indexFormat = RenderFormat::UNKNOWN;
-        RenderFormat vertexFormat = RenderFormat::UNKNOWN;
-        uint32_t indexCount = 0;
-        uint32_t vertexCount = 0;
-        uint32_t vertexStride = 0;
-        bool isOpaque = false;
+        RenderFormat indexFormat PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        RenderFormat vertexFormat PLUME_DEFAULT(RenderFormat::UNKNOWN);
+        uint32_t indexCount PLUME_DEFAULT(0);
+        uint32_t vertexCount PLUME_DEFAULT(0);
+        uint32_t vertexStride PLUME_DEFAULT(0);
+        bool isOpaque PLUME_DEFAULT(false);
 
+    #ifdef __cplusplus
         RenderBottomLevelASMesh() = default;
 
         RenderBottomLevelASMesh(RenderBufferReference indexBuffer, RenderBufferReference vertexBuffer, RenderFormat indexFormat, RenderFormat vertexFormat, uint32_t indexCount, uint32_t vertexCount, uint32_t vertexStride, bool isOpaque) {
@@ -1654,28 +1917,32 @@ namespace plume {
             this->vertexStride = vertexStride;
             this->isOpaque = isOpaque;
         }
+    #endif
     };
 
     struct RenderBottomLevelASBuildInfo {
-        uint32_t meshCount = 0;
-        uint32_t primitiveCount = 0;
-        bool preferFastBuild = false;
-        bool preferFastTrace = false;
-        uint64_t scratchSize = 0;
-        uint64_t accelerationStructureSize = 0;
+        uint32_t meshCount PLUME_DEFAULT(0);
+        uint32_t primitiveCount PLUME_DEFAULT(0);
+        bool preferFastBuild PLUME_DEFAULT(false);
+        bool preferFastTrace PLUME_DEFAULT(false);
+        uint64_t scratchSize PLUME_DEFAULT(0);
+        uint64_t accelerationStructureSize PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         // Private backend data. Can go unused.
         std::vector<uint8_t> buildData;
+    #endif
     };
 
     struct RenderTopLevelASInstance {
         RenderBufferReference bottomLevelAS;
-        uint32_t instanceID = 0;
-        uint32_t instanceMask = 0;
-        uint32_t instanceContributionToHitGroupIndex = 0;
-        bool cullDisable = false;
+        uint32_t instanceID PLUME_DEFAULT(0);
+        uint32_t instanceMask PLUME_DEFAULT(0);
+        uint32_t instanceContributionToHitGroupIndex PLUME_DEFAULT(0);
+        bool cullDisable PLUME_DEFAULT(false);
         RenderAffineTransform transform;
 
+    #ifdef __cplusplus
         RenderTopLevelASInstance() = default;
 
         RenderTopLevelASInstance(RenderBufferReference bottomLevelAS, uint32_t instanceID, uint32_t instanceMask, uint32_t instanceContributionToHitGroupIndex, bool cullDisable, RenderAffineTransform transform) {
@@ -1686,31 +1953,36 @@ namespace plume {
             this->cullDisable = cullDisable;
             this->transform = transform;
         }
+    #endif
     };
 
+#ifdef __cplusplus
     struct RenderTopLevelASBuildInfo {
         // The instances buffer data must be uploaded to the GPU by the API user.
         std::vector<uint8_t> instancesBufferData;
-        uint32_t instanceCount = 0;
-        bool preferFastBuild = false;
-        bool preferFastTrace = false;
-        uint64_t scratchSize = 0;
-        uint64_t accelerationStructureSize = 0;
+        uint32_t instanceCount PLUME_DEFAULT(0);
+        bool preferFastBuild PLUME_DEFAULT(false);
+        bool preferFastTrace PLUME_DEFAULT(false);
+        uint64_t scratchSize PLUME_DEFAULT(0);
+        uint64_t accelerationStructureSize PLUME_DEFAULT(0);
 
         // Private backend data. Can go unused.
         std::vector<uint8_t> buildData;
     };
+#endif
 
     struct RenderShaderBindingGroup {
-        const RenderPipelineProgram *pipelinePrograms = nullptr;
-        uint32_t pipelineProgramsCount = 0;
+        const RenderPipelineProgram *pipelinePrograms PLUME_DEFAULT(nullptr);
+        uint32_t pipelineProgramsCount PLUME_DEFAULT(0);
 
+    #ifdef __cplusplus
         RenderShaderBindingGroup() = default;
 
         RenderShaderBindingGroup(const RenderPipelineProgram *pipelinePrograms, uint32_t pipelineProgramsCount) {
             this->pipelinePrograms = pipelinePrograms;
             this->pipelineProgramsCount = pipelineProgramsCount;
         }
+    #endif
     };
 
     struct RenderShaderBindingGroups {
@@ -1719,6 +1991,7 @@ namespace plume {
         RenderShaderBindingGroup hitGroup;
         RenderShaderBindingGroup callable;
 
+    #ifdef __cplusplus
         RenderShaderBindingGroups() = default;
 
         RenderShaderBindingGroups(RenderShaderBindingGroup rayGen, RenderShaderBindingGroup miss, RenderShaderBindingGroup hitGroup, RenderShaderBindingGroup callable = RenderShaderBindingGroup()) {
@@ -1727,15 +2000,16 @@ namespace plume {
             this->hitGroup = hitGroup;
             this->callable = callable;
         }
+    #endif
     };
 
     struct RenderShaderBindingGroupInfo {
-        uint64_t offset = 0;
-        uint64_t size = 0;
-        uint32_t stride = 0;
+        uint64_t offset PLUME_DEFAULT(0);
+        uint64_t size PLUME_DEFAULT(0);
+        uint32_t stride PLUME_DEFAULT(0);
 
         // Convenience index for selecting a different binding in the table. offset must add startIndex * stride.
-        uint32_t startIndex = 0;
+        uint32_t startIndex PLUME_DEFAULT(0);
     };
 
     struct RenderShaderBindingGroupsInfo {
@@ -1745,6 +2019,7 @@ namespace plume {
         RenderShaderBindingGroupInfo callable;
     };
 
+#ifdef __cplusplus
     struct RenderShaderBindingTableInfo {
         // The table buffer data must be uploaded to the GPU by the API user and submitted to dispatchRays().
         std::vector<uint8_t> tableBufferData;
@@ -1754,63 +2029,67 @@ namespace plume {
     };
 
     struct RenderDeviceDescription {
-        std::string name = "Unknown";
-        RenderDeviceType type = RenderDeviceType::UNKNOWN;
-        RenderDeviceVendor vendor = RenderDeviceVendor::UNKNOWN;
-        uint64_t driverVersion = 0;
-        uint64_t dedicatedVideoMemory = 0;
+        std::string name PLUME_DEFAULT("Unknown");
+        RenderDeviceType type PLUME_DEFAULT(RenderDeviceType::UNKNOWN);
+        RenderDeviceVendor vendor PLUME_DEFAULT(RenderDeviceVendor::UNKNOWN);
+        uint64_t driverVersion PLUME_DEFAULT(0);
+        uint64_t dedicatedVideoMemory PLUME_DEFAULT(0);
     };
+#endif
 
     struct RenderDeviceCapabilities {
         // Geometry shaders.
-        bool geometryShader = false;
+        bool geometryShader PLUME_DEFAULT(false);
 
         // Raytracing.
-        bool raytracing = false;
-        bool raytracingStateUpdate = false;
+        bool raytracing PLUME_DEFAULT(false);
+        bool raytracingStateUpdate PLUME_DEFAULT(false);
 
         // MSAA.
-        bool sampleLocations = false;
+        bool sampleLocations PLUME_DEFAULT(false);
 
         // Resolve.
-        bool resolveRegion = false;
-        bool resolveModes = false;
+        bool resolveRegion PLUME_DEFAULT(false);
+        bool resolveModes PLUME_DEFAULT(false);
 
         // Bindless resources.
-        bool descriptorIndexing = false;
-        bool scalarBlockLayout = false;
+        bool descriptorIndexing PLUME_DEFAULT(false);
+        bool scalarBlockLayout PLUME_DEFAULT(false);
 
         // Buffers.
-        bool bufferDeviceAddress = false;
-        
+        bool bufferDeviceAddress PLUME_DEFAULT(false);
+
         // Samplers.
-        bool samplerMirrorClampToEdge = false;
+        bool samplerMirrorClampToEdge PLUME_DEFAULT(false);
 
         // Present.
-        bool presentWait = false;
-        bool displayTiming = false;
+        bool presentWait PLUME_DEFAULT(false);
+        bool displayTiming PLUME_DEFAULT(false);
 
         // Framebuffers.
-        uint64_t maxTextureSize = 0;
+        uint64_t maxTextureSize PLUME_DEFAULT(0);
 
         // HDR.
-        bool preferHDR = false;
+        bool preferHDR PLUME_DEFAULT(false);
 
         // Draw.
-        bool triangleFan = false;
-        bool dynamicDepthBias = false;
+        bool triangleFan PLUME_DEFAULT(false);
+        bool dynamicDepthBias PLUME_DEFAULT(false);
 
         // UMA.
-        bool uma = false;
+        bool uma PLUME_DEFAULT(false);
 
         // GPU Upload heap.
-        bool gpuUploadHeap = false;
+        bool gpuUploadHeap PLUME_DEFAULT(false);
 
         // Query Pools.
-        bool queryPools = false;
+        bool queryPools PLUME_DEFAULT(false);
     };
 
     struct RenderInterfaceCapabilities {
-        RenderShaderFormat shaderFormat = RenderShaderFormat::UNKNOWN;
+        RenderShaderFormat shaderFormat PLUME_DEFAULT(RenderShaderFormat::UNKNOWN);
     };
+
+#ifdef __cplusplus
 };
+#endif
