@@ -836,16 +836,17 @@ namespace plume {
     }
 
     MTL::ResourceOptions mapResourceOption(RenderHeapType heapType) {
+        const MTL::ResourceOptions commonOptions = MTL::ResourceHazardTrackingModeUntracked | MTL::ResourceCPUCacheModeDefaultCache;
         switch (heapType) {
             case RenderHeapType::DEFAULT:
-                return MTL::ResourceStorageModePrivate;
+                return commonOptions | MTL::ResourceStorageModePrivate;
             case RenderHeapType::UPLOAD:
             case RenderHeapType::READBACK:
             case RenderHeapType::GPU_UPLOAD:
-                return MTL::ResourceStorageModeShared;
+                return commonOptions | MTL::ResourceStorageModeShared;
             default:
                 assert(false && "Unknown heap type.");
-                return MTL::ResourceStorageModePrivate;
+                return commonOptions | MTL::ResourceStorageModePrivate;
         }
     }
 
