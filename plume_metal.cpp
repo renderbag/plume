@@ -1916,7 +1916,7 @@ namespace plume {
         // Metal supports a maximum of 3 drawables.
         this->drawables.resize(MAX_DRAWABLES);
 
-        this->windowWrapper = std::make_unique<CocoaWindow>(desc.renderWindow.window);
+        this->windowWrapper = std::make_unique<AppleWindow>(desc.renderWindow.window);
         getWindowSize(width, height);
 
         // Set the layer's drawable size to match the window size
@@ -2100,7 +2100,7 @@ namespace plume {
 
     void MetalSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
         MetalAutoreleasePool releasePool;
-        CocoaWindowAttributes attributes;
+        AppleWindowAttributes attributes;
         windowWrapper->getWindowAttributes(&attributes);
         dstWidth = attributes.width;
         dstHeight = attributes.height;

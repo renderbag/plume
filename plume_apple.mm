@@ -7,7 +7,7 @@
 
 #include "plume_apple.h"
 #include <TargetConditionals.h>
-#if TARGET_OS_OSX 
+#if TARGET_OS_OSX
 #import <AppKit/AppKit.h>
 #import <IOKit/IOKitLib.h>
 #else
@@ -73,9 +73,9 @@ namespace plume {
     }
 #endif
 
-    // MARK: - CocoaWindow
+    // MARK: - AppleWindow
 
-    CocoaWindow::CocoaWindow(void* window)
+    AppleWindow::AppleWindow(void* window)
         : windowHandle(window), cachedRefreshRate(0) {
         cachedAttributes = {0, 0, 0, 0};
 
@@ -105,9 +105,9 @@ namespace plume {
         }
     }
 
-    CocoaWindow::~CocoaWindow() {}
+    AppleWindow::~AppleWindow() {}
 
-    void CocoaWindow::updateWindowAttributesInternal(bool forceSync) {
+    void AppleWindow::updateWindowAttributesInternal(bool forceSync) {
         auto updateBlock = ^{
         #if TARGET_OS_OSX   
             NSWindow *nsWindow = (__bridge NSWindow *)windowHandle;
@@ -133,7 +133,7 @@ namespace plume {
         }
     }
 
-    void CocoaWindow::updateRefreshRateInternal(bool forceSync) {
+    void AppleWindow::updateRefreshRateInternal(bool forceSync) {
         auto updateBlock = ^{
         #if TARGET_OS_OSX
             NSWindow *nsWindow = (__bridge NSWindow *)windowHandle;
@@ -157,7 +157,7 @@ namespace plume {
         }
     }
 
-    void CocoaWindow::getWindowAttributes(CocoaWindowAttributes* attributes) const {
+    void AppleWindow::getWindowAttributes(AppleWindowAttributes* attributes) const {
       if ([NSThread isMainThread]) {
         #if TARGET_OS_OSX
             NSWindow *nsWindow = (__bridge NSWindow *)windowHandle;
@@ -171,10 +171,10 @@ namespace plume {
 
             {
                 std::lock_guard<std::mutex> lock(attributesMutex);
-                const_cast<CocoaWindow*>(this)->cachedAttributes.x = (int)round(contentFrame.origin.x);
-                const_cast<CocoaWindow*>(this)->cachedAttributes.y = (int)round(contentFrame.origin.y);
-                const_cast<CocoaWindow*>(this)->cachedAttributes.width = (int)round(contentFrame.size.width * scaleFactor);
-                const_cast<CocoaWindow*>(this)->cachedAttributes.height = (int)round(contentFrame.size.height * scaleFactor);
+                const_cast<AppleWindow*>(this)->cachedAttributes.x = (int)round(contentFrame.origin.x);
+                const_cast<AppleWindow*>(this)->cachedAttributes.y = (int)round(contentFrame.origin.y);
+                const_cast<AppleWindow*>(this)->cachedAttributes.width = (int)round(contentFrame.size.width * scaleFactor);
+                const_cast<AppleWindow*>(this)->cachedAttributes.height = (int)round(contentFrame.size.height * scaleFactor);
 
                 *attributes = cachedAttributes;
             }
@@ -184,11 +184,11 @@ namespace plume {
                 *attributes = cachedAttributes;
             }
 
-            const_cast<CocoaWindow*>(this)->updateWindowAttributesInternal(false);
+            const_cast<AppleWindow*>(this)->updateWindowAttributesInternal(false);
         }
     }
 
-    int CocoaWindow::getRefreshRate() const {
+    int AppleWindow::getRefreshRate() const {
         if ([NSThread isMainThread]) {
         #if TARGET_OS_OSX
             NSWindow *nsWindow = (__bridge NSWindow *)windowHandle;
@@ -196,7 +196,7 @@ namespace plume {
 
             if (@available(macOS 12.0, *)) {
                 int freshRate = (int)[screen maximumFramesPerSecond];
-                const_cast<CocoaWindow*>(this)->cachedRefreshRate.store(freshRate);
+                const_cast<AppleWindow*>(this)->cachedRefreshRate.store(freshRate);
                 return freshRate;
             }
         #else
@@ -204,7 +204,7 @@ namespace plume {
             UIScreen *screen = [uiWindow screen];
             if (@available(iOS 10.3, *)) {
                 int freshRate = (int)[screen maximumFramesPerSecond];
-                const_cast<CocoaWindow*>(this)->cachedRefreshRate.store(freshRate);
+                const_cast<AppleWindow*>(this)->cachedRefreshRate.store(freshRate);
                 return freshRate;
             }
         #endif
@@ -212,13 +212,13 @@ namespace plume {
         } else {
             int rate = cachedRefreshRate.load();
 
-            const_cast<CocoaWindow*>(this)->updateRefreshRateInternal(false);
+            const_cast<AppleWindow*>(this)->updateRefreshRateInternal(false);
 
             return rate;
         }
     }
 
-    void CocoaWindow::toggleFullscreen() {
+    void AppleWindow::toggleFullscreen() {
     #if TARGET_OS_OSX
         if ([NSThread isMainThread]) {
             NSWindow *nsWindow = (__bridge NSWindow *)windowHandle;

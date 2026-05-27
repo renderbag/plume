@@ -227,7 +227,7 @@ namespace plume {
         VulkanCommandQueue *commandQueue = nullptr;
         VkSurfaceKHR surface = VK_NULL_HANDLE;
 #if defined(__APPLE__)
-        std::unique_ptr<CocoaWindow> windowWrapper;
+        std::unique_ptr<AppleWindow> windowWrapper;
 #endif
         uint64_t presentCount = 0;
         uint32_t width = 0;
