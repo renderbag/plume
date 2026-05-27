@@ -238,7 +238,7 @@ namespace plume {
         uint32_t refreshRate = 0;
         std::vector<MetalDrawable> drawables;
         uint32_t currentAvailableDrawableIndex = 0;
-        std::unique_ptr<CocoaWindow> windowWrapper;
+        std::unique_ptr<AppleWindow> windowWrapper;
 
         // Present wait
         uint64_t currentPresentId = 0;

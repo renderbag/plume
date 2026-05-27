@@ -14,25 +14,25 @@
 namespace plume {
     RenderDeviceVendor getRenderDeviceVendor(uint64_t registryID);
 
-    struct CocoaWindowAttributes {
+    struct AppleWindowAttributes {
         int x, y;
         int width, height;
     };
 
-    class CocoaWindow {
+    class AppleWindow {
         void* windowHandle;
-        CocoaWindowAttributes cachedAttributes;
+        AppleWindowAttributes cachedAttributes;
         std::atomic<int> cachedRefreshRate;
         mutable std::mutex attributesMutex;
 
         void updateWindowAttributesInternal(bool forceSync = false);
         void updateRefreshRateInternal(bool forceSync = false);
     public:
-        CocoaWindow(void* window);
-        ~CocoaWindow();
+        AppleWindow(void* window);
+        ~AppleWindow();
 
         // Get cached window attributes, may trigger async update
-        void getWindowAttributes(CocoaWindowAttributes* attributes) const;
+        void getWindowAttributes(AppleWindowAttributes* attributes) const;
 
         // Get cached refresh rate, may trigger async update
         int getRefreshRate() const;
