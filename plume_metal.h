@@ -66,7 +66,7 @@ namespace plume {
     };
 
     struct ClearPipelineKey {
-        static_assert(static_cast<uint32_t>(RenderFormat::MAX) < 128,
+        static_assert(static_cast<uint32_t>(RenderFormat::MAX) < 256,
                 "ClearPipelineKey needs to use more bits for each render target format.");
 
         union {
@@ -75,14 +75,16 @@ namespace plume {
                 uint64_t depthClear: 1;
                 uint64_t stencilClear: 1;
                 uint64_t msaaCount: 4;
-                uint64_t colorFormat0: 7;
-                uint64_t colorFormat1: 7;
-                uint64_t colorFormat2: 7;
-                uint64_t colorFormat3: 7;
-                uint64_t colorFormat4: 7;
-                uint64_t colorFormat5: 7;
-                uint64_t colorFormat6: 7;
-                uint64_t depthFormat: 7;
+                uint64_t colorFormat0: 8;
+                uint64_t colorFormat1: 8;
+                uint64_t colorFormat2: 8;
+                uint64_t colorFormat3: 8;
+                uint64_t colorFormat4: 8;
+                uint64_t colorFormat5: 8;
+                uint64_t colorFormat6: 8;
+                // There are effectively 4 depth buffer formats so using more bits 
+                // is wasteful
+                uint64_t depthFormat: 2;
             };
         };
     };

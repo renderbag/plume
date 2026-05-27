@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <cassert>
 
 #include "plume_metal.h"
 
@@ -43,6 +44,21 @@ namespace plume {
         return (n + alignment - 1) & ~(alignment - 1);
     }
 
+    inline constexpr uint64_t encodeDepthFormat(MTL::PixelFormat format) {
+        switch (format) {
+            case MTL::PixelFormatDepth16Unorm:
+                return 1;
+            case MTL::PixelFormatDepth32Float:
+                return 2;
+            case MTL::PixelFormatDepth24Unorm_Stencil8:
+                return 3;
+            case MTL::PixelFormatDepth32Float_Stencil8:
+                return 4;
+            default:
+                assert(false && "Unknown depth format.");
+        }
+    }
+
     uint64_t createClearPipelineKey(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled, bool stencilWriteEnabled) {
         auto colorFormat = [&](uint32_t index) {
             if (auto colorAttachment = pipelineDesc->colorAttachments()->object(index)) {
@@ -63,7 +79,7 @@ namespace plume {
         key.colorFormat4 = colorFormat(4);
         key.colorFormat5 = colorFormat(5);
         key.colorFormat6 = colorFormat(6);
-        key.depthFormat = static_cast<uint64_t>(mapRenderFormat(pipelineDesc->depthAttachmentPixelFormat()));
+        key.depthFormat = encodeDepthFormat(pipelineDesc->depthAttachmentPixelFormat());
 
         return key.value;
     }
