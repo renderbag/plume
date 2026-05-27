@@ -249,6 +249,118 @@ namespace plume {
             return VK_FORMAT_BC7_UNORM_BLOCK;
         case RenderFormat::BC7_UNORM_SRGB:
             return VK_FORMAT_BC7_SRGB_BLOCK;
+        case RenderFormat::ASTC_4X4_TYPELESS:
+            return VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_4X4_FLOAT:
+            return VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_4X4_UNORM:
+            return VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+        case RenderFormat::ASTC_4X4_UNORM_SRGB:
+            return VK_FORMAT_ASTC_4x4_SRGB_BLOCK;
+        case RenderFormat::ASTC_5X4_TYPELESS:
+            return VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_5X4_FLOAT:
+            return VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_5X4_UNORM:
+            return VK_FORMAT_ASTC_5x4_UNORM_BLOCK;
+        case RenderFormat::ASTC_5X4_UNORM_SRGB:
+            return VK_FORMAT_ASTC_5x4_SRGB_BLOCK;
+        case RenderFormat::ASTC_5X5_TYPELESS:
+            return VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_5X5_FLOAT:
+            return VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_5X5_UNORM:
+            return VK_FORMAT_ASTC_5x5_UNORM_BLOCK;
+        case RenderFormat::ASTC_5X5_UNORM_SRGB:
+            return VK_FORMAT_ASTC_5x5_SRGB_BLOCK;
+        case RenderFormat::ASTC_6X5_TYPELESS:
+            return VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_6X5_FLOAT:
+            return VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_6X5_UNORM:
+            return VK_FORMAT_ASTC_6x5_UNORM_BLOCK;
+        case RenderFormat::ASTC_6X5_UNORM_SRGB:
+            return VK_FORMAT_ASTC_6x5_SRGB_BLOCK;
+        case RenderFormat::ASTC_6X6_TYPELESS:
+            return VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_6X6_FLOAT:
+            return VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_6X6_UNORM:
+            return VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
+        case RenderFormat::ASTC_6X6_UNORM_SRGB:
+            return VK_FORMAT_ASTC_6x6_SRGB_BLOCK;
+        case RenderFormat::ASTC_8X5_TYPELESS:
+            return VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X5_FLOAT:
+            return VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X5_UNORM:
+            return VK_FORMAT_ASTC_8x5_UNORM_BLOCK;
+        case RenderFormat::ASTC_8X5_UNORM_SRGB:
+            return VK_FORMAT_ASTC_8x5_SRGB_BLOCK;
+        case RenderFormat::ASTC_8X6_TYPELESS:
+            return VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X6_FLOAT:
+            return VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X6_UNORM:
+            return VK_FORMAT_ASTC_8x6_UNORM_BLOCK;
+        case RenderFormat::ASTC_8X6_UNORM_SRGB:
+            return VK_FORMAT_ASTC_8x6_SRGB_BLOCK;
+        case RenderFormat::ASTC_8X8_TYPELESS:
+            return VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X8_FLOAT:
+            return VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_8X8_UNORM:
+            return VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
+        case RenderFormat::ASTC_8X8_UNORM_SRGB:
+            return VK_FORMAT_ASTC_8x8_SRGB_BLOCK;
+        case RenderFormat::ASTC_10X5_TYPELESS:
+            return VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X5_FLOAT:
+            return VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X5_UNORM:
+            return VK_FORMAT_ASTC_10x5_UNORM_BLOCK;
+        case RenderFormat::ASTC_10X5_UNORM_SRGB:
+            return VK_FORMAT_ASTC_10x5_SRGB_BLOCK;
+        case RenderFormat::ASTC_10X6_TYPELESS:
+            return VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X6_FLOAT:
+            return VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X6_UNORM:
+            return VK_FORMAT_ASTC_10x6_UNORM_BLOCK;
+        case RenderFormat::ASTC_10X6_UNORM_SRGB:
+            return VK_FORMAT_ASTC_10x6_SRGB_BLOCK;
+        case RenderFormat::ASTC_10X8_TYPELESS:
+            return VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X8_FLOAT:
+            return VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X8_UNORM:
+            return VK_FORMAT_ASTC_10x8_UNORM_BLOCK;
+        case RenderFormat::ASTC_10X8_UNORM_SRGB:
+            return VK_FORMAT_ASTC_10x8_SRGB_BLOCK;
+        case RenderFormat::ASTC_10X10_TYPELESS:
+            return VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X10_FLOAT:
+            return VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_10X10_UNORM:
+            return VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
+        case RenderFormat::ASTC_10X10_UNORM_SRGB:
+            return VK_FORMAT_ASTC_10x10_SRGB_BLOCK;
+        case RenderFormat::ASTC_12X10_TYPELESS:
+            return VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_12X10_FLOAT:
+            return VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_12X10_UNORM:
+            return VK_FORMAT_ASTC_12x10_UNORM_BLOCK;
+        case RenderFormat::ASTC_12X10_UNORM_SRGB:
+            return VK_FORMAT_ASTC_12x10_SRGB_BLOCK;
+        case RenderFormat::ASTC_12X12_TYPELESS:
+            return VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_12X12_FLOAT:
+            return VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK;
+        case RenderFormat::ASTC_12X12_UNORM:
+            return VK_FORMAT_ASTC_12x12_UNORM_BLOCK;
+        case RenderFormat::ASTC_12X12_UNORM_SRGB:
+            return VK_FORMAT_ASTC_12x12_SRGB_BLOCK;
         default:
             assert(false && "Unknown format.");
             return VK_FORMAT_UNDEFINED;
@@ -3213,10 +3325,11 @@ namespace plume {
             assert(srcBuffer != nullptr);
 
             const uint32_t blockWidth = RenderFormatBlockWidth(dstTexture->desc.format);
+            const uint32_t blockHeight = RenderFormatBlockHeight(dstTexture->desc.format);
             VkBufferImageCopy imageCopy = {};
             imageCopy.bufferOffset = srcLocation.placedFootprint.offset;
             imageCopy.bufferRowLength = ((srcLocation.placedFootprint.rowWidth + blockWidth - 1) / blockWidth) * blockWidth;
-            imageCopy.bufferImageHeight = ((srcLocation.placedFootprint.height + blockWidth - 1) / blockWidth) * blockWidth;
+            imageCopy.bufferImageHeight = ((srcLocation.placedFootprint.height + blockHeight - 1) / blockHeight) * blockHeight;
             imageCopy.imageSubresource.aspectMask = toAspectFlags(dstTexture->desc.format, dstTexture->desc.flags);
             imageCopy.imageSubresource.baseArrayLayer = dstLocation.subresource.arrayIndex;
             imageCopy.imageSubresource.layerCount = 1;
