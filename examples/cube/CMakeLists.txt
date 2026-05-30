@@ -8,12 +8,26 @@ target_link_libraries(plume_cube PRIVATE plume ${SDL2_LIBRARIES})
 
 # Platform-specific libraries
 if(APPLE)
-    target_link_libraries(plume_cube PRIVATE "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation -framework IOKit")
+    target_link_libraries(plume_cube PRIVATE "-framework Metal -framework QuartzCore -framework CoreGraphics -framework Foundation")
+
+    if(NOT IOS)
+        target_link_libraries(plume_cube PRIVATE "-framework IOKit")
+    endif()
 
     set_target_properties(plume_cube PROPERTIES
         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
         XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS ${CMAKE_CURRENT_SOURCE_DIR}/../plume.entitlements
     )
+
+    if(IOS)
+        set_target_properties(plume_triangle PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.renderbag.plume_cube"
+            MACOSX_BUNDLE_BUNDLE_NAME "Plume Cube"
+            MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
+            MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+        )
+    endif()
 elseif(WIN32)
     target_link_libraries(plume_cube PRIVATE d3d12 dxgi)
 

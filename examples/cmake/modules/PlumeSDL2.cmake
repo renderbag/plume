@@ -61,6 +61,7 @@ function(plume_find_sdl2)
         FetchContent_MakeAvailable(plume_sdl2)
 
         set(_sdl2_src "${plume_sdl2_SOURCE_DIR}")
+
         if(NOT EXISTS "${_sdl2_src}/include" AND EXISTS "${_sdl2_src}/SDL2-${PLUME_SDL2_VERSION}/include")
             set(_sdl2_src "${_sdl2_src}/SDL2-${PLUME_SDL2_VERSION}")
         endif()
@@ -84,7 +85,13 @@ macro(_plume_sdl2_setup_from_dir _sdl2_root)
 
     set(SDL2_INCLUDE_DIRS "${_sdl2_root}/include" CACHE INTERNAL "")
     set(SDL2_BINDIR "${_sdl2_root}/lib/${_plume_sdl2_arch}" CACHE INTERNAL "")
-    set(SDL2_LIBRARIES "${SDL2_BINDIR}/SDL2.lib;${SDL2_BINDIR}/SDL2main.lib" CACHE INTERNAL "")
+
+    if(WIN32)
+        set(SDL2_LIBRARIES "${SDL2_BINDIR}/SDL2.lib;${SDL2_BINDIR}/SDL2main.lib" CACHE INTERNAL "")
+    else()
+        set(SDL2_LIBRARIES "${SDL2_BINDIR}/libSDL2.a;${SDL2_BINDIR}/libSDL2main.a" CACHE INTERNAL "")
+    endif()
+
     set(PLUME_SDL2_FOUND TRUE CACHE INTERNAL "")
 
     unset(_plume_sdl2_arch)

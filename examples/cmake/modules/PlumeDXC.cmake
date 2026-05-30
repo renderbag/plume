@@ -3,6 +3,24 @@
 
 include(FetchContent)
 
+function(_plume_get_dxc_host_arch OUT_VAR)
+    if(CMAKE_CROSSCOMPILING)
+        set(_plume_arch "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    else()
+        set(_plume_arch "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
+    string(TOLOWER "${_plume_arch}" _plume_arch_lower)
+
+    if(_plume_arch_lower MATCHES "^(x86_64|amd64)$")
+        set(${OUT_VAR} "x64" PARENT_SCOPE)
+    elseif(_plume_arch_lower MATCHES "^(arm64|aarch64)$")
+        set(${OUT_VAR} "arm64" PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Unsupported host architecture for DXC: ${_plume_arch}")
+    endif()
+endfunction()
+
 # Set up common DXC options (called regardless of fetch)
 function(_plume_setup_dxc_options)
     if(DEFINED PLUME_DXC_COMMON_OPTS)
@@ -29,6 +47,8 @@ function(plume_fetch_dxc)
     )
     FetchContent_MakeAvailable(plume_dxc)
 
+    _plume_get_dxc_host_arch(PLUME_DXC_HOST_ARCH)
+
     # Set up DXC paths based on platform
     if(WIN32)
         set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/x64/dxc.exe" CACHE INTERNAL "DXC executable")
@@ -38,17 +58,13 @@ function(plume_fetch_dxc)
         if(EXISTS "${plume_dxc_SOURCE_DIR}/bin/x64/dxcompiler.dll")
             configure_file("${plume_dxc_SOURCE_DIR}/bin/x64/dxcompiler.dll" "${CMAKE_BINARY_DIR}/bin/dxcompiler.dll" COPYONLY)
         endif()
+
         if(EXISTS "${plume_dxc_SOURCE_DIR}/bin/x64/dxil.dll")
             configure_file("${plume_dxc_SOURCE_DIR}/bin/x64/dxil.dll" "${CMAKE_BINARY_DIR}/bin/dxil.dll" COPYONLY)
         endif()
     elseif(APPLE)
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-            set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/x64/dxc-macos" CACHE INTERNAL "DXC executable")
-            set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/x64" CACHE INTERNAL "DXC library directory")
-        else()
-            set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/arm64/dxc-macos" CACHE INTERNAL "DXC executable")
-            set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/arm64" CACHE INTERNAL "DXC library directory")
-        endif()
+        set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/${PLUME_DXC_HOST_ARCH}/dxc-macos" CACHE INTERNAL "DXC executable")
+        set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/${PLUME_DXC_HOST_ARCH}" CACHE INTERNAL "DXC library directory")
 
         # Ensure executable permission
         if(EXISTS "${PLUME_DXC_EXECUTABLE}")
@@ -58,13 +74,8 @@ function(plume_fetch_dxc)
         endif()
     else()
         # Linux
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-            set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/x64/dxc-linux" CACHE INTERNAL "DXC executable")
-            set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/x64" CACHE INTERNAL "DXC library directory")
-        else()
-            set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/arm64/dxc-linux" CACHE INTERNAL "DXC executable")
-            set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/arm64" CACHE INTERNAL "DXC library directory")
-        endif()
+        set(PLUME_DXC_EXECUTABLE "${plume_dxc_SOURCE_DIR}/bin/${PLUME_DXC_HOST_ARCH}/dxc-linux" CACHE INTERNAL "DXC executable")
+        set(PLUME_DXC_LIB_DIR "${plume_dxc_SOURCE_DIR}/lib/${PLUME_DXC_HOST_ARCH}" CACHE INTERNAL "DXC library directory")
 
         # Ensure executable permission
         if(EXISTS "${PLUME_DXC_EXECUTABLE}")
