@@ -1,13 +1,7 @@
 # PlumeFileToC.cmake
 # Builds the file_to_c tool for embedding binary files as C arrays
 
-function(_plume_get_host_build_type OUT_VAR)
-    if(CMAKE_BUILD_TYPE)
-        set(${OUT_VAR} "${CMAKE_BUILD_TYPE}" PARENT_SCOPE)
-    else()
-        set(${OUT_VAR} "Release" PARENT_SCOPE)
-    endif()
-endfunction()
+include(${CMAKE_CURRENT_LIST_DIR}/PlumeHostTool.cmake)
 
 # Build the file_to_c tool for the host system
 function(plume_build_file_to_c)
@@ -22,49 +16,31 @@ function(plume_build_file_to_c)
         message(FATAL_ERROR "plume file_to_c.cpp not found at ${FILE_TO_C_SOURCE}")
     endif()
 
-    if(CMAKE_CROSSCOMPILING)
-        _plume_get_host_build_type(HOST_BUILD_TYPE)
+    if(IOS)
+        message(STATUS "Plume - Building file_to_c as HOST tool")
 
         set(HOST_PROJECT_DIR "${CMAKE_BINARY_DIR}/host-tools/file_to_c-src")
         set(HOST_BUILD_DIR "${CMAKE_BINARY_DIR}/host-tools/file_to_c-build")
         set(HOST_INSTALL_DIR "${CMAKE_BINARY_DIR}/host-tools/install")
-        file(MAKE_DIRECTORY "${HOST_PROJECT_DIR}")
-
-        if(CMAKE_HOST_WIN32)
-            set(HOST_EXE_SUFFIX ".exe")
-        else()
-            set(HOST_EXE_SUFFIX "")
-        endif()
-
-        set(HOST_FILE_TO_C_BIN "${HOST_INSTALL_DIR}/bin/file_to_c${HOST_EXE_SUFFIX}")
 
         set(_host_file_to_c_cmake [=[
 cmake_minimum_required(VERSION 3.16)
 project(plume_host_file_to_c LANGUAGES CXX)
 
-add_executable(file_to_c "@FILE_TO_C_SOURCE@")
-set_target_properties(file_to_c PROPERTIES
+add_executable(plume_file_to_c "@FILE_TO_C_SOURCE@")
+set_target_properties(plume_file_to_c PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
-install(TARGETS file_to_c RUNTIME DESTINATION bin)
+install(TARGETS plume_file_to_c RUNTIME DESTINATION bin)
 ]=])
         string(REPLACE "@FILE_TO_C_SOURCE@" "${FILE_TO_C_SOURCE}" _host_file_to_c_cmake "${_host_file_to_c_cmake}")
         file(WRITE "${HOST_PROJECT_DIR}/CMakeLists.txt" "${_host_file_to_c_cmake}")
+        plume_add_host_tool(HOST_FILE_TO_C_BIN plume_file_to_c "${FILE_TO_C_SOURCE}" "${HOST_PROJECT_DIR}" "${HOST_BUILD_DIR}" "${HOST_INSTALL_DIR}")
 
-        add_custom_command(OUTPUT "${HOST_FILE_TO_C_BIN}"
-            COMMAND ${CMAKE_COMMAND} -S "${HOST_PROJECT_DIR}" -B "${HOST_BUILD_DIR}" -G "${CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${HOST_BUILD_TYPE}
-            COMMAND ${CMAKE_COMMAND} --build "${HOST_BUILD_DIR}" --config ${HOST_BUILD_TYPE} --target file_to_c
-            COMMAND ${CMAKE_COMMAND} --install "${HOST_BUILD_DIR}" --config ${HOST_BUILD_TYPE} --prefix "${HOST_INSTALL_DIR}"
-            DEPENDS "${FILE_TO_C_SOURCE}"
-            COMMENT "Building host file_to_c tool"
-            USES_TERMINAL
-            VERBATIM
-        )
-
-        add_custom_target(plume_file_to_c DEPENDS "${HOST_FILE_TO_C_BIN}")
         set(PLUME_FILE_TO_C_EXECUTABLE "${HOST_FILE_TO_C_BIN}" CACHE INTERNAL "Path to host file_to_c executable")
     else()
+        message(STATUS "Plume - Building file_to_c")
         add_executable(plume_file_to_c ${FILE_TO_C_SOURCE})
         set_target_properties(plume_file_to_c PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plume_tools"
@@ -72,12 +48,12 @@ install(TARGETS file_to_c RUNTIME DESTINATION bin)
             CXX_STANDARD_REQUIRED ON
         )
         set(PLUME_FILE_TO_C_EXECUTABLE "$<TARGET_FILE:plume_file_to_c>" CACHE INTERNAL "Path to file_to_c executable")
-    endif()
 
-    if(APPLE AND TARGET plume_file_to_c AND NOT CMAKE_CROSSCOMPILING)
-        set_target_properties(plume_file_to_c PROPERTIES
-            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
-        )
+        if(APPLE AND TARGET plume_file_to_c)
+            set_target_properties(plume_file_to_c PROPERTIES
+                XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+            )
+        endif()
     endif()
 endfunction()
 

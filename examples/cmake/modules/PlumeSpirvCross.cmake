@@ -2,14 +2,7 @@
 # Fetches and builds SPIRV-Cross from source, then builds our spirv_cross_msl tool
 
 include(FetchContent)
-
-function(_plume_get_host_build_type OUT_VAR)
-    if(CMAKE_BUILD_TYPE)
-        set(${OUT_VAR} "${CMAKE_BUILD_TYPE}" PARENT_SCOPE)
-    else()
-        set(${OUT_VAR} "Release" PARENT_SCOPE)
-    endif()
-endfunction()
+include(${CMAKE_CURRENT_LIST_DIR}/PlumeHostTool.cmake)
 
 # Build the spirv_cross_msl tool, fetching and compiling SPIRV-Cross if not provided
 function(plume_fetch_spirv_cross)
@@ -23,21 +16,12 @@ function(plume_fetch_spirv_cross)
         message(FATAL_ERROR "plume spirv_cross_msl.cpp not found at ${SPIRV_CROSS_MSL_SOURCE}")
     endif()
 
-    if(CMAKE_CROSSCOMPILING)
-        _plume_get_host_build_type(HOST_BUILD_TYPE)
+    if(IOS)
+        message(STATUS "Plume - Building plume_spirv_cross_msl as HOST tool")
 
         set(HOST_PROJECT_DIR "${CMAKE_BINARY_DIR}/host-tools/spirv_cross_msl-src")
         set(HOST_BUILD_DIR "${CMAKE_BINARY_DIR}/host-tools/spirv_cross_msl-build")
         set(HOST_INSTALL_DIR "${CMAKE_BINARY_DIR}/host-tools/install")
-        file(MAKE_DIRECTORY "${HOST_PROJECT_DIR}")
-
-        if(CMAKE_HOST_WIN32)
-            set(HOST_EXE_SUFFIX ".exe")
-        else()
-            set(HOST_EXE_SUFFIX "")
-        endif()
-
-        set(HOST_SPIRV_CROSS_MSL_BIN "${HOST_INSTALL_DIR}/bin/plume_spirv_cross_msl${HOST_EXE_SUFFIX}")
 
         set(_host_spirv_cross_cmake [=[
 cmake_minimum_required(VERSION 3.16)
@@ -80,94 +64,82 @@ install(TARGETS plume_spirv_cross_msl RUNTIME DESTINATION bin)
 ]=])
         string(REPLACE "@SPIRV_CROSS_MSL_SOURCE@" "${SPIRV_CROSS_MSL_SOURCE}" _host_spirv_cross_cmake "${_host_spirv_cross_cmake}")
         file(WRITE "${HOST_PROJECT_DIR}/CMakeLists.txt" "${_host_spirv_cross_cmake}")
+        plume_add_host_tool(HOST_SPIRV_CROSS_MSL_BIN plume_spirv_cross_msl "${SPIRV_CROSS_MSL_SOURCE}" "${HOST_PROJECT_DIR}" "${HOST_BUILD_DIR}" "${HOST_INSTALL_DIR}")
 
-        add_custom_command(
-            OUTPUT "${HOST_SPIRV_CROSS_MSL_BIN}"
-            COMMAND ${CMAKE_COMMAND} -S "${HOST_PROJECT_DIR}" -B "${HOST_BUILD_DIR}" -G "${CMAKE_GENERATOR}" -DCMAKE_BUILD_TYPE=${HOST_BUILD_TYPE}
-            COMMAND ${CMAKE_COMMAND} --build "${HOST_BUILD_DIR}" --config ${HOST_BUILD_TYPE} --target plume_spirv_cross_msl
-            COMMAND ${CMAKE_COMMAND} --install "${HOST_BUILD_DIR}" --config ${HOST_BUILD_TYPE} --prefix "${HOST_INSTALL_DIR}"
-            DEPENDS "${SPIRV_CROSS_MSL_SOURCE}"
-            COMMENT "Building host plume_spirv_cross_msl tool"
-            USES_TERMINAL
-            VERBATIM
-        )
-
-        add_custom_target(plume_spirv_cross_msl DEPENDS "${HOST_SPIRV_CROSS_MSL_BIN}")
         set(PLUME_SPIRV_CROSS_MSL_EXECUTABLE "${HOST_SPIRV_CROSS_MSL_BIN}" CACHE INTERNAL "Path to host plume_spirv_cross_msl executable")
-        return()
-    endif()
-
-    # Use provided paths or fetch and build from source
-    if(DEFINED PLUME_SPIRV_CROSS_LIB_DIR AND DEFINED PLUME_SPIRV_CROSS_INCLUDE_DIR)
-        # User provided prebuilt libraries
-        set(SPIRV_CROSS_LIB_DIR "${PLUME_SPIRV_CROSS_LIB_DIR}")
-        set(SPIRV_CROSS_INCLUDE_DIR "${PLUME_SPIRV_CROSS_INCLUDE_DIR}")
-        set(SPIRV_CROSS_USE_PREBUILT TRUE)
     else()
-        # Fetch and build from source
-        set(SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_GLSL ON CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_MSL ON CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_CPP OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_REFLECT OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_ENABLE_C_API OFF CACHE BOOL "" FORCE)
-        set(SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
-
-        FetchContent_Declare(
-            spirv_cross
-            GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross.git
-            GIT_TAG vulkan-sdk-1.4.335.0
-            GIT_SHALLOW TRUE
-        )
-        FetchContent_MakeAvailable(spirv_cross)
-
-        set(SPIRV_CROSS_INCLUDE_DIR "${spirv_cross_SOURCE_DIR}")
-        set(SPIRV_CROSS_USE_PREBUILT FALSE)
-    endif()
-
-    add_executable(plume_spirv_cross_msl ${SPIRV_CROSS_MSL_SOURCE})
-    target_include_directories(plume_spirv_cross_msl PRIVATE ${SPIRV_CROSS_INCLUDE_DIR})
-    set_target_properties(plume_spirv_cross_msl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-
-    if(SPIRV_CROSS_USE_PREBUILT)
-        # Link against pre-built static libraries
-        # Order matters: msl depends on glsl depends on core
-        if(WIN32)
-            target_link_libraries(plume_spirv_cross_msl PRIVATE
-                "${SPIRV_CROSS_LIB_DIR}/spirv-cross-msl.lib"
-                "${SPIRV_CROSS_LIB_DIR}/spirv-cross-glsl.lib"
-                "${SPIRV_CROSS_LIB_DIR}/spirv-cross-core.lib"
-            )
+        # Use provided paths or fetch and build from source
+        if(DEFINED PLUME_SPIRV_CROSS_LIB_DIR AND DEFINED PLUME_SPIRV_CROSS_INCLUDE_DIR)
+            # User provided prebuilt libraries
+            set(SPIRV_CROSS_LIB_DIR "${PLUME_SPIRV_CROSS_LIB_DIR}")
+            set(SPIRV_CROSS_INCLUDE_DIR "${PLUME_SPIRV_CROSS_INCLUDE_DIR}")
+            set(SPIRV_CROSS_USE_PREBUILT TRUE)
         else()
+            # Fetch and build from source
+            set(SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_GLSL ON CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_MSL ON CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_CPP OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_REFLECT OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_ENABLE_C_API OFF CACHE BOOL "" FORCE)
+            set(SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+
+            FetchContent_Declare(
+                spirv_cross
+                GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross.git
+                GIT_TAG vulkan-sdk-1.4.335.0
+                GIT_SHALLOW TRUE
+            )
+            FetchContent_MakeAvailable(spirv_cross)
+
+            set(SPIRV_CROSS_INCLUDE_DIR "${spirv_cross_SOURCE_DIR}")
+            set(SPIRV_CROSS_USE_PREBUILT FALSE)
+        endif()
+
+        add_executable(plume_spirv_cross_msl ${SPIRV_CROSS_MSL_SOURCE})
+        target_include_directories(plume_spirv_cross_msl PRIVATE ${SPIRV_CROSS_INCLUDE_DIR})
+        set_target_properties(plume_spirv_cross_msl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+
+        if(SPIRV_CROSS_USE_PREBUILT)
+            # Link against pre-built static libraries
+            # Order matters: msl depends on glsl depends on core
+            if(WIN32)
+                target_link_libraries(plume_spirv_cross_msl PRIVATE
+                    "${SPIRV_CROSS_LIB_DIR}/spirv-cross-msl.lib"
+                    "${SPIRV_CROSS_LIB_DIR}/spirv-cross-glsl.lib"
+                    "${SPIRV_CROSS_LIB_DIR}/spirv-cross-core.lib"
+                )
+            else()
+                target_link_libraries(plume_spirv_cross_msl PRIVATE
+                    "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-msl.a"
+                    "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-glsl.a"
+                    "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-core.a"
+                )
+            endif()
+        else()
+            # Link against freshly built targets
             target_link_libraries(plume_spirv_cross_msl PRIVATE
-                "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-msl.a"
-                "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-glsl.a"
-                "${SPIRV_CROSS_LIB_DIR}/libspirv-cross-core.a"
+                spirv-cross-msl
+                spirv-cross-glsl
+                spirv-cross-core
             )
         endif()
-    else()
-        # Link against freshly built targets
-        target_link_libraries(plume_spirv_cross_msl PRIVATE
-            spirv-cross-msl
-            spirv-cross-glsl
-            spirv-cross-core
-        )
-    endif()
 
-    set_target_properties(plume_spirv_cross_msl PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plume_tools"
-    )
-    set(PLUME_SPIRV_CROSS_MSL_EXECUTABLE "$<TARGET_FILE:plume_spirv_cross_msl>" CACHE INTERNAL "Path to plume_spirv_cross_msl executable")
-
-    if(APPLE)
         set_target_properties(plume_spirv_cross_msl PROPERTIES
-            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plume_tools"
         )
+        set(PLUME_SPIRV_CROSS_MSL_EXECUTABLE "$<TARGET_FILE:plume_spirv_cross_msl>" CACHE INTERNAL "Path to plume_spirv_cross_msl executable")
+
+        if(APPLE)
+            set_target_properties(plume_spirv_cross_msl PROPERTIES
+                XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+            )
+        endif()
     endif()
 endfunction()
 
