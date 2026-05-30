@@ -3779,6 +3779,7 @@ namespace plume {
         this->renderInterface = renderInterface;
 
         // Device Selection
+#if TARGET_OS_MAC
         NS::Array* devices = MTL::CopyAllDevices();
         MTL::Device *preferredDevice = nullptr;
         for (NS::UInteger i = 0; i < devices->count(); i++) {
@@ -3793,6 +3794,10 @@ namespace plume {
         mtl = preferredDevice ? preferredDevice : MTL::CreateSystemDefaultDevice();
         mtl->retain();
         devices->release();
+#else
+        mtl = MTL::CreateSystemDefaultDevice();
+        mtl->retain();
+#endif
 
         NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
 
@@ -4209,11 +4214,18 @@ namespace plume {
         capabilities.shaderFormat = RenderShaderFormat::METAL;
 
         // Fill device names.
+    #if TARGET_OS_MAC
         const NS::Array* devices = MTL::CopyAllDevices();
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
             deviceNames.push_back(std::string(deviceName->utf8String()));
         }
+    #else
+        MTL::Device* defaultDevice = MTL::CreateSystemDefaultDevice();
+        if (defaultDevice) {
+            deviceNames.push_back(std::string(defaultDevice->name()->utf8String()));
+        }
+    #endif
     }
 
     MetalInterface::~MetalInterface() {}
