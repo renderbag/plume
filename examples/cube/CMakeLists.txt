@@ -20,7 +20,7 @@ if(APPLE)
     )
 
     if(IOS)
-        set_target_properties(plume_triangle PROPERTIES
+        set_target_properties(plume_cube PROPERTIES
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.renderbag.plume_cube"
             MACOSX_BUNDLE_BUNDLE_NAME "Plume Cube"
