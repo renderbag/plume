@@ -3870,6 +3870,8 @@ namespace plume {
         clearDepthFunction->release();
         sharedBlitDescriptor->release();
 
+        nullBuffer.reset();
+
         if (residencySet != nullptr) {
             residencySet->endResidency();
             residencySet->release();
