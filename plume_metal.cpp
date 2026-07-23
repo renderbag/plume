@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <cassert>
 
 #include "plume_metal.h"
 
@@ -43,6 +44,21 @@ namespace plume {
         return (n + alignment - 1) & ~(alignment - 1);
     }
 
+    inline constexpr uint64_t encodeDepthFormat(MTL::PixelFormat format) {
+        switch (format) {
+            case MTL::PixelFormatDepth16Unorm:
+                return 1;
+            case MTL::PixelFormatDepth32Float:
+                return 2;
+            case MTL::PixelFormatDepth24Unorm_Stencil8:
+                return 3;
+            case MTL::PixelFormatDepth32Float_Stencil8:
+                return 4;
+            default:
+                assert(false && "Unknown depth format.");
+        }
+    }
+
     uint64_t createClearPipelineKey(MTL::RenderPipelineDescriptor *pipelineDesc, bool depthWriteEnabled, bool stencilWriteEnabled) {
         auto colorFormat = [&](uint32_t index) {
             if (auto colorAttachment = pipelineDesc->colorAttachments()->object(index)) {
@@ -63,7 +79,7 @@ namespace plume {
         key.colorFormat4 = colorFormat(4);
         key.colorFormat5 = colorFormat(5);
         key.colorFormat6 = colorFormat(6);
-        key.depthFormat = static_cast<uint64_t>(mapRenderFormat(pipelineDesc->depthAttachmentPixelFormat()));
+        key.depthFormat = encodeDepthFormat(pipelineDesc->depthAttachmentPixelFormat());
 
         return key.value;
     }
@@ -285,6 +301,90 @@ namespace plume {
                     return RenderFormat::BC7_UNORM;
                 case MTL::PixelFormatBC7_RGBAUnorm_sRGB:
                     return RenderFormat::BC7_UNORM_SRGB;
+                case MTL::PixelFormatASTC_4x4_LDR:
+                    return RenderFormat::ASTC_4X4_UNORM;
+                case MTL::PixelFormatASTC_4x4_sRGB:
+                    return RenderFormat::ASTC_4X4_UNORM_SRGB;
+                case MTL::PixelFormatASTC_4x4_HDR:
+                    return RenderFormat::ASTC_4X4_FLOAT;
+                case MTL::PixelFormatASTC_5x4_LDR:
+                    return RenderFormat::ASTC_5X4_UNORM;
+                case MTL::PixelFormatASTC_5x4_sRGB:
+                    return RenderFormat::ASTC_5X4_UNORM_SRGB;
+                case MTL::PixelFormatASTC_5x4_HDR:
+                    return RenderFormat::ASTC_5X4_FLOAT;
+                case MTL::PixelFormatASTC_5x5_LDR:
+                    return RenderFormat::ASTC_5X5_UNORM;
+                case MTL::PixelFormatASTC_5x5_sRGB:
+                    return RenderFormat::ASTC_5X5_UNORM_SRGB;
+                case MTL::PixelFormatASTC_5x5_HDR:
+                    return RenderFormat::ASTC_5X5_FLOAT;
+                case MTL::PixelFormatASTC_6x5_LDR:
+                    return RenderFormat::ASTC_6X5_UNORM;
+                case MTL::PixelFormatASTC_6x5_sRGB:
+                    return RenderFormat::ASTC_6X5_UNORM_SRGB;
+                case MTL::PixelFormatASTC_6x5_HDR:
+                    return RenderFormat::ASTC_6X5_FLOAT;
+                case MTL::PixelFormatASTC_6x6_LDR:
+                    return RenderFormat::ASTC_6X6_UNORM;
+                case MTL::PixelFormatASTC_6x6_sRGB:
+                    return RenderFormat::ASTC_6X6_UNORM_SRGB;
+                case MTL::PixelFormatASTC_6x6_HDR:
+                    return RenderFormat::ASTC_6X6_FLOAT;
+                case MTL::PixelFormatASTC_8x5_LDR:
+                    return RenderFormat::ASTC_8X5_UNORM;
+                case MTL::PixelFormatASTC_8x5_sRGB:
+                    return RenderFormat::ASTC_8X5_UNORM_SRGB;
+                case MTL::PixelFormatASTC_8x5_HDR:
+                    return RenderFormat::ASTC_8X5_FLOAT;
+                case MTL::PixelFormatASTC_8x6_LDR:
+                    return RenderFormat::ASTC_8X6_UNORM;
+                case MTL::PixelFormatASTC_8x6_sRGB:
+                    return RenderFormat::ASTC_8X6_UNORM_SRGB;
+                case MTL::PixelFormatASTC_8x6_HDR:
+                    return RenderFormat::ASTC_8X6_FLOAT;
+                case MTL::PixelFormatASTC_8x8_LDR:
+                    return RenderFormat::ASTC_8X8_UNORM;
+                case MTL::PixelFormatASTC_8x8_sRGB:
+                    return RenderFormat::ASTC_8X8_UNORM_SRGB;
+                case MTL::PixelFormatASTC_8x8_HDR:
+                    return RenderFormat::ASTC_8X8_FLOAT;
+                case MTL::PixelFormatASTC_10x5_LDR:
+                    return RenderFormat::ASTC_10X5_UNORM;
+                case MTL::PixelFormatASTC_10x5_sRGB:
+                    return RenderFormat::ASTC_10X5_UNORM_SRGB;
+                case MTL::PixelFormatASTC_10x5_HDR:
+                    return RenderFormat::ASTC_10X5_FLOAT;
+                case MTL::PixelFormatASTC_10x6_LDR:
+                    return RenderFormat::ASTC_10X6_UNORM;
+                case MTL::PixelFormatASTC_10x6_sRGB:
+                    return RenderFormat::ASTC_10X6_UNORM_SRGB;
+                case MTL::PixelFormatASTC_10x6_HDR:
+                    return RenderFormat::ASTC_10X6_FLOAT;
+                case MTL::PixelFormatASTC_10x8_LDR:
+                    return RenderFormat::ASTC_10X8_UNORM;
+                case MTL::PixelFormatASTC_10x8_sRGB:
+                    return RenderFormat::ASTC_10X8_UNORM_SRGB;
+                case MTL::PixelFormatASTC_10x8_HDR:
+                    return RenderFormat::ASTC_10X8_FLOAT;
+                case MTL::PixelFormatASTC_10x10_LDR:
+                    return RenderFormat::ASTC_10X10_UNORM;
+                case MTL::PixelFormatASTC_10x10_sRGB:
+                    return RenderFormat::ASTC_10X10_UNORM_SRGB;
+                case MTL::PixelFormatASTC_10x10_HDR:
+                    return RenderFormat::ASTC_10X10_FLOAT;
+                case MTL::PixelFormatASTC_12x10_LDR:
+                    return RenderFormat::ASTC_12X10_UNORM;
+                case MTL::PixelFormatASTC_12x10_sRGB:
+                    return RenderFormat::ASTC_12X10_UNORM_SRGB;
+                case MTL::PixelFormatASTC_12x10_HDR:
+                    return RenderFormat::ASTC_12X10_FLOAT;
+                case MTL::PixelFormatASTC_12x12_LDR:
+                    return RenderFormat::ASTC_12X12_UNORM;
+                case MTL::PixelFormatASTC_12x12_sRGB:
+                    return RenderFormat::ASTC_12X12_UNORM_SRGB;
+                case MTL::PixelFormatASTC_12x12_HDR:
+                    return RenderFormat::ASTC_12X12_FLOAT;
                 default:
                     assert(false && "Unknown Metal format.");
                     return RenderFormat::UNKNOWN;
@@ -402,48 +502,161 @@ namespace plume {
             case RenderFormat::R8_SINT:
                 return MTL::PixelFormatR8Sint;
             // Block compressed formats
-           case RenderFormat::BC1_TYPELESS:
-               return MTL::PixelFormatBC1_RGBA;
-           case RenderFormat::BC1_UNORM:
-               return MTL::PixelFormatBC1_RGBA;
-           case RenderFormat::BC1_UNORM_SRGB:
-               return MTL::PixelFormatBC1_RGBA_sRGB;
-           case RenderFormat::BC2_TYPELESS:
-               return MTL::PixelFormatBC2_RGBA;
-           case RenderFormat::BC2_UNORM:
-               return MTL::PixelFormatBC2_RGBA;
-           case RenderFormat::BC2_UNORM_SRGB:
-               return MTL::PixelFormatBC2_RGBA_sRGB;
-           case RenderFormat::BC3_TYPELESS:
-               return MTL::PixelFormatBC3_RGBA;
-           case RenderFormat::BC3_UNORM:
-               return MTL::PixelFormatBC3_RGBA;
-           case RenderFormat::BC3_UNORM_SRGB:
-               return MTL::PixelFormatBC3_RGBA_sRGB;
-           case RenderFormat::BC4_TYPELESS:
-               return MTL::PixelFormatBC4_RUnorm;
-           case RenderFormat::BC4_UNORM:
-               return MTL::PixelFormatBC4_RUnorm;
-           case RenderFormat::BC4_SNORM:
-               return MTL::PixelFormatBC4_RSnorm;
-           case RenderFormat::BC5_TYPELESS:
-               return MTL::PixelFormatBC5_RGUnorm;
-           case RenderFormat::BC5_UNORM:
-               return MTL::PixelFormatBC5_RGUnorm;
-           case RenderFormat::BC5_SNORM:
-               return MTL::PixelFormatBC5_RGSnorm;
-           case RenderFormat::BC6H_TYPELESS:
-               return MTL::PixelFormatBC6H_RGBFloat;
-           case RenderFormat::BC6H_UF16:
-               return MTL::PixelFormatBC6H_RGBUfloat;
-           case RenderFormat::BC6H_SF16:
-               return MTL::PixelFormatBC6H_RGBFloat;
-           case RenderFormat::BC7_TYPELESS:
-               return MTL::PixelFormatBC7_RGBAUnorm;
-           case RenderFormat::BC7_UNORM:
-               return MTL::PixelFormatBC7_RGBAUnorm;
-           case RenderFormat::BC7_UNORM_SRGB:
-               return MTL::PixelFormatBC7_RGBAUnorm_sRGB;
+            case RenderFormat::BC1_TYPELESS:
+                return MTL::PixelFormatBC1_RGBA;
+            case RenderFormat::BC1_UNORM:
+                return MTL::PixelFormatBC1_RGBA;
+            case RenderFormat::BC1_UNORM_SRGB:
+                return MTL::PixelFormatBC1_RGBA_sRGB;
+            case RenderFormat::BC2_TYPELESS:
+                return MTL::PixelFormatBC2_RGBA;
+            case RenderFormat::BC2_UNORM:
+                return MTL::PixelFormatBC2_RGBA;
+            case RenderFormat::BC2_UNORM_SRGB:
+                return MTL::PixelFormatBC2_RGBA_sRGB;
+            case RenderFormat::BC3_TYPELESS:
+                return MTL::PixelFormatBC3_RGBA;
+            case RenderFormat::BC3_UNORM:
+                return MTL::PixelFormatBC3_RGBA;
+            case RenderFormat::BC3_UNORM_SRGB:
+                return MTL::PixelFormatBC3_RGBA_sRGB;
+            case RenderFormat::BC4_TYPELESS:
+                return MTL::PixelFormatBC4_RUnorm;
+            case RenderFormat::BC4_UNORM:
+                return MTL::PixelFormatBC4_RUnorm;
+            case RenderFormat::BC4_SNORM:
+                return MTL::PixelFormatBC4_RSnorm;
+            case RenderFormat::BC5_TYPELESS:
+                return MTL::PixelFormatBC5_RGUnorm;
+            case RenderFormat::BC5_UNORM:
+                return MTL::PixelFormatBC5_RGUnorm;
+            case RenderFormat::BC5_SNORM:
+                return MTL::PixelFormatBC5_RGSnorm;
+            case RenderFormat::BC6H_TYPELESS:
+                return MTL::PixelFormatBC6H_RGBFloat;
+            case RenderFormat::BC6H_UF16:
+                return MTL::PixelFormatBC6H_RGBUfloat;
+            case RenderFormat::BC6H_SF16:
+                return MTL::PixelFormatBC6H_RGBFloat;
+            case RenderFormat::BC7_TYPELESS:
+                return MTL::PixelFormatBC7_RGBAUnorm;
+            case RenderFormat::BC7_UNORM:
+                return MTL::PixelFormatBC7_RGBAUnorm;
+            case RenderFormat::BC7_UNORM_SRGB:
+                return MTL::PixelFormatBC7_RGBAUnorm_sRGB;    
+            // ASTC formats    
+            case RenderFormat::ASTC_4X4_TYPELESS:
+                return MTL::PixelFormatASTC_4x4_HDR;
+            case RenderFormat::ASTC_4X4_UNORM:
+                return MTL::PixelFormatASTC_4x4_LDR;
+            case RenderFormat::ASTC_4X4_FLOAT:
+                return MTL::PixelFormatASTC_4x4_HDR;
+            case RenderFormat::ASTC_4X4_UNORM_SRGB:
+                return MTL::PixelFormatASTC_4x4_sRGB;
+            case RenderFormat::ASTC_5X4_TYPELESS:
+                return MTL::PixelFormatASTC_5x4_HDR;
+            case RenderFormat::ASTC_5X4_UNORM:
+                return MTL::PixelFormatASTC_5x4_LDR;
+            case RenderFormat::ASTC_5X4_FLOAT:
+                return MTL::PixelFormatASTC_5x4_HDR;
+            case RenderFormat::ASTC_5X4_UNORM_SRGB:
+                return MTL::PixelFormatASTC_5x4_sRGB;
+            case RenderFormat::ASTC_5X5_TYPELESS:
+                return MTL::PixelFormatASTC_5x5_HDR;
+            case RenderFormat::ASTC_5X5_UNORM:
+                return MTL::PixelFormatASTC_5x5_LDR;
+            case RenderFormat::ASTC_5X5_FLOAT:
+                return MTL::PixelFormatASTC_5x5_HDR;
+            case RenderFormat::ASTC_5X5_UNORM_SRGB:
+                return MTL::PixelFormatASTC_5x5_sRGB;
+            case RenderFormat::ASTC_6X5_TYPELESS:
+                return MTL::PixelFormatASTC_6x5_HDR;
+            case RenderFormat::ASTC_6X5_UNORM:
+                return MTL::PixelFormatASTC_6x5_LDR;
+            case RenderFormat::ASTC_6X5_FLOAT:
+                return MTL::PixelFormatASTC_6x5_HDR;
+            case RenderFormat::ASTC_6X5_UNORM_SRGB:
+                return MTL::PixelFormatASTC_6x5_sRGB;
+            case RenderFormat::ASTC_6X6_TYPELESS:
+                return MTL::PixelFormatASTC_6x6_HDR;
+            case RenderFormat::ASTC_6X6_UNORM:
+                return MTL::PixelFormatASTC_6x6_LDR;
+            case RenderFormat::ASTC_6X6_FLOAT:
+                return MTL::PixelFormatASTC_6x6_HDR;
+            case RenderFormat::ASTC_6X6_UNORM_SRGB:
+                return MTL::PixelFormatASTC_6x6_sRGB;
+            case RenderFormat::ASTC_8X5_TYPELESS:
+                return MTL::PixelFormatASTC_8x5_HDR;
+            case RenderFormat::ASTC_8X5_UNORM:
+                return MTL::PixelFormatASTC_8x5_LDR;
+            case RenderFormat::ASTC_8X5_FLOAT:
+                return MTL::PixelFormatASTC_8x5_HDR;
+            case RenderFormat::ASTC_8X5_UNORM_SRGB:
+                return MTL::PixelFormatASTC_8x5_sRGB;
+            case RenderFormat::ASTC_8X6_TYPELESS:
+                return MTL::PixelFormatASTC_8x6_HDR;
+            case RenderFormat::ASTC_8X6_UNORM:
+                return MTL::PixelFormatASTC_8x6_LDR;
+            case RenderFormat::ASTC_8X6_FLOAT:
+                return MTL::PixelFormatASTC_8x6_HDR;
+            case RenderFormat::ASTC_8X6_UNORM_SRGB:
+                return MTL::PixelFormatASTC_8x6_sRGB;
+            case RenderFormat::ASTC_8X8_TYPELESS:
+                return MTL::PixelFormatASTC_8x8_HDR;
+            case RenderFormat::ASTC_8X8_UNORM:
+                return MTL::PixelFormatASTC_8x8_LDR;
+            case RenderFormat::ASTC_8X8_FLOAT:
+                return MTL::PixelFormatASTC_8x8_HDR;
+            case RenderFormat::ASTC_8X8_UNORM_SRGB:
+                return MTL::PixelFormatASTC_8x8_sRGB;
+            case RenderFormat::ASTC_10X5_TYPELESS:
+                return MTL::PixelFormatASTC_10x5_HDR;
+            case RenderFormat::ASTC_10X5_UNORM:
+                return MTL::PixelFormatASTC_10x5_LDR;
+            case RenderFormat::ASTC_10X5_FLOAT:
+                return MTL::PixelFormatASTC_10x5_HDR;
+            case RenderFormat::ASTC_10X5_UNORM_SRGB:
+                return MTL::PixelFormatASTC_10x5_sRGB;
+            case RenderFormat::ASTC_10X6_TYPELESS:
+                return MTL::PixelFormatASTC_10x6_HDR;
+            case RenderFormat::ASTC_10X6_UNORM:
+                return MTL::PixelFormatASTC_10x6_LDR;
+            case RenderFormat::ASTC_10X6_FLOAT:
+                return MTL::PixelFormatASTC_10x6_HDR;
+            case RenderFormat::ASTC_10X6_UNORM_SRGB:
+                return MTL::PixelFormatASTC_10x6_sRGB;
+            case RenderFormat::ASTC_10X8_TYPELESS:
+                return MTL::PixelFormatASTC_10x8_HDR;
+            case RenderFormat::ASTC_10X8_UNORM:
+                return MTL::PixelFormatASTC_10x8_LDR;
+            case RenderFormat::ASTC_10X8_FLOAT:
+                return MTL::PixelFormatASTC_10x8_HDR;
+            case RenderFormat::ASTC_10X8_UNORM_SRGB:
+                return MTL::PixelFormatASTC_10x8_sRGB;
+            case RenderFormat::ASTC_10X10_TYPELESS:
+                return MTL::PixelFormatASTC_10x10_HDR;
+            case RenderFormat::ASTC_10X10_UNORM:
+                return MTL::PixelFormatASTC_10x10_LDR;
+            case RenderFormat::ASTC_10X10_FLOAT:
+                return MTL::PixelFormatASTC_10x10_HDR;
+            case RenderFormat::ASTC_10X10_UNORM_SRGB:
+                return MTL::PixelFormatASTC_10x10_sRGB;
+            case RenderFormat::ASTC_12X10_TYPELESS:
+                return MTL::PixelFormatASTC_12x10_HDR;
+            case RenderFormat::ASTC_12X10_UNORM:
+                return MTL::PixelFormatASTC_12x10_LDR;
+            case RenderFormat::ASTC_12X10_FLOAT:
+                return MTL::PixelFormatASTC_12x10_HDR;
+            case RenderFormat::ASTC_12X10_UNORM_SRGB:
+                return MTL::PixelFormatASTC_12x10_sRGB;
+            case RenderFormat::ASTC_12X12_TYPELESS:
+                return MTL::PixelFormatASTC_12x12_HDR;
+            case RenderFormat::ASTC_12X12_UNORM:
+                return MTL::PixelFormatASTC_12x12_LDR;
+            case RenderFormat::ASTC_12X12_FLOAT:
+                return MTL::PixelFormatASTC_12x12_HDR;
+            case RenderFormat::ASTC_12X12_UNORM_SRGB:
+                return MTL::PixelFormatASTC_12x12_sRGB;
             default:
                 assert(false && "Unknown format.");
                 return MTL::PixelFormatInvalid;
@@ -2998,12 +3211,13 @@ namespace plume {
 
             // Calculate block size based on destination texture format
             const uint32_t blockWidth = RenderFormatBlockWidth(dstTexture->desc.format);
+            const uint32_t blockHeight = RenderFormatBlockHeight(dstTexture->desc.format);
 
             // Use actual dimensions for the copy size
             const MTL::Size size = { srcLocation.placedFootprint.width, srcLocation.placedFootprint.height, srcLocation.placedFootprint.depth};
 
             const uint32_t horizontalBlocks = (srcLocation.placedFootprint.rowWidth + blockWidth - 1) / blockWidth;
-            const uint32_t verticalBlocks = (srcLocation.placedFootprint.height + blockWidth - 1) / blockWidth;
+            const uint32_t verticalBlocks = (srcLocation.placedFootprint.height + blockHeight - 1) / blockHeight;
             const uint32_t bytesPerRow = horizontalBlocks * RenderFormatSize(dstTexture->desc.format);
             const uint32_t bytesPerImage = bytesPerRow * verticalBlocks;
 

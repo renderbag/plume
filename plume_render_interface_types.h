@@ -160,6 +160,62 @@ namespace plume {
         BC7_TYPELESS,
         BC7_UNORM,
         BC7_UNORM_SRGB,
+        ASTC_4X4_TYPELESS,
+        ASTC_4X4_FLOAT,
+        ASTC_4X4_UNORM,
+        ASTC_4X4_UNORM_SRGB,
+        ASTC_5X4_TYPELESS,
+        ASTC_5X4_FLOAT,
+        ASTC_5X4_UNORM,
+        ASTC_5X4_UNORM_SRGB,
+        ASTC_5X5_TYPELESS,
+        ASTC_5X5_FLOAT,
+        ASTC_5X5_UNORM,
+        ASTC_5X5_UNORM_SRGB,
+        ASTC_6X5_TYPELESS,
+        ASTC_6X5_UNORM,
+        ASTC_6X5_FLOAT,
+        ASTC_6X5_UNORM_SRGB,
+        ASTC_6X6_TYPELESS,
+        ASTC_6X6_FLOAT,
+        ASTC_6X6_UNORM,
+        ASTC_6X6_UNORM_SRGB,
+        ASTC_8X5_TYPELESS,
+        ASTC_8X5_FLOAT,
+        ASTC_8X5_UNORM,
+        ASTC_8X5_UNORM_SRGB,
+        ASTC_8X6_TYPELESS,
+        ASTC_8X6_FLOAT,
+        ASTC_8X6_UNORM,
+        ASTC_8X6_UNORM_SRGB,
+        ASTC_8X8_TYPELESS,
+        ASTC_8X8_FLOAT,
+        ASTC_8X8_UNORM,
+        ASTC_8X8_UNORM_SRGB,
+        ASTC_10X5_TYPELESS,
+        ASTC_10X5_FLOAT,
+        ASTC_10X5_UNORM,
+        ASTC_10X5_UNORM_SRGB,
+        ASTC_10X6_TYPELESS,
+        ASTC_10X6_FLOAT,
+        ASTC_10X6_UNORM,
+        ASTC_10X6_UNORM_SRGB,
+        ASTC_10X8_TYPELESS,
+        ASTC_10X8_FLOAT,
+        ASTC_10X8_UNORM,
+        ASTC_10X8_UNORM_SRGB,
+        ASTC_10X10_TYPELESS,
+        ASTC_10X10_FLOAT,
+        ASTC_10X10_UNORM,
+        ASTC_10X10_UNORM_SRGB,
+        ASTC_12X10_TYPELESS,
+        ASTC_12X10_FLOAT,
+        ASTC_12X10_UNORM,
+        ASTC_12X10_UNORM_SRGB,
+        ASTC_12X12_TYPELESS,
+        ASTC_12X12_FLOAT,
+        ASTC_12X12_UNORM,
+        ASTC_12X12_UNORM_SRGB,
         MAX
     };
 
@@ -584,12 +640,71 @@ namespace plume {
         case RenderFormat::BC3_UNORM:
         case RenderFormat::BC3_UNORM_SRGB:
         case RenderFormat::BC3_TYPELESS:
+        case RenderFormat::BC5_TYPELESS:
         case RenderFormat::BC5_UNORM:
         case RenderFormat::BC5_SNORM:
+        case RenderFormat::BC6H_TYPELESS:
         case RenderFormat::BC6H_UF16:
         case RenderFormat::BC6H_SF16:
+        case RenderFormat::BC7_TYPELESS:
         case RenderFormat::BC7_UNORM:
         case RenderFormat::BC7_UNORM_SRGB:
+        case RenderFormat::ASTC_4X4_TYPELESS:
+        case RenderFormat::ASTC_4X4_FLOAT:
+        case RenderFormat::ASTC_4X4_UNORM:
+        case RenderFormat::ASTC_4X4_UNORM_SRGB:
+        case RenderFormat::ASTC_5X4_TYPELESS:
+        case RenderFormat::ASTC_5X4_FLOAT:
+        case RenderFormat::ASTC_5X4_UNORM:
+        case RenderFormat::ASTC_5X4_UNORM_SRGB:
+        case RenderFormat::ASTC_5X5_TYPELESS:
+        case RenderFormat::ASTC_5X5_FLOAT:
+        case RenderFormat::ASTC_5X5_UNORM:
+        case RenderFormat::ASTC_5X5_UNORM_SRGB:
+        case RenderFormat::ASTC_6X5_TYPELESS:
+        case RenderFormat::ASTC_6X5_FLOAT:
+        case RenderFormat::ASTC_6X5_UNORM:
+        case RenderFormat::ASTC_6X5_UNORM_SRGB:
+        case RenderFormat::ASTC_6X6_TYPELESS:
+        case RenderFormat::ASTC_6X6_FLOAT:
+        case RenderFormat::ASTC_6X6_UNORM:
+        case RenderFormat::ASTC_6X6_UNORM_SRGB:
+        case RenderFormat::ASTC_8X5_TYPELESS:
+        case RenderFormat::ASTC_8X5_FLOAT:
+        case RenderFormat::ASTC_8X5_UNORM:
+        case RenderFormat::ASTC_8X5_UNORM_SRGB:
+        case RenderFormat::ASTC_8X6_TYPELESS:
+        case RenderFormat::ASTC_8X6_FLOAT:
+        case RenderFormat::ASTC_8X6_UNORM:
+        case RenderFormat::ASTC_8X6_UNORM_SRGB:
+        case RenderFormat::ASTC_8X8_TYPELESS:
+        case RenderFormat::ASTC_8X8_FLOAT:
+        case RenderFormat::ASTC_8X8_UNORM:
+        case RenderFormat::ASTC_8X8_UNORM_SRGB:
+        case RenderFormat::ASTC_10X5_TYPELESS:
+        case RenderFormat::ASTC_10X5_FLOAT:
+        case RenderFormat::ASTC_10X5_UNORM:
+        case RenderFormat::ASTC_10X5_UNORM_SRGB:
+        case RenderFormat::ASTC_10X6_TYPELESS:
+        case RenderFormat::ASTC_10X6_FLOAT:
+        case RenderFormat::ASTC_10X6_UNORM:
+        case RenderFormat::ASTC_10X6_UNORM_SRGB:
+        case RenderFormat::ASTC_10X8_TYPELESS:
+        case RenderFormat::ASTC_10X8_FLOAT:
+        case RenderFormat::ASTC_10X8_UNORM:
+        case RenderFormat::ASTC_10X8_UNORM_SRGB:
+        case RenderFormat::ASTC_10X10_TYPELESS:
+        case RenderFormat::ASTC_10X10_FLOAT:
+        case RenderFormat::ASTC_10X10_UNORM:
+        case RenderFormat::ASTC_10X10_UNORM_SRGB:
+        case RenderFormat::ASTC_12X10_TYPELESS:
+        case RenderFormat::ASTC_12X10_FLOAT:
+        case RenderFormat::ASTC_12X10_UNORM:
+        case RenderFormat::ASTC_12X10_UNORM_SRGB:
+        case RenderFormat::ASTC_12X12_TYPELESS:
+        case RenderFormat::ASTC_12X12_FLOAT:
+        case RenderFormat::ASTC_12X12_UNORM:
+        case RenderFormat::ASTC_12X12_UNORM_SRGB:
             return 16;
         default:
             assert(false && "Unknown format.");
@@ -674,7 +789,229 @@ namespace plume {
         case RenderFormat::BC7_TYPELESS:
         case RenderFormat::BC7_UNORM:
         case RenderFormat::BC7_UNORM_SRGB:
+        case RenderFormat::ASTC_4X4_TYPELESS:
+        case RenderFormat::ASTC_4X4_FLOAT:
+        case RenderFormat::ASTC_4X4_UNORM:
+        case RenderFormat::ASTC_4X4_UNORM_SRGB:
             return 4;
+        case RenderFormat::ASTC_5X4_TYPELESS:
+        case RenderFormat::ASTC_5X4_FLOAT:
+        case RenderFormat::ASTC_5X4_UNORM:
+        case RenderFormat::ASTC_5X4_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_5X5_TYPELESS:
+        case RenderFormat::ASTC_5X5_FLOAT:
+        case RenderFormat::ASTC_5X5_UNORM:
+        case RenderFormat::ASTC_5X5_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_6X5_TYPELESS:
+        case RenderFormat::ASTC_6X5_FLOAT:
+        case RenderFormat::ASTC_6X5_UNORM:
+        case RenderFormat::ASTC_6X5_UNORM_SRGB:
+            return 6;
+        case RenderFormat::ASTC_6X6_TYPELESS:
+        case RenderFormat::ASTC_6X6_FLOAT:
+        case RenderFormat::ASTC_6X6_UNORM:
+        case RenderFormat::ASTC_6X6_UNORM_SRGB:
+            return 6;
+        case RenderFormat::ASTC_8X5_TYPELESS:
+        case RenderFormat::ASTC_8X5_FLOAT:
+        case RenderFormat::ASTC_8X5_UNORM:
+        case RenderFormat::ASTC_8X5_UNORM_SRGB:
+            return 8;
+        case RenderFormat::ASTC_8X6_TYPELESS:
+        case RenderFormat::ASTC_8X6_FLOAT:
+        case RenderFormat::ASTC_8X6_UNORM:
+        case RenderFormat::ASTC_8X6_UNORM_SRGB:
+            return 8;
+        case RenderFormat::ASTC_8X8_TYPELESS:
+        case RenderFormat::ASTC_8X8_FLOAT:
+        case RenderFormat::ASTC_8X8_UNORM:
+        case RenderFormat::ASTC_8X8_UNORM_SRGB:
+            return 8;
+        case RenderFormat::ASTC_10X5_TYPELESS:
+        case RenderFormat::ASTC_10X5_FLOAT:
+        case RenderFormat::ASTC_10X5_UNORM:
+        case RenderFormat::ASTC_10X5_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_10X6_TYPELESS:
+        case RenderFormat::ASTC_10X6_FLOAT:
+        case RenderFormat::ASTC_10X6_UNORM:
+        case RenderFormat::ASTC_10X6_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_10X8_TYPELESS:
+        case RenderFormat::ASTC_10X8_FLOAT:
+        case RenderFormat::ASTC_10X8_UNORM:
+        case RenderFormat::ASTC_10X8_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_10X10_TYPELESS:
+        case RenderFormat::ASTC_10X10_FLOAT:
+        case RenderFormat::ASTC_10X10_UNORM:
+        case RenderFormat::ASTC_10X10_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_12X10_TYPELESS:
+        case RenderFormat::ASTC_12X10_FLOAT:
+        case RenderFormat::ASTC_12X10_UNORM:
+        case RenderFormat::ASTC_12X10_UNORM_SRGB:
+            return 12;
+        case RenderFormat::ASTC_12X12_TYPELESS:
+        case RenderFormat::ASTC_12X12_FLOAT:
+        case RenderFormat::ASTC_12X12_UNORM:
+        case RenderFormat::ASTC_12X12_UNORM_SRGB:
+            return 12;
+        default:
+            assert(false && "Unknown format.");
+            return 1;
+        }
+    };
+
+    constexpr uint32_t RenderFormatBlockHeight(RenderFormat format) {
+        switch (format) {
+        case RenderFormat::R32G32B32A32_TYPELESS:
+        case RenderFormat::R32G32B32A32_FLOAT:
+        case RenderFormat::R32G32B32A32_UINT:
+        case RenderFormat::R32G32B32A32_SINT:
+        case RenderFormat::R32G32B32_TYPELESS:
+        case RenderFormat::R32G32B32_FLOAT:
+        case RenderFormat::R32G32B32_UINT:
+        case RenderFormat::R32G32B32_SINT:
+        case RenderFormat::R16G16B16A16_TYPELESS:
+        case RenderFormat::R16G16B16A16_FLOAT:
+        case RenderFormat::R16G16B16A16_UNORM:
+        case RenderFormat::R16G16B16A16_UINT:
+        case RenderFormat::R16G16B16A16_SNORM:
+        case RenderFormat::R16G16B16A16_SINT:
+        case RenderFormat::R32G32_TYPELESS:
+        case RenderFormat::R32G32_FLOAT:
+        case RenderFormat::R32G32_UINT:
+        case RenderFormat::R32G32_SINT:
+        case RenderFormat::R8G8B8A8_TYPELESS:
+        case RenderFormat::R8G8B8A8_UNORM:
+        case RenderFormat::R8G8B8A8_UINT:
+        case RenderFormat::R8G8B8A8_SNORM:
+        case RenderFormat::R8G8B8A8_SINT:
+        case RenderFormat::B8G8R8A8_UNORM:
+        case RenderFormat::R16G16_TYPELESS:
+        case RenderFormat::R16G16_FLOAT:
+        case RenderFormat::R16G16_UNORM:
+        case RenderFormat::R16G16_UINT:
+        case RenderFormat::R16G16_SNORM:
+        case RenderFormat::R16G16_SINT:
+        case RenderFormat::R32_TYPELESS:
+        case RenderFormat::D32_FLOAT:
+        case RenderFormat::D32_FLOAT_S8_UINT:
+        case RenderFormat::R32_FLOAT:
+        case RenderFormat::R32_UINT:
+        case RenderFormat::R32_SINT:
+        case RenderFormat::R8G8_TYPELESS:
+        case RenderFormat::R8G8_UNORM:
+        case RenderFormat::R8G8_UINT:
+        case RenderFormat::R8G8_SNORM:
+        case RenderFormat::R8G8_SINT:
+        case RenderFormat::R16_TYPELESS:
+        case RenderFormat::R16_FLOAT:
+        case RenderFormat::D16_UNORM:
+        case RenderFormat::R16_UNORM:
+        case RenderFormat::R16_UINT:
+        case RenderFormat::R16_SNORM:
+        case RenderFormat::R16_SINT:
+        case RenderFormat::R8_TYPELESS:
+        case RenderFormat::R8_UNORM:
+        case RenderFormat::R8_UINT:
+        case RenderFormat::R8_SNORM:
+        case RenderFormat::R8_SINT:
+            return 1;
+        case RenderFormat::BC1_TYPELESS:
+        case RenderFormat::BC1_UNORM:
+        case RenderFormat::BC1_UNORM_SRGB:
+        case RenderFormat::BC2_TYPELESS:
+        case RenderFormat::BC2_UNORM:
+        case RenderFormat::BC2_UNORM_SRGB:
+        case RenderFormat::BC3_TYPELESS:
+        case RenderFormat::BC3_UNORM:
+        case RenderFormat::BC3_UNORM_SRGB:
+        case RenderFormat::BC4_TYPELESS:
+        case RenderFormat::BC4_UNORM:
+        case RenderFormat::BC4_SNORM:
+        case RenderFormat::BC5_TYPELESS:
+        case RenderFormat::BC5_UNORM:
+        case RenderFormat::BC5_SNORM:
+        case RenderFormat::BC6H_TYPELESS:
+        case RenderFormat::BC6H_UF16:
+        case RenderFormat::BC6H_SF16:
+        case RenderFormat::BC7_TYPELESS:
+        case RenderFormat::BC7_UNORM:
+        case RenderFormat::BC7_UNORM_SRGB:
+        case RenderFormat::ASTC_4X4_TYPELESS:
+        case RenderFormat::ASTC_4X4_FLOAT:
+        case RenderFormat::ASTC_4X4_UNORM:
+        case RenderFormat::ASTC_4X4_UNORM_SRGB:
+            return 4;
+        case RenderFormat::ASTC_5X4_TYPELESS:
+        case RenderFormat::ASTC_5X4_FLOAT:
+        case RenderFormat::ASTC_5X4_UNORM:
+        case RenderFormat::ASTC_5X4_UNORM_SRGB:
+            return 4;
+        case RenderFormat::ASTC_5X5_TYPELESS:
+        case RenderFormat::ASTC_5X5_FLOAT:
+        case RenderFormat::ASTC_5X5_UNORM:
+        case RenderFormat::ASTC_5X5_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_6X5_TYPELESS:
+        case RenderFormat::ASTC_6X5_FLOAT:
+        case RenderFormat::ASTC_6X5_UNORM:
+        case RenderFormat::ASTC_6X5_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_6X6_TYPELESS:
+        case RenderFormat::ASTC_6X6_FLOAT:
+        case RenderFormat::ASTC_6X6_UNORM:
+        case RenderFormat::ASTC_6X6_UNORM_SRGB:
+            return 6;
+        case RenderFormat::ASTC_8X5_TYPELESS:
+        case RenderFormat::ASTC_8X5_FLOAT:
+        case RenderFormat::ASTC_8X5_UNORM:
+        case RenderFormat::ASTC_8X5_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_8X6_TYPELESS:
+        case RenderFormat::ASTC_8X6_FLOAT:
+        case RenderFormat::ASTC_8X6_UNORM:
+        case RenderFormat::ASTC_8X6_UNORM_SRGB:
+            return 6;
+        case RenderFormat::ASTC_8X8_TYPELESS:
+        case RenderFormat::ASTC_8X8_FLOAT:
+        case RenderFormat::ASTC_8X8_UNORM:
+        case RenderFormat::ASTC_8X8_UNORM_SRGB:
+            return 8;
+        case RenderFormat::ASTC_10X5_TYPELESS:
+        case RenderFormat::ASTC_10X5_FLOAT:
+        case RenderFormat::ASTC_10X5_UNORM:
+        case RenderFormat::ASTC_10X5_UNORM_SRGB:
+            return 5;
+        case RenderFormat::ASTC_10X6_TYPELESS:
+        case RenderFormat::ASTC_10X6_FLOAT:
+        case RenderFormat::ASTC_10X6_UNORM:
+        case RenderFormat::ASTC_10X6_UNORM_SRGB:
+            return 6;
+        case RenderFormat::ASTC_10X8_TYPELESS:
+        case RenderFormat::ASTC_10X8_FLOAT:
+        case RenderFormat::ASTC_10X8_UNORM:
+        case RenderFormat::ASTC_10X8_UNORM_SRGB:
+            return 8;
+        case RenderFormat::ASTC_10X10_TYPELESS:
+        case RenderFormat::ASTC_10X10_FLOAT:
+        case RenderFormat::ASTC_10X10_UNORM:
+        case RenderFormat::ASTC_10X10_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_12X10_TYPELESS:
+        case RenderFormat::ASTC_12X10_FLOAT:
+        case RenderFormat::ASTC_12X10_UNORM:
+        case RenderFormat::ASTC_12X10_UNORM_SRGB:
+            return 10;
+        case RenderFormat::ASTC_12X12_TYPELESS:
+        case RenderFormat::ASTC_12X12_FLOAT:
+        case RenderFormat::ASTC_12X12_UNORM:
+        case RenderFormat::ASTC_12X12_UNORM_SRGB:
+            return 12;
         default:
             assert(false && "Unknown format.");
             return 1;
