@@ -21,6 +21,7 @@ cmake_dependent_option(PLUME_SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" 
 cmake_dependent_option(PLUME_D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 cmake_dependent_option(PLUME_APPLE_RETINA_ENABLED "Enable Apple Retina display support" ON APPLE ON)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
+cmake_dependent_option(PLUME_XCODE_TEAM_ID "Xcode team ID for code signing (e.g., ABCDE12345)" "" APPLE OFF)
 
 # Windows-specific definitions
 if(WIN32)
@@ -29,7 +30,7 @@ endif()
 
 # Enable SDL Vulkan support
 if(PLUME_SDL_VULKAN_ENABLED)
-    if (NOT TARGET SDL2::SDL2)
+    if(NOT TARGET SDL2::SDL2)
         find_package(SDL2 REQUIRED)
     else()
         set(SDL2_INCLUDE_DIRS "$<TARGET_PROPERTY:SDL2::SDL2,INTERFACE_INCLUDE_DIRECTORIES>")
@@ -49,6 +50,16 @@ message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${
 message(STATUS "Plume - SDL Vulkan integration: ${PLUME_SDL_VULKAN_ENABLED}")
 message(STATUS "Plume - D3D12 Agility SDK: ${PLUME_D3D12_AGILITY_SDK_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
+
+if(APPLE AND PLUME_BUILD_EXAMPLES)
+    message(STATUS "Plume - Xcode examples configured with automatic code signing")
+
+    if(PLUME_XCODE_TEAM_ID)
+        message(STATUS "Plume - Xcode Team ID: ${PLUME_XCODE_TEAM_ID}")
+    else()
+        message(STATUS "Plume - To set your Xcode Team ID, use: -DPLUME_XCODE_TEAM_ID=<your-team-id>")
+    endif()
+endif()
 
 # Basic source files that are always included
 set(PLUME_SOURCES

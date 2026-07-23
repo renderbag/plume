@@ -13,6 +13,17 @@ plume_find_sdl2()
 include(${CMAKE_SOURCE_DIR}/examples/cmake/PlumeShaders.cmake)
 plume_shaders_init()
 
+# Load Xcode configuration helper for team ID and code signing
+if(APPLE)
+    include(${CMAKE_SOURCE_DIR}/examples/cmake/modules/PlumeXcodeConfig.cmake)
+endif()
+
 # Add example subdirectories
 add_subdirectory(triangle)
 add_subdirectory(cube)
+
+# Apply Xcode configuration to example targets
+if(APPLE)
+    plume_apply_xcode_config(plume_triangle)
+    plume_apply_xcode_config(plume_cube)
+endif()

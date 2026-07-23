@@ -1916,7 +1916,7 @@ namespace plume {
         // Metal supports a maximum of 3 drawables.
         this->drawables.resize(MAX_DRAWABLES);
 
-        this->windowWrapper = std::make_unique<CocoaWindow>(desc.renderWindow.window);
+        this->windowWrapper = std::make_unique<AppleWindow>(desc.renderWindow.window);
         getWindowSize(width, height);
 
         // Set the layer's drawable size to match the window size
@@ -2100,7 +2100,7 @@ namespace plume {
 
     void MetalSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
         MetalAutoreleasePool releasePool;
-        CocoaWindowAttributes attributes;
+        AppleWindowAttributes attributes;
         windowWrapper->getWindowAttributes(&attributes);
         dstWidth = attributes.width;
         dstHeight = attributes.height;
@@ -3779,6 +3779,7 @@ namespace plume {
         this->renderInterface = renderInterface;
 
         // Device Selection
+#if TARGET_OS_MAC
         NS::Array* devices = MTL::CopyAllDevices();
         MTL::Device *preferredDevice = nullptr;
         for (NS::UInteger i = 0; i < devices->count(); i++) {
@@ -3793,13 +3794,22 @@ namespace plume {
         mtl = preferredDevice ? preferredDevice : MTL::CreateSystemDefaultDevice();
         mtl->retain();
         devices->release();
+#else
+        mtl = MTL::CreateSystemDefaultDevice();
+        mtl->retain();
+#endif
 
         const std::string deviceName(mtl->name()->utf8String());
         description.name = deviceName;
-        description.type = mapDeviceType(mtl->location());
         description.driverVersion = 1; // Unavailable
-        description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : getRenderDeviceVendor(mtl->registryID());
         description.dedicatedVideoMemory = mtl->recommendedMaxWorkingSetSize();
+    #if TARGET_OS_MAC
+        description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : getRenderDeviceVendor(mtl->registryID());
+        description.type = mapDeviceType(mtl->location());
+    #else
+        description.type = RenderDeviceType::INTEGRATED;
+        description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : RenderDeviceVendor::UNKNOWN;
+    #endif
 
         timestampCounterSet = findTimestampCounterSet();
         if (timestampCounterSet != nullptr) {
@@ -4193,11 +4203,18 @@ namespace plume {
         capabilities.shaderFormat = RenderShaderFormat::METAL;
 
         // Fill device names.
+    #if TARGET_OS_MAC
         const NS::Array* devices = MTL::CopyAllDevices();
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
             deviceNames.push_back(std::string(deviceName->utf8String()));
         }
+    #else
+        MTL::Device* defaultDevice = MTL::CreateSystemDefaultDevice();
+        if (defaultDevice) {
+            deviceNames.push_back(std::string(defaultDevice->name()->utf8String()));
+        }
+    #endif
     }
 
     MetalInterface::~MetalInterface() {}

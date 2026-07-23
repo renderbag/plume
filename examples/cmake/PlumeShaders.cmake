@@ -15,13 +15,14 @@ include("${CMAKE_CURRENT_LIST_DIR}/modules/PlumeSpirvCross.cmake")
 
 function(_plume_embed TARGET_NAME INPUT_FILE VAR_NAME OUTPUT_C OUTPUT_H)
     plume_build_file_to_c()
+    plume_get_file_to_c_command(FILE_TO_C_CMD)
 
     get_filename_component(OUT_DIR "${OUTPUT_C}" DIRECTORY)
     file(MAKE_DIRECTORY "${OUT_DIR}")
 
     add_custom_command(
         OUTPUT "${OUTPUT_C}" "${OUTPUT_H}"
-        COMMAND plume_file_to_c "${INPUT_FILE}" "${VAR_NAME}" "${OUTPUT_C}" "${OUTPUT_H}"
+        COMMAND ${FILE_TO_C_CMD} "${INPUT_FILE}" "${VAR_NAME}" "${OUTPUT_C}" "${OUTPUT_H}"
         DEPENDS "${INPUT_FILE}" plume_file_to_c
         COMMENT "Embedding ${VAR_NAME} from ${INPUT_FILE}"
         VERBATIM
@@ -62,6 +63,7 @@ function(_plume_compile_hlsl_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_N
     endif()
 
     set(SHADER_MODEL "6_0")
+
     if(ARG_SHADER_MODEL)
         set(SHADER_MODEL "${ARG_SHADER_MODEL}")
     endif()
@@ -71,10 +73,12 @@ function(_plume_compile_hlsl_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_N
     else()
         set(OUT_DIR "${CMAKE_BINARY_DIR}/shaders")
     endif()
+
     file(MAKE_DIRECTORY "${OUT_DIR}")
 
     set(PROFILE "")
     set(DXC_TYPE_ARGS "")
+
     if(SHADER_TYPE STREQUAL "vertex")
         set(PROFILE "vs_${SHADER_MODEL}")
         set(DXC_TYPE_ARGS "-fvk-invert-y")
@@ -91,6 +95,7 @@ function(_plume_compile_hlsl_impl TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_N
     endif()
 
     set(INCLUDE_FLAGS "")
+
     foreach(DIR ${ARG_INCLUDE_DIRS})
         list(APPEND INCLUDE_FLAGS "-I${DIR}")
     endforeach()
@@ -126,12 +131,14 @@ endfunction()
 
 function(_plume_compile_spirv_to_metal_impl TARGET_NAME SPIRV_FILE OUTPUT_NAME)
     cmake_parse_arguments(PARSE_ARGV 3 ARG "" "OUTPUT_DIR" "")
+    plume_get_spirv_cross_msl_command(SPIRV_CROSS_MSL_CMD)
 
     if(ARG_OUTPUT_DIR)
         set(OUT_DIR "${ARG_OUTPUT_DIR}")
     else()
         set(OUT_DIR "${CMAKE_BINARY_DIR}/shaders")
     endif()
+
     file(MAKE_DIRECTORY "${OUT_DIR}")
 
     set(METAL_SOURCE "${OUT_DIR}/${OUTPUT_NAME}.hlsl.metal")
@@ -148,7 +155,7 @@ function(_plume_compile_spirv_to_metal_impl TARGET_NAME SPIRV_FILE OUTPUT_NAME)
 
     add_custom_command(
         OUTPUT "${METAL_SOURCE}"
-        COMMAND plume_spirv_cross_msl "${SPIRV_FILE}" "${METAL_SOURCE}"
+        COMMAND ${SPIRV_CROSS_MSL_CMD} "${SPIRV_FILE}" "${METAL_SOURCE}"
         DEPENDS "${SPIRV_FILE}" plume_spirv_cross_msl
         COMMENT "SPIRV-Cross: ${SPIRV_FILE} -> Metal source"
         VERBATIM
@@ -175,6 +182,8 @@ function(_plume_compile_spirv_to_metal_impl TARGET_NAME SPIRV_FILE OUTPUT_NAME)
 endfunction()
 
 function(_plume_compile_metal_impl TARGET_NAME SHADER_SOURCE OUTPUT_NAME)
+    plume_get_file_to_c_command(FILE_TO_C_CMD)
+
     set(IR_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.ir")
     set(METALLIB_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.metallib")
     set(C_OUTPUT "${CMAKE_BINARY_DIR}/shaders/${OUTPUT_NAME}.metal.c")
@@ -204,7 +213,7 @@ function(_plume_compile_metal_impl TARGET_NAME SHADER_SOURCE OUTPUT_NAME)
 
     add_custom_command(
         OUTPUT "${C_OUTPUT}" "${H_OUTPUT}"
-        COMMAND plume_file_to_c "${METALLIB_OUTPUT}" "${OUTPUT_NAME}BlobMSL" "${C_OUTPUT}" "${H_OUTPUT}"
+        COMMAND ${FILE_TO_C_CMD} "${METALLIB_OUTPUT}" "${OUTPUT_NAME}BlobMSL" "${C_OUTPUT}" "${H_OUTPUT}"
         DEPENDS "${METALLIB_OUTPUT}" plume_file_to_c
         COMMENT "Generating C header for Metal shader ${OUTPUT_NAME}"
         VERBATIM
@@ -215,7 +224,6 @@ function(_plume_compile_metal_impl TARGET_NAME SHADER_SOURCE OUTPUT_NAME)
 endfunction()
 
 # Public API
-
 function(plume_compile_shader TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME ENTRY_POINT)
     cmake_parse_arguments(ARG "SPEC_CONSTANTS" "SHADER_MODEL;OUTPUT_DIR" "INCLUDE_DIRS;EXTRA_ARGS" ${ARGN})
 
@@ -227,15 +235,19 @@ function(plume_compile_shader TARGET_NAME SHADER_SOURCE SHADER_TYPE OUTPUT_NAME 
         endif()
     elseif(SHADER_EXT MATCHES "\\.hlsl$")
         set(IMPL_ARGS "")
+
         if(ARG_SHADER_MODEL)
             list(APPEND IMPL_ARGS SHADER_MODEL "${ARG_SHADER_MODEL}")
         endif()
+
         if(ARG_INCLUDE_DIRS)
             list(APPEND IMPL_ARGS INCLUDE_DIRS ${ARG_INCLUDE_DIRS})
         endif()
+
         if(ARG_EXTRA_ARGS)
             list(APPEND IMPL_ARGS EXTRA_ARGS ${ARG_EXTRA_ARGS})
         endif()
+
         if(ARG_OUTPUT_DIR)
             list(APPEND IMPL_ARGS OUTPUT_DIR "${ARG_OUTPUT_DIR}")
             set(OUT_DIR "${ARG_OUTPUT_DIR}")
