@@ -160,6 +160,9 @@ namespace plume {
         BC7_TYPELESS,
         BC7_UNORM,
         BC7_UNORM_SRGB,
+        R8G8B8A8_USCALED,
+        R16G16_SSCALED,
+        R16G16B16A16_SSCALED,
         MAX
     };
 
