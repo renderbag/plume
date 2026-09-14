@@ -770,13 +770,13 @@ namespace plume {
         }
     }
 
-    static void setObjectName(VkDevice device, VkObjectType objectType, uint64_t object, const std::string &name) {
+    static void setObjectName(VkDevice device, VkObjectType objectType, uint64_t object, const char *name) {
 #   ifdef VULKAN_OBJECT_NAMES_ENABLED
         VkDebugUtilsObjectNameInfoEXT nameInfo = {};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = objectType;
         nameInfo.objectHandle = object;
-        nameInfo.pObjectName = name.c_str();
+        nameInfo.pObjectName = name;
         VkResult res = vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
         if (res != VK_SUCCESS) {
             fprintf(stderr, "vkSetDebugUtilsObjectNameEXT failed with error code 0x%X.\n", res);
@@ -920,7 +920,7 @@ namespace plume {
         return std::make_unique<VulkanBufferFormattedView>(this, format);
     }
 
-    void VulkanBuffer::setName(const std::string &name) {
+    void VulkanBuffer::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_BUFFER, uint64_t(vk), name);
     }
 
@@ -1059,7 +1059,7 @@ namespace plume {
         return std::make_unique<VulkanTextureView>(this, desc);
     }
 
-    void VulkanTexture::setName(const std::string &name) {
+    void VulkanTexture::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_IMAGE, uint64_t(vk), name);
     }
 
@@ -1310,7 +1310,7 @@ namespace plume {
         }
     }
 
-    void VulkanShader::setName(const std::string &name) {
+    void VulkanShader::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_SHADER_MODULE, uint64_t(vk), name);
     }
 
@@ -1403,11 +1403,11 @@ namespace plume {
         }
     }
 
-    void VulkanComputePipeline::setName(const std::string &name) {
+    void VulkanComputePipeline::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_PIPELINE, uint64_t(vk), name);
     }
 
-    RenderPipelineProgram VulkanComputePipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram VulkanComputePipeline::getProgram(const char *name) const {
         assert(false && "Compute pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -1666,11 +1666,11 @@ namespace plume {
         }
     }
 
-    void VulkanGraphicsPipeline::setName(const std::string &name) {
+    void VulkanGraphicsPipeline::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_PIPELINE, uint64_t(vk), name);
     }
 
-    RenderPipelineProgram VulkanGraphicsPipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram VulkanGraphicsPipeline::getProgram(const char *name) const {
         assert(false && "Graphics pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -1870,12 +1870,12 @@ namespace plume {
         }
     }
 
-    void VulkanRaytracingPipeline::setName(const std::string &name) {
+    void VulkanRaytracingPipeline::setName(const char *name) {
         setObjectName(device->vk, VK_OBJECT_TYPE_PIPELINE, uint64_t(vk), name);
     }
 
-    RenderPipelineProgram VulkanRaytracingPipeline::getProgram(const std::string &name) const {
-        auto it = nameProgramMap.find(name);
+    RenderPipelineProgram VulkanRaytracingPipeline::getProgram(const char *name) const {
+        auto it = nameProgramMap.find(std::string(name));
         assert((it != nameProgramMap.end()) && "Program must exist in the PSO.");
         return it->second;
     }
@@ -3733,8 +3733,8 @@ namespace plume {
     }
 
     // VulkanDevice
-    
-    VulkanDevice::VulkanDevice(VulkanInterface *renderInterface, const std::string &preferredDeviceName) {
+
+    VulkanDevice::VulkanDevice(VulkanInterface *renderInterface, const char *preferredDeviceName) {
         assert(renderInterface != nullptr);
 
         this->renderInterface = renderInterface;
@@ -3767,14 +3767,13 @@ namespace plume {
                 continue;
             }
 
-            std::string deviceName(deviceProperties.deviceName);
             uint32_t deviceTypeScore = deviceTypeScoreTable[deviceTypeIndex];
             bool preferDeviceTypeScore = (deviceTypeScore > currentDeviceTypeScore);
-            bool preferUserChoice = preferredDeviceName == deviceName;
+            bool preferUserChoice = std::string(preferredDeviceName) == deviceProperties.deviceName;
             bool preferOption = preferDeviceTypeScore || preferUserChoice;
             if (preferOption) {
                 physicalDevice = physicalDevices[i];
-                description.name = deviceName;
+                snprintf(description.name, sizeof(description.name), "%s", deviceProperties.deviceName);
                 description.type = toDeviceType(deviceProperties.deviceType);
                 description.driverVersion = deviceProperties.driverVersion;
                 description.vendor = RenderDeviceVendor(deviceProperties.vendorID);
@@ -4608,7 +4607,7 @@ namespace plume {
         }
     }
 
-    std::unique_ptr<RenderDevice> VulkanInterface::createDevice(const std::string &preferredDeviceName) {
+    std::unique_ptr<RenderDevice> VulkanInterface::createDevice(const char *preferredDeviceName) {
         std::unique_ptr<VulkanDevice> createdDevice = std::make_unique<VulkanDevice>(this, preferredDeviceName);
         return createdDevice->isValid() ? std::move(createdDevice) : nullptr;
     }
@@ -4617,10 +4616,15 @@ namespace plume {
         return capabilities;
     }
 
-    const std::vector<std::string> &VulkanInterface::getDeviceNames() const {
-        return deviceNames;
+    uint32_t VulkanInterface::getDeviceCount() const {
+        return uint32_t(deviceNames.size());
     }
-
+    
+    const char *VulkanInterface::getDeviceName(uint32_t index) const {
+        assert(index < deviceNames.size());
+        return deviceNames[index].c_str();
+    }
+    
     bool VulkanInterface::isValid() const {
         return instance != nullptr;
     }

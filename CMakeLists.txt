@@ -20,6 +20,7 @@ include(CMakeDependentOption)
 cmake_dependent_option(PLUME_SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF IS_LINUX OFF)
 cmake_dependent_option(PLUME_D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 cmake_dependent_option(PLUME_APPLE_RETINA_ENABLED "Enable Apple Retina display support" ON APPLE ON)
+option(PLUME_CPP_STD_ENABLED "Enable C++ STD helpers" ON)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
 
 # Windows-specific definitions
@@ -48,6 +49,7 @@ endif()
 message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "Plume - SDL Vulkan integration: ${PLUME_SDL_VULKAN_ENABLED}")
 message(STATUS "Plume - D3D12 Agility SDK: ${PLUME_D3D12_AGILITY_SDK_ENABLED}")
+message(STATUS "Plume - C++ STD helpers: ${PLUME_CPP_STD_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 
 # Basic source files that are always included
@@ -87,6 +89,10 @@ if(WIN32)
     target_include_directories(plume PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/contrib/D3D12MemoryAllocator/include
     )
+endif()
+
+if(PLUME_CPP_STD_ENABLED)
+    target_compile_definitions(plume PUBLIC PLUME_CPP_STD_ENABLED)
 endif()
 
 if(PLUME_SDL_VULKAN_ENABLED)

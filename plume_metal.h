@@ -8,6 +8,7 @@
 #pragma once
 
 #include <set>
+#include <string>
 #include <unordered_set>
 
 #include "plume_render_interface.h"
@@ -563,7 +564,7 @@ namespace plume {
         void *map(uint32_t subresource, const RenderRange *readRange) override;
         void unmap(uint32_t subresource, const RenderRange *writtenRange) override;
         std::unique_ptr<RenderBufferFormattedView> createBufferFormattedView(RenderFormat format) override;
-        void setName(const std::string &name) override;
+        void setName(const char *name) override;
         uint64_t getDeviceAddress() const override;
     };
 
@@ -581,7 +582,7 @@ namespace plume {
         MetalDrawable() = default;
         ~MetalDrawable() override;
         std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const override;
-        void setName(const std::string &name) override;
+        void setName(const char *name) override;
         MTL::Texture* getTexture() const override { return mtl->texture(); }
     };
 
@@ -596,7 +597,7 @@ namespace plume {
         MetalTexture(MetalDevice *device, MetalPool *pool, const RenderTextureDesc &desc);
         ~MetalTexture() override;
         std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const override;
-        void setName(const std::string &name) override;
+        void setName(const char *name) override;
         MTL::Texture* getTexture() const override { return mtl; }
     };
 
@@ -638,7 +639,7 @@ namespace plume {
 
         MetalShader(const MetalDevice *device, const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format);
         ~MetalShader() override;
-        virtual void setName(const std::string &name) override;
+        virtual void setName(const char *name) override;
         MTL::Function* createFunction(const RenderSpecConstant *specConstants, uint32_t specConstantsCount) const;
     };
 
@@ -670,8 +671,8 @@ namespace plume {
 
         MetalComputePipeline(const MetalDevice *device, const RenderComputePipelineDesc &desc);
         ~MetalComputePipeline() override;
-        void setName(const std::string &name) override;
-        RenderPipelineProgram getProgram(const std::string &name) const override;
+        void setName(const char *name) override;
+        RenderPipelineProgram getProgram(const char *name) const override;
     };
 
     struct MetalGraphicsPipeline : MetalPipeline {
@@ -679,8 +680,8 @@ namespace plume {
 
         MetalGraphicsPipeline(const MetalDevice *device, const RenderGraphicsPipelineDesc &desc);
         ~MetalGraphicsPipeline() override;
-        void setName(const std::string &name) override;
-        RenderPipelineProgram getProgram(const std::string &name) const override;
+        void setName(const char *name) override;
+        RenderPipelineProgram getProgram(const char *name) const override;
     };
 
     struct MetalPipelineLayout : RenderPipelineLayout {
@@ -729,7 +730,7 @@ namespace plume {
         // Counter sets for query pools
         MTL::CounterSet* timestampCounterSet = nullptr;
 
-        explicit MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName);
+        explicit MetalDevice(MetalInterface *renderInterface, const char *preferredDeviceName);
         ~MetalDevice() override;
         std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) override;
         std::unique_ptr<RenderShader> createShader(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) override;
@@ -776,9 +777,10 @@ namespace plume {
 
         MetalInterface();
         ~MetalInterface() override;
-        std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName) override;
+        std::unique_ptr<RenderDevice> createDevice(const char *preferredDeviceName) override;
         const RenderInterfaceCapabilities &getCapabilities() const override;
-        const std::vector<std::string> &getDeviceNames() const override;
+        uint32_t getDeviceCount() const override;
+        const char *getDeviceName(uint32_t index) const override;
         bool isValid() const;
     };
 }

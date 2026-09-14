@@ -768,8 +768,8 @@ namespace plume {
         }
     }
 
-    static void setObjectName(ID3D12Object *object, const std::string &name) {
-        const std::wstring wideCharName = Utf8ToUtf16(name);
+    static void setObjectName(ID3D12Object *object, const char *name) {
+        const std::wstring wideCharName = Utf8ToUtf16(std::string(name));
         object->SetName(wideCharName.c_str());
     }
 
@@ -2800,7 +2800,7 @@ namespace plume {
         return std::make_unique<D3D12BufferFormattedView>(this, format);
     }
 
-    void D3D12Buffer::setName(const std::string &name) {
+    void D3D12Buffer::setName(const char *name) {
         setObjectName(d3d, name);
     }
 
@@ -2894,7 +2894,7 @@ namespace plume {
         return std::make_unique<D3D12TextureView>(this, desc);
     }
 
-    void D3D12Texture::setName(const std::string &name) {
+    void D3D12Texture::setName(const char *name) {
         setObjectName(d3d, name);
     }
 
@@ -2979,7 +2979,7 @@ namespace plume {
 
     D3D12Shader::~D3D12Shader() { }
 
-    void D3D12Shader::setName(const std::string &name) {
+    void D3D12Shader::setName(const char *name) {
         // Nothing to set a name on.
     }
 
@@ -3063,11 +3063,11 @@ namespace plume {
         }
     }
 
-    void D3D12ComputePipeline::setName(const std::string &name) {
+    void D3D12ComputePipeline::setName(const char *name) {
         setObjectName(d3d, name);
     }
 
-    RenderPipelineProgram D3D12ComputePipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram D3D12ComputePipeline::getProgram(const char *name) const {
         assert(false && "Compute pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -3208,11 +3208,11 @@ namespace plume {
         }
     }
 
-    void D3D12GraphicsPipeline::setName(const std::string &name) {
+    void D3D12GraphicsPipeline::setName(const char *name) {
         setObjectName(d3d, name);
     }
 
-    RenderPipelineProgram D3D12GraphicsPipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram D3D12GraphicsPipeline::getProgram(const char *name) const {
         assert(false && "Graphics pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -3432,12 +3432,12 @@ namespace plume {
         }
     }
 
-    void D3D12RaytracingPipeline::setName(const std::string &name) {
+    void D3D12RaytracingPipeline::setName(const char *name) {
         setObjectName(stateObject, name);
     }
 
-    RenderPipelineProgram D3D12RaytracingPipeline::getProgram(const std::string &name) const {
-        auto it = nameProgramMap.find(name);
+    RenderPipelineProgram D3D12RaytracingPipeline::getProgram(const char *name) const {
+        auto it = nameProgramMap.find(std::string(name));
         assert((it != nameProgramMap.end()) && "Program must exist in the PSO.");
         return it->second;
     }
@@ -3640,7 +3640,7 @@ namespace plume {
 
     // D3D12Device
 
-    D3D12Device::D3D12Device(D3D12Interface *renderInterface, const std::string &preferredDeviceName) {
+    D3D12Device::D3D12Device(D3D12Interface *renderInterface, const char *preferredDeviceName) {
         assert(renderInterface != nullptr);
 
         this->renderInterface = renderInterface;
@@ -3740,7 +3740,7 @@ namespace plume {
             std::string deviceName = Utf16ToUtf8(adapterDesc.Description);
             bool preferOverNothing = (adapter == nullptr) || (d3d == nullptr);
             bool preferVideoMemory = adapterDesc.DedicatedVideoMemory > description.dedicatedVideoMemory;
-            bool preferUserChoice = preferredDeviceName == deviceName;
+            bool preferUserChoice = std::string(preferredDeviceName) == deviceName;
             bool preferOption = preferOverNothing || preferVideoMemory || preferUserChoice;
             if (preferOption) {
                 if (d3d != nullptr) {
@@ -3769,7 +3769,7 @@ namespace plume {
                 capabilities.gpuUploadHeap = uma || gpuUploadHeapOption;
                 gpuUploadHeapFallback = uma && !gpuUploadHeapOption;
 
-                description.name = deviceName;
+                snprintf(description.name, sizeof(description.name), "%s", deviceName.c_str());
                 description.dedicatedVideoMemory = adapterDesc.DedicatedVideoMemory;
                 description.vendor = RenderDeviceVendor(adapterDesc.VendorId);
 
@@ -4232,7 +4232,7 @@ namespace plume {
         }
     }
 
-    std::unique_ptr<RenderDevice> D3D12Interface::createDevice(const std::string &preferredDeviceName) {
+    std::unique_ptr<RenderDevice> D3D12Interface::createDevice(const char *preferredDeviceName) {
         std::unique_ptr<D3D12Device> createdDevice = std::make_unique<D3D12Device>(this, preferredDeviceName);
         return createdDevice->isValid() ? std::move(createdDevice) : nullptr;
     }
@@ -4241,8 +4241,13 @@ namespace plume {
         return capabilities;
     }
 
-    const std::vector<std::string> &D3D12Interface::getDeviceNames() const {
-        return deviceNames;
+    uint32_t D3D12Interface::getDeviceCount() const {
+        return uint32_t(deviceNames.size());
+    }
+    
+    const char *D3D12Interface::getDeviceName(uint32_t index) const {
+        assert(index < deviceNames.size());
+        return deviceNames[index].c_str();
     }
 
     bool D3D12Interface::isValid() const {

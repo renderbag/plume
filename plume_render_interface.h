@@ -9,6 +9,10 @@
 
 #include <climits>
 
+#ifdef PLUME_CPP_STD_ENABLED
+#include <string>
+#endif
+
 #include "plume_render_interface_types.h"
 
 namespace plume {
@@ -23,13 +27,19 @@ namespace plume {
         virtual void *map(uint32_t subresource = 0, const RenderRange *readRange = nullptr) = 0;
         virtual void unmap(uint32_t subresource = 0, const RenderRange *writtenRange = nullptr) = 0;
         virtual std::unique_ptr<RenderBufferFormattedView> createBufferFormattedView(RenderFormat format) = 0;
-        virtual void setName(const std::string &name) = 0;
+        virtual void setName(const char *name) = 0;
         virtual uint64_t getDeviceAddress() const = 0;
 
         // Concrete implementation shortcuts.
         inline RenderBufferReference at(uint64_t offset) const {
             return RenderBufferReference(this, offset);
         }
+
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderTextureView {
@@ -39,7 +49,14 @@ namespace plume {
     struct RenderTexture {
         virtual ~RenderTexture() { }
         virtual std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const = 0;
-        virtual void setName(const std::string &name) = 0;
+        virtual void setName(const char *name) = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderAccelerationStructure {
@@ -48,7 +65,14 @@ namespace plume {
 
     struct RenderShader {
         virtual ~RenderShader() { }
-        virtual void setName(const std::string &name) = 0;
+        virtual void setName(const char *name) = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderSampler {
@@ -57,8 +81,15 @@ namespace plume {
 
     struct RenderPipeline {
         virtual ~RenderPipeline() { }
-        virtual void setName(const std::string &name) = 0;
-        virtual RenderPipelineProgram getProgram(const std::string &name) const = 0;
+        virtual void setName(const char *name) = 0;
+        virtual RenderPipelineProgram getProgram(const char *name) const = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderPipelineLayout {
@@ -253,9 +284,28 @@ namespace plume {
 
     struct RenderInterface {
         virtual ~RenderInterface() { }
-        virtual std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName = "") = 0;
-        virtual const std::vector<std::string> &getDeviceNames() const = 0;
+        virtual std::unique_ptr<RenderDevice> createDevice(const char *preferredDeviceName = "") = 0;
+        virtual uint32_t getDeviceCount() const = 0;
+        virtual const char *getDeviceName(uint32_t index) const = 0;
         virtual const RenderInterfaceCapabilities &getCapabilities() const = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName) {
+            return createDevice(preferredDeviceName.c_str());
+        }
+
+        inline std::vector<std::string> getDeviceNames() const {
+            const uint32_t deviceCount = getDeviceCount();
+            std::vector<std::string> deviceNames;
+            deviceNames.reserve(deviceCount);
+            for (uint32_t i = 0; i < deviceCount; i++) {
+                deviceNames.emplace_back(getDeviceName(i));
+            }
+    
+            return deviceNames;
+        }
+#endif        
     };
 
     extern void RenderInterfaceTest(RenderInterface *renderInterface);
