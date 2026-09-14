@@ -18,6 +18,7 @@ string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Linux" IS_LINUX)
 # Project options
 include(CMakeDependentOption)
 cmake_dependent_option(PLUME_SDL2_VULKAN_ENABLED "Enable SDL2 Vulkan integration" OFF IS_LINUX OFF)
+cmake_dependent_option(PLUME_SDL3_VULKAN_ENABLED "Enable SDL3 Vulkan integration" OFF IS_LINUX OFF)
 cmake_dependent_option(PLUME_D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 cmake_dependent_option(PLUME_APPLE_RETINA_ENABLED "Enable Apple Retina display support" ON APPLE ON)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
@@ -25,6 +26,10 @@ option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
 # Windows-specific definitions
 if(WIN32)
     add_compile_definitions(NOMINMAX)
+endif()
+
+if(PLUME_SDL2_VULKAN_ENABLED AND PLUME_SDL3_VULKAN_ENABLED)
+    message(FATAL_ERROR "Plume - PLUME_SDL2_VULKAN_ENABLED and PLUME_SDL3_VULKAN_ENABLED are mutually exclusive")
 endif()
 
 # Enable SDL Vulkan support
@@ -36,6 +41,10 @@ if(PLUME_SDL2_VULKAN_ENABLED)
     endif()
 
     message(STATUS "Plume - Building with SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
+elseif(PLUME_SDL3_VULKAN_ENABLED)
+    if (NOT TARGET SDL3::Headers)
+        find_package(SDL3 REQUIRED)
+    endif()
 endif()
 
 # Enable D3D12 Agility SDK support
@@ -47,6 +56,7 @@ endif()
 # Print status messages
 message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
 message(STATUS "Plume - SDL2 Vulkan integration: ${PLUME_SDL2_VULKAN_ENABLED}")
+message(STATUS "Plume - SDL3 Vulkan integration: ${PLUME_SDL3_VULKAN_ENABLED}")
 message(STATUS "Plume - D3D12 Agility SDK: ${PLUME_D3D12_AGILITY_SDK_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 
@@ -92,6 +102,9 @@ endif()
 if(PLUME_SDL2_VULKAN_ENABLED)
     target_compile_definitions(plume PUBLIC PLUME_SDL2_VULKAN_ENABLED)
     target_include_directories(plume PUBLIC ${SDL2_INCLUDE_DIRS})
+elseif(PLUME_SDL3_VULKAN_ENABLED)
+    target_compile_definitions(plume PUBLIC PLUME_SDL3_VULKAN_ENABLED)
+    target_link_libraries(plume PUBLIC PUBLIC SDL3::Headers)
 endif()
 
 if(PLUME_D3D12_AGILITY_SDK_ENABLED)
