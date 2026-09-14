@@ -18,7 +18,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #elif defined(__ANDROID__)
 #define VK_USE_PLATFORM_ANDROID_KHR
-#elif defined(__linux__) && !defined(PLUME_SDL_VULKAN_ENABLED)
+#elif defined(__linux__) && !defined(PLUME_SDL2_VULKAN_ENABLED)
 #define VK_USE_PLATFORM_XLIB_KHR
 #elif defined(__APPLE__)
 #define VK_USE_PLATFORM_METAL_EXT
@@ -454,7 +454,7 @@ namespace plume {
         RenderInterfaceCapabilities capabilities;
         std::vector<std::string> deviceNames;
 
-#   if PLUME_SDL_VULKAN_ENABLED
+#   if PLUME_SDL2_VULKAN_ENABLED
         VulkanInterface(RenderWindow sdlWindow);
 #   else
         VulkanInterface();

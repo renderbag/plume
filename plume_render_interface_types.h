@@ -19,7 +19,7 @@
 #include <Windows.h>
 #elif defined(__ANDROID__)
 #include "android/native_window.h"
-#elif defined(__linux__) && !defined(PLUME_SDL_VULKAN_ENABLED)
+#elif defined(__linux__) && !defined(PLUME_SDL2_VULKAN_ENABLED)
 #include "X11/Xlib.h"
 #undef None
 #undef Status
@@ -29,7 +29,7 @@
 #undef Always
 #endif
 
-#ifdef PLUME_SDL_VULKAN_ENABLED
+#ifdef PLUME_SDL2_VULKAN_ENABLED
 #include <SDL_vulkan.h>
 #endif
 
@@ -39,7 +39,7 @@ namespace plume {
     typedef HWND RenderWindow;
 #elif defined(__ANDROID__)
     typedef ANativeWindow* RenderWindow;
-#elif defined(PLUME_SDL_VULKAN_ENABLED)
+#elif defined(PLUME_SDL2_VULKAN_ENABLED)
     typedef SDL_Window *RenderWindow;
 #elif defined(__linux__)
     struct RenderWindow {

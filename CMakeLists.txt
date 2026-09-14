@@ -17,7 +17,7 @@ string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Linux" IS_LINUX)
 
 # Project options
 include(CMakeDependentOption)
-cmake_dependent_option(PLUME_SDL_VULKAN_ENABLED "Enable SDL Vulkan integration" OFF IS_LINUX OFF)
+cmake_dependent_option(PLUME_SDL2_VULKAN_ENABLED "Enable SDL2 Vulkan integration" OFF IS_LINUX OFF)
 cmake_dependent_option(PLUME_D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 cmake_dependent_option(PLUME_APPLE_RETINA_ENABLED "Enable Apple Retina display support" ON APPLE ON)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
@@ -28,7 +28,7 @@ if(WIN32)
 endif()
 
 # Enable SDL Vulkan support
-if(PLUME_SDL_VULKAN_ENABLED)
+if(PLUME_SDL2_VULKAN_ENABLED)
     if (NOT TARGET SDL2::SDL2)
         find_package(SDL2 REQUIRED)
     else()
@@ -46,7 +46,7 @@ endif()
 
 # Print status messages
 message(STATUS "Plume - Building with backends: Vulkan=1 Metal=${APPLE} D3D12=${WIN32}")
-message(STATUS "Plume - SDL Vulkan integration: ${PLUME_SDL_VULKAN_ENABLED}")
+message(STATUS "Plume - SDL2 Vulkan integration: ${PLUME_SDL2_VULKAN_ENABLED}")
 message(STATUS "Plume - D3D12 Agility SDK: ${PLUME_D3D12_AGILITY_SDK_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
 
@@ -89,8 +89,8 @@ if(WIN32)
     )
 endif()
 
-if(PLUME_SDL_VULKAN_ENABLED)
-    target_compile_definitions(plume PUBLIC PLUME_SDL_VULKAN_ENABLED)
+if(PLUME_SDL2_VULKAN_ENABLED)
+    target_compile_definitions(plume PUBLIC PLUME_SDL2_VULKAN_ENABLED)
     target_include_directories(plume PUBLIC ${SDL2_INCLUDE_DIRS})
 endif()
 
