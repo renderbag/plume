@@ -4,6 +4,7 @@
 // Demonstrates cube texture creation and sampling
 //
 
+#define PLUME_CPP_STD_ENABLED
 #include "plume_render_interface.h"
 
 #include <cassert>

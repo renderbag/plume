@@ -9,6 +9,11 @@
 
 #include <climits>
 
+#ifdef PLUME_CPP_STD_ENABLED
+#include <string>
+#include <memory>
+#endif
+
 #include "plume_render_interface_types.h"
 
 namespace plume {
@@ -22,14 +27,24 @@ namespace plume {
         virtual ~RenderBuffer() { }
         virtual void *map(uint32_t subresource = 0, const RenderRange *readRange = nullptr) = 0;
         virtual void unmap(uint32_t subresource = 0, const RenderRange *writtenRange = nullptr) = 0;
-        virtual std::unique_ptr<RenderBufferFormattedView> createBufferFormattedView(RenderFormat format) = 0;
-        virtual void setName(const std::string &name) = 0;
+        virtual RenderBufferFormattedView *createBufferFormattedViewRaw(RenderFormat format) = 0;
+        virtual void setName(const char *name) = 0;
         virtual uint64_t getDeviceAddress() const = 0;
 
         // Concrete implementation shortcuts.
         inline RenderBufferReference at(uint64_t offset) const {
             return RenderBufferReference(this, offset);
         }
+
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderBufferFormattedView> createBufferFormattedView(RenderFormat format) {
+            return std::unique_ptr<RenderBufferFormattedView>(createBufferFormattedViewRaw(format));
+        }
+
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderTextureView {
@@ -38,8 +53,19 @@ namespace plume {
 
     struct RenderTexture {
         virtual ~RenderTexture() { }
-        virtual std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const = 0;
-        virtual void setName(const std::string &name) = 0;
+        virtual RenderTextureView *createTextureViewRaw(const RenderTextureViewDesc &desc) const = 0;
+        virtual void setName(const char *name) = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const {
+            return std::unique_ptr<RenderTextureView>(createTextureViewRaw(desc));
+        }
+
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderAccelerationStructure {
@@ -48,7 +74,14 @@ namespace plume {
 
     struct RenderShader {
         virtual ~RenderShader() { }
-        virtual void setName(const std::string &name) = 0;
+        virtual void setName(const char *name) = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderSampler {
@@ -57,8 +90,15 @@ namespace plume {
 
     struct RenderPipeline {
         virtual ~RenderPipeline() { }
-        virtual void setName(const std::string &name) = 0;
-        virtual RenderPipelineProgram getProgram(const std::string &name) const = 0;
+        virtual void setName(const char *name) = 0;
+        virtual RenderPipelineProgram getProgram(const char *name) const = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline void setName(const std::string &name) {
+            setName(name.c_str());
+        }
+#endif
     };
 
     struct RenderPipelineLayout {
@@ -199,8 +239,8 @@ namespace plume {
 
     struct RenderCommandQueue {
         virtual ~RenderCommandQueue() { }
-        virtual std::unique_ptr<RenderCommandList> createCommandList() = 0;
-        virtual std::unique_ptr<RenderSwapChain> createSwapChain(const RenderSwapChainDesc &desc) = 0;
+        virtual RenderCommandList *createCommandListRaw() = 0;
+        virtual RenderSwapChain *createSwapChainRaw(const RenderSwapChainDesc &desc) = 0;
         virtual void executeCommandLists(const RenderCommandList **commandLists, uint32_t commandListCount, RenderCommandSemaphore **waitSemaphores = nullptr, uint32_t waitSemaphoreCount = 0, RenderCommandSemaphore **signalSemaphores = nullptr, uint32_t signalSemaphoreCount = 0, RenderCommandFence *signalFence = nullptr) = 0;
         virtual void waitForCommandFence(RenderCommandFence *fence) = 0;
 
@@ -208,12 +248,33 @@ namespace plume {
         inline void executeCommandLists(const RenderCommandList *commandList, RenderCommandFence *signalFence = nullptr) {
             executeCommandLists(&commandList, 1, nullptr, 0, nullptr, 0, signalFence);
         }
+
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderCommandList> createCommandList() {
+            return std::unique_ptr<RenderCommandList>(createCommandListRaw());
+        }
+
+        inline std::unique_ptr<RenderSwapChain> createSwapChain(const RenderSwapChainDesc &desc) {
+            return std::unique_ptr<RenderSwapChain>(createSwapChainRaw(desc));
+        }
+#endif
     };
 
     struct RenderPool {
         virtual ~RenderPool() { }
-        virtual std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) = 0;
-        virtual std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) = 0;
+        virtual RenderBuffer *createBufferRaw(const RenderBufferDesc &desc) = 0;
+        virtual RenderTexture *createTextureRaw(const RenderTextureDesc &desc) = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) {
+            return std::unique_ptr<RenderBuffer>(createBufferRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) {
+            return std::unique_ptr<RenderTexture>(createTextureRaw(desc));
+        }
+#endif
     };
 
     struct RenderQueryPool {
@@ -225,22 +286,22 @@ namespace plume {
 
     struct RenderDevice {
         virtual ~RenderDevice() { }
-        virtual std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) = 0;
-        virtual std::unique_ptr<RenderShader> createShader(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) = 0;
-        virtual std::unique_ptr<RenderSampler> createSampler(const RenderSamplerDesc &desc) = 0;
-        virtual std::unique_ptr<RenderPipeline> createComputePipeline(const RenderComputePipelineDesc &desc) = 0;
-        virtual std::unique_ptr<RenderPipeline> createGraphicsPipeline(const RenderGraphicsPipelineDesc &desc) = 0;
-        virtual std::unique_ptr<RenderPipeline> createRaytracingPipeline(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline = nullptr) = 0;
-        virtual std::unique_ptr<RenderCommandQueue> createCommandQueue(RenderCommandListType type) = 0;
-        virtual std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) = 0;
-        virtual std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) = 0;
-        virtual std::unique_ptr<RenderAccelerationStructure> createAccelerationStructure(const RenderAccelerationStructureDesc &desc) = 0;
-        virtual std::unique_ptr<RenderPool> createPool(const RenderPoolDesc &desc) = 0;
-        virtual std::unique_ptr<RenderPipelineLayout> createPipelineLayout(const RenderPipelineLayoutDesc &desc) = 0;
-        virtual std::unique_ptr<RenderCommandFence> createCommandFence() = 0;
-        virtual std::unique_ptr<RenderCommandSemaphore> createCommandSemaphore() = 0;
-        virtual std::unique_ptr<RenderFramebuffer> createFramebuffer(const RenderFramebufferDesc &desc) = 0;
-        virtual std::unique_ptr<RenderQueryPool> createQueryPool(uint32_t queryCount) = 0;
+        virtual RenderDescriptorSet *createDescriptorSetRaw(const RenderDescriptorSetDesc &desc) = 0;
+        virtual RenderShader *createShaderRaw(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) = 0;
+        virtual RenderSampler *createSamplerRaw(const RenderSamplerDesc &desc) = 0;
+        virtual RenderPipeline *createComputePipelineRaw(const RenderComputePipelineDesc &desc) = 0;
+        virtual RenderPipeline *createGraphicsPipelineRaw(const RenderGraphicsPipelineDesc &desc) = 0;
+        virtual RenderPipeline *createRaytracingPipelineRaw(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline = nullptr) = 0;
+        virtual RenderCommandQueue *createCommandQueueRaw(RenderCommandListType type) = 0;
+        virtual RenderBuffer *createBufferRaw(const RenderBufferDesc &desc) = 0;
+        virtual RenderTexture *createTextureRaw(const RenderTextureDesc &desc) = 0;
+        virtual RenderAccelerationStructure *createAccelerationStructureRaw(const RenderAccelerationStructureDesc &desc) = 0;
+        virtual RenderPool *createPoolRaw(const RenderPoolDesc &desc) = 0;
+        virtual RenderPipelineLayout *createPipelineLayoutRaw(const RenderPipelineLayoutDesc &desc) = 0;
+        virtual RenderCommandFence *createCommandFenceRaw() = 0;
+        virtual RenderCommandSemaphore *createCommandSemaphoreRaw() = 0;
+        virtual RenderFramebuffer *createFramebufferRaw(const RenderFramebufferDesc &desc) = 0;
+        virtual RenderQueryPool *createQueryPoolRaw(uint32_t queryCount) = 0;
         virtual void setBottomLevelASBuildInfo(RenderBottomLevelASBuildInfo &buildInfo, const RenderBottomLevelASMesh *meshes, uint32_t meshCount, bool preferFastBuild = true, bool preferFastTrace = false) = 0;
         virtual void setTopLevelASBuildInfo(RenderTopLevelASBuildInfo &buildInfo, const RenderTopLevelASInstance *instances, uint32_t instanceCount, bool preferFastBuild = true, bool preferFastTrace = false) = 0;
         virtual void setShaderBindingTableInfo(RenderShaderBindingTableInfo &tableInfo, const RenderShaderBindingGroups &groups, const RenderPipeline *pipeline, RenderDescriptorSet **descriptorSets, uint32_t descriptorSetCount) = 0;
@@ -249,13 +310,103 @@ namespace plume {
         virtual RenderSampleCounts getSampleCountsSupported(RenderFormat format) const = 0;
         virtual bool beginCapture() = 0;
         virtual bool endCapture() = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) {
+            return std::unique_ptr<RenderDescriptorSet>(createDescriptorSetRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderShader> createShader(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) {
+            return std::unique_ptr<RenderShader>(createShaderRaw(data, size, entryPointName, format));
+        }
+
+        inline std::unique_ptr<RenderSampler> createSampler(const RenderSamplerDesc &desc) {
+            return std::unique_ptr<RenderSampler>(createSamplerRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderPipeline> createComputePipeline(const RenderComputePipelineDesc &desc) {
+            return std::unique_ptr<RenderPipeline>(createComputePipelineRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderPipeline> createGraphicsPipeline(const RenderGraphicsPipelineDesc &desc) {
+            return std::unique_ptr<RenderPipeline>(createGraphicsPipelineRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderPipeline> createRaytracingPipeline(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline = nullptr) {
+            return std::unique_ptr<RenderPipeline>(createRaytracingPipelineRaw(desc, previousPipeline));
+        }
+
+        inline std::unique_ptr<RenderCommandQueue> createCommandQueue(RenderCommandListType type) {
+            return std::unique_ptr<RenderCommandQueue>(createCommandQueueRaw(type));
+        }
+
+        inline std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) {
+            return std::unique_ptr<RenderBuffer>(createBufferRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) {
+            return std::unique_ptr<RenderTexture>(createTextureRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderAccelerationStructure> createAccelerationStructure(const RenderAccelerationStructureDesc &desc) {
+            return std::unique_ptr<RenderAccelerationStructure>(createAccelerationStructureRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderPool> createPool(const RenderPoolDesc &desc) {
+            return std::unique_ptr<RenderPool>(createPoolRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderPipelineLayout> createPipelineLayout(const RenderPipelineLayoutDesc &desc) {
+            return std::unique_ptr<RenderPipelineLayout>(createPipelineLayoutRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderCommandFence> createCommandFence() {
+            return std::unique_ptr<RenderCommandFence>(createCommandFenceRaw());
+        }
+
+        inline std::unique_ptr<RenderCommandSemaphore> createCommandSemaphore() {
+            return std::unique_ptr<RenderCommandSemaphore>(createCommandSemaphoreRaw());
+        }
+
+        inline std::unique_ptr<RenderFramebuffer> createFramebuffer(const RenderFramebufferDesc &desc) {
+            return std::unique_ptr<RenderFramebuffer>(createFramebufferRaw(desc));
+        }
+
+        inline std::unique_ptr<RenderQueryPool> createQueryPool(uint32_t queryCount) {
+            return std::unique_ptr<RenderQueryPool>(createQueryPoolRaw(queryCount));
+        }
+#endif
     };
 
     struct RenderInterface {
         virtual ~RenderInterface() { }
-        virtual std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName = "") = 0;
-        virtual const std::vector<std::string> &getDeviceNames() const = 0;
+        virtual RenderDevice *createDeviceRaw(const char *preferredDeviceName = "") = 0;
+        virtual uint32_t getDeviceCount() const = 0;
+        virtual const char *getDeviceName(uint32_t index) const = 0;
         virtual const RenderInterfaceCapabilities &getCapabilities() const = 0;
+
+        // Concrete implementation shortcuts.
+#ifdef PLUME_CPP_STD_ENABLED
+        inline std::unique_ptr<RenderDevice> createDevice(const char *preferredDeviceName = "") {
+            return std::unique_ptr<RenderDevice>(createDeviceRaw(preferredDeviceName));
+        }
+
+        inline std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName) {
+            return createDevice(preferredDeviceName.c_str());
+        }
+
+        inline std::vector<std::string> getDeviceNames() const {
+            const uint32_t deviceCount = getDeviceCount();
+            std::vector<std::string> deviceNames;
+            deviceNames.reserve(deviceCount);
+            for (uint32_t i = 0; i < deviceCount; i++) {
+                deviceNames.emplace_back(getDeviceName(i));
+            }
+    
+            return deviceNames;
+        }
+#endif        
     };
 
     extern void RenderInterfaceTest(RenderInterface *renderInterface);

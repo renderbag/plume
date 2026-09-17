@@ -9,8 +9,6 @@
 
 #include <cassert>
 #include <list>
-#include <memory>
-#include <string>
 #include <vector>
 #include <cfloat>
 #include <cstdint>
@@ -1754,7 +1752,7 @@ namespace plume {
     };
 
     struct RenderDeviceDescription {
-        std::string name = "Unknown";
+        char name[256] = "Unknown";
         RenderDeviceType type = RenderDeviceType::UNKNOWN;
         RenderDeviceVendor vendor = RenderDeviceVendor::UNKNOWN;
         uint64_t driverVersion = 0;

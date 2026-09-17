@@ -15,6 +15,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <algorithm>
+#include <memory>
 #include <mutex>
 
 #include "plume_metal.h"
@@ -1168,13 +1169,13 @@ namespace plume {
         }
     }
 
-    std::unique_ptr<RenderBufferFormattedView> MetalBuffer::createBufferFormattedView(RenderFormat format) {
-        return std::make_unique<MetalBufferFormattedView>(this, format);
+    RenderBufferFormattedView *MetalBuffer::createBufferFormattedViewRaw(RenderFormat format) {
+        return new MetalBufferFormattedView(this, format);
     }
 
-    void MetalBuffer::setName(const std::string &name) {
+    void MetalBuffer::setName(const char *name) {
         MetalAutoreleasePool releasePool;
-        const NS::String *label = NS::String::string(name.c_str(), NS::UTF8StringEncoding);
+        const NS::String *label = NS::String::string(name, NS::UTF8StringEncoding);
         mtl->setLabel(label);
     }
 
@@ -1256,13 +1257,13 @@ namespace plume {
         mtl->release();
     }
 
-    std::unique_ptr<RenderTextureView> MetalTexture::createTextureView(const RenderTextureViewDesc &desc) const {
-        return std::make_unique<MetalTextureView>(this, desc);
+    RenderTextureView *MetalTexture::createTextureViewRaw(const RenderTextureViewDesc &desc) const {
+        return new MetalTextureView(this, desc);
     }
 
-    void MetalTexture::setName(const std::string &name) {
+    void MetalTexture::setName(const char *name) {
         MetalAutoreleasePool releasePool;
-        mtl->setLabel(NS::String::string(name.c_str(), NS::UTF8StringEncoding));
+        mtl->setLabel(NS::String::string(name, NS::UTF8StringEncoding));
     }
 
     // MetalTextureView
@@ -1319,12 +1320,12 @@ namespace plume {
 
     MetalPool::~MetalPool() { }
 
-    std::unique_ptr<RenderBuffer> MetalPool::createBuffer(const RenderBufferDesc &desc) {
-        return std::make_unique<MetalBuffer>(device, this, desc);
+    RenderBuffer *MetalPool::createBufferRaw(const RenderBufferDesc &desc) {
+        return new MetalBuffer(device, this, desc);
     }
 
-    std::unique_ptr<RenderTexture> MetalPool::createTexture(const RenderTextureDesc &desc) {
-        return std::make_unique<MetalTexture>(device, this, desc);
+    RenderTexture *MetalPool::createTextureRaw(const RenderTextureDesc &desc) {
+        return new MetalTexture(device, this, desc);
     }
 
     // MetalShader
@@ -1361,13 +1362,13 @@ namespace plume {
         }
     }
 
-    void MetalShader::setName(const std::string &name) {
+    void MetalShader::setName(const char *name) {
         MetalAutoreleasePool releasePool;
         if (debugName != nullptr) {
             debugName->release();
         }
 
-        debugName = NS::String::string(name.c_str(), NS::UTF8StringEncoding);
+        debugName = NS::String::string(name, NS::UTF8StringEncoding);
         debugName->retain();
 
         library->setLabel(debugName);
@@ -1478,11 +1479,11 @@ namespace plume {
         }
     }
 
-    void MetalComputePipeline::setName(const std::string &name) {
+    void MetalComputePipeline::setName(const char *name) {
         // TODO: New - setting name happens at descriptor level - this would have to be reworked
     }
 
-    RenderPipelineProgram MetalComputePipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram MetalComputePipeline::getProgram(const char *name) const {
         assert(false && "Compute pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -1648,11 +1649,11 @@ namespace plume {
         }
     }
 
-    void MetalGraphicsPipeline::setName(const std::string &name) {
+    void MetalGraphicsPipeline::setName(const char *name) {
         // TODO: New - setting name happens at descriptor level - this would have to be reworked
     }
 
-    RenderPipelineProgram MetalGraphicsPipeline::getProgram(const std::string &name) const {
+    RenderPipelineProgram MetalGraphicsPipeline::getProgram(const char *name) const {
         assert(false && "Graphics pipelines can't retrieve shader programs.");
         return RenderPipelineProgram();
     }
@@ -1892,14 +1893,14 @@ namespace plume {
         }
     }
 
-    std::unique_ptr<RenderTextureView> MetalDrawable::createTextureView(const RenderTextureViewDesc& desc) const {
+    RenderTextureView *MetalDrawable::createTextureViewRaw(const RenderTextureViewDesc& desc) const {
         assert(false && "Drawables don't support texture views");
         return nullptr;
     }
 
-    void MetalDrawable::setName(const std::string &name) {
+    void MetalDrawable::setName(const char *name) {
         MetalAutoreleasePool releasePool;
-        mtl->texture()->setLabel(NS::String::string(name.c_str(), NS::UTF8StringEncoding));
+        mtl->texture()->setLabel(NS::String::string(name, NS::UTF8StringEncoding));
     }
 
     // MetalSwapChain
@@ -3672,12 +3673,12 @@ namespace plume {
         mtl->release();
     }
 
-    std::unique_ptr<RenderCommandList> MetalCommandQueue::createCommandList() {
-        return std::make_unique<MetalCommandList>(this);
+    RenderCommandList *MetalCommandQueue::createCommandListRaw() {
+        return new MetalCommandList(this);
     }
 
-    std::unique_ptr<RenderSwapChain> MetalCommandQueue::createSwapChain(const RenderSwapChainDesc &desc) {
-        return std::make_unique<MetalSwapChain>(this, desc);
+    RenderSwapChain *MetalCommandQueue::createSwapChainRaw(const RenderSwapChainDesc &desc) {
+        return new MetalSwapChain(this, desc);
     }
 
     void MetalCommandQueue::executeCommandLists(const RenderCommandList **commandLists, const uint32_t commandListCount, RenderCommandSemaphore **waitSemaphores, const uint32_t waitSemaphoreCount, RenderCommandSemaphore **signalSemaphores, const uint32_t signalSemaphoreCount, RenderCommandFence *signalFence) {
@@ -3772,7 +3773,7 @@ namespace plume {
 
     // MetalDevice
 
-    MetalDevice::MetalDevice(MetalInterface *renderInterface, const std::string &preferredDeviceName) {
+    MetalDevice::MetalDevice(MetalInterface *renderInterface, const char *preferredDeviceName) {
         assert(renderInterface != nullptr);
 
         MetalAutoreleasePool releasePool;
@@ -3783,7 +3784,7 @@ namespace plume {
         MTL::Device *preferredDevice = nullptr;
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             MTL::Device *device = (MTL::Device *)devices->object(i);
-            const NS::String *preferredDeviceNameNS = NS::String::string(preferredDeviceName.c_str(), NS::UTF8StringEncoding);
+            const NS::String *preferredDeviceNameNS = NS::String::string(preferredDeviceName, NS::UTF8StringEncoding);
             if (device->name()->isEqualToString(preferredDeviceNameNS)) {
                 preferredDevice = device;
                 break;
@@ -3794,8 +3795,7 @@ namespace plume {
         mtl->retain();
         devices->release();
 
-        const std::string deviceName(mtl->name()->utf8String());
-        description.name = deviceName;
+        snprintf(description.name, sizeof(description.name), "%s", mtl->name()->utf8String());
         description.type = mapDeviceType(mtl->location());
         description.driverVersion = 1; // Unavailable
         description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : getRenderDeviceVendor(mtl->registryID());
@@ -3845,7 +3845,7 @@ namespace plume {
         useArgumentBuffersTier2 = mtl->argumentBuffersSupport() == MTL::ArgumentBuffersTier2;
         useDirectBufferAddresses = useArgumentBuffersTier2 && mtl->supportsFamily(MTL::GPUFamilyMetal3);
 
-        nullBuffer = createBuffer(RenderBufferDesc::DefaultBuffer(16, RenderBufferFlag::VERTEX));
+        nullBuffer = std::unique_ptr<RenderBuffer>(createBufferRaw(RenderBufferDesc::DefaultBuffer(16, RenderBufferFlag::VERTEX)));
 
         if (supportsResidencySets) {
             MTL::ResidencySetDescriptor* residencySetDescriptor = MTL::ResidencySetDescriptor::alloc()->init();
@@ -3880,69 +3880,69 @@ namespace plume {
         mtl->release();
     }
 
-    std::unique_ptr<RenderDescriptorSet> MetalDevice::createDescriptorSet(const RenderDescriptorSetDesc &desc) {
-        return std::make_unique<MetalDescriptorSet>(this, desc);
+    RenderDescriptorSet *MetalDevice::createDescriptorSetRaw(const RenderDescriptorSetDesc &desc) {
+        return new MetalDescriptorSet(this, desc);
     }
 
-    std::unique_ptr<RenderShader> MetalDevice::createShader(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) {
-        return std::make_unique<MetalShader>(this, data, size, entryPointName, format);
+    RenderShader *MetalDevice::createShaderRaw(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) {
+        return new MetalShader(this, data, size, entryPointName, format);
     }
 
-    std::unique_ptr<RenderSampler> MetalDevice::createSampler(const RenderSamplerDesc &desc) {
-        return std::make_unique<MetalSampler>(this, desc);
+    RenderSampler *MetalDevice::createSamplerRaw(const RenderSamplerDesc &desc) {
+        return new MetalSampler(this, desc);
     }
 
-    std::unique_ptr<RenderPipeline> MetalDevice::createComputePipeline(const RenderComputePipelineDesc &desc) {
-        return std::make_unique<MetalComputePipeline>(this, desc);
+    RenderPipeline *MetalDevice::createComputePipelineRaw(const RenderComputePipelineDesc &desc) {
+        return new MetalComputePipeline(this, desc);
     }
 
-    std::unique_ptr<RenderPipeline> MetalDevice::createGraphicsPipeline(const RenderGraphicsPipelineDesc &desc) {
-        return std::make_unique<MetalGraphicsPipeline>(this, desc);
+    RenderPipeline *MetalDevice::createGraphicsPipelineRaw(const RenderGraphicsPipelineDesc &desc) {
+        return new MetalGraphicsPipeline(this, desc);
     }
 
-    std::unique_ptr<RenderPipeline> MetalDevice::createRaytracingPipeline(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline) {
+    RenderPipeline *MetalDevice::createRaytracingPipelineRaw(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline) {
         // TODO: Unimplemented (Raytracing).
         return nullptr;
     }
 
-    std::unique_ptr<RenderCommandQueue> MetalDevice::createCommandQueue(RenderCommandListType type) {
-        return std::make_unique<MetalCommandQueue>(this, type);
+    RenderCommandQueue *MetalDevice::createCommandQueueRaw(RenderCommandListType type) {
+        return new MetalCommandQueue(this, type);
     }
 
-    std::unique_ptr<RenderBuffer> MetalDevice::createBuffer(const RenderBufferDesc &desc) {
-        return std::make_unique<MetalBuffer>(this, nullptr, desc);
+    RenderBuffer *MetalDevice::createBufferRaw(const RenderBufferDesc &desc) {
+        return new MetalBuffer(this, nullptr, desc);
     }
 
-    std::unique_ptr<RenderTexture> MetalDevice::createTexture(const RenderTextureDesc &desc) {
-        return std::make_unique<MetalTexture>(this, nullptr, desc);
+    RenderTexture *MetalDevice::createTextureRaw(const RenderTextureDesc &desc) {
+        return new MetalTexture(this, nullptr, desc);
     }
 
-    std::unique_ptr<RenderAccelerationStructure> MetalDevice::createAccelerationStructure(const RenderAccelerationStructureDesc &desc) {
-        return std::make_unique<MetalAccelerationStructure>(this, desc);
+    RenderAccelerationStructure *MetalDevice::createAccelerationStructureRaw(const RenderAccelerationStructureDesc &desc) {
+        return new MetalAccelerationStructure(this, desc);
     }
 
-    std::unique_ptr<RenderPool> MetalDevice::createPool(const RenderPoolDesc &desc) {
-        return std::make_unique<MetalPool>(this, desc);
+    RenderPool *MetalDevice::createPoolRaw(const RenderPoolDesc &desc) {
+        return new MetalPool(this, desc);
     }
 
-    std::unique_ptr<RenderPipelineLayout> MetalDevice::createPipelineLayout(const RenderPipelineLayoutDesc &desc) {
-        return std::make_unique<MetalPipelineLayout>(this, desc);
+    RenderPipelineLayout *MetalDevice::createPipelineLayoutRaw(const RenderPipelineLayoutDesc &desc) {
+        return new MetalPipelineLayout(this, desc);
     }
 
-    std::unique_ptr<RenderCommandFence> MetalDevice::createCommandFence() {
-        return std::make_unique<MetalCommandFence>(this);
+    RenderCommandFence *MetalDevice::createCommandFenceRaw() {
+        return new MetalCommandFence(this);
     }
 
-    std::unique_ptr<RenderCommandSemaphore> MetalDevice::createCommandSemaphore() {
-        return std::make_unique<MetalCommandSemaphore>(this);
+    RenderCommandSemaphore *MetalDevice::createCommandSemaphoreRaw() {
+        return new MetalCommandSemaphore(this);
     }
 
-    std::unique_ptr<RenderFramebuffer> MetalDevice::createFramebuffer(const RenderFramebufferDesc &desc) {
-        return std::make_unique<MetalFramebuffer>(this, desc);
+    RenderFramebuffer *MetalDevice::createFramebufferRaw(const RenderFramebufferDesc &desc) {
+        return new MetalFramebuffer(this, desc);
     }
 
-    std::unique_ptr<RenderQueryPool> MetalDevice::createQueryPool(uint32_t queryCount) {
-        return std::make_unique<MetalQueryPool>(this, queryCount);
+    RenderQueryPool *MetalDevice::createQueryPoolRaw(uint32_t queryCount) {
+        return new MetalQueryPool(this, queryCount);
     }
 
     void MetalDevice::setBottomLevelASBuildInfo(RenderBottomLevelASBuildInfo &buildInfo, const RenderBottomLevelASMesh *meshes, uint32_t meshCount, bool preferFastBuild, bool preferFastTrace) {
@@ -4203,17 +4203,22 @@ namespace plume {
     MetalInterface::~MetalInterface() {}
 
     // TODO: NEW - Incorporate preferredDeviceName (new)
-    std::unique_ptr<RenderDevice> MetalInterface::createDevice(const std::string &preferredDeviceName) {
-        std::unique_ptr<MetalDevice> createdDevice = std::make_unique<MetalDevice>(this, preferredDeviceName);
-        return createdDevice->isValid() ? std::move(createdDevice) : nullptr;
+    RenderDevice *MetalInterface::createDeviceRaw(const char *preferredDeviceName) {
+        MetalDevice *createdDevice = new MetalDevice(this, preferredDeviceName);
+        return createdDevice->isValid() ? createdDevice : nullptr;
     }
 
     const RenderInterfaceCapabilities &MetalInterface::getCapabilities() const {
         return capabilities;
     }
 
-    const std::vector<std::string> &MetalInterface::getDeviceNames() const {
-        return deviceNames;
+    uint32_t MetalInterface::getDeviceCount() const {
+        return uint32_t(deviceNames.size());
+    }
+    
+    const char *MetalInterface::getDeviceName(uint32_t index) const {
+        assert(index < deviceNames.size());
+        return deviceNames[index].c_str();
     }
 
     bool MetalInterface::isValid() const {
@@ -4222,8 +4227,12 @@ namespace plume {
 
     // Global creation function.
 
+    RenderInterface *CreateMetalInterfaceRaw() {
+        MetalInterface *createdInterface = new MetalInterface();
+        return createdInterface->isValid() ? createdInterface : nullptr;
+    }
+
     std::unique_ptr<RenderInterface> CreateMetalInterface() {
-        std::unique_ptr<MetalInterface> createdInterface = std::make_unique<MetalInterface>();
-        return createdInterface->isValid() ? std::move(createdInterface) : nullptr;
+        return std::unique_ptr<RenderInterface>(CreateMetalInterfaceRaw());
     }
 }

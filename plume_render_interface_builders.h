@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <unordered_set>
 
 namespace plume {
@@ -110,7 +111,7 @@ namespace plume {
         std::unique_ptr<RenderDescriptorSet> create(RenderDevice *device) const {
             assert(!open && "Builder must be closed.");
 
-            return device->createDescriptorSet(descriptorSetDesc);
+            return std::unique_ptr<RenderDescriptorSet>(device->createDescriptorSetRaw(descriptorSetDesc));
         }
     };
 
@@ -275,7 +276,7 @@ namespace plume {
         std::unique_ptr<RenderPipelineLayout> create(RenderDevice *device) const {
             assert(!open && "Builder must be closed.");
 
-            return device->createPipelineLayout(layoutDesc);
+            return std::unique_ptr<RenderPipelineLayout>(device->createPipelineLayoutRaw(layoutDesc));
         }
     };
 }

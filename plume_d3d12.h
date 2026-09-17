@@ -11,6 +11,7 @@
 
 #include <map>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 
 #ifdef PLUME_D3D12_AGILITY_SDK_ENABLED
@@ -262,8 +263,8 @@ namespace plume {
 
         D3D12CommandQueue(D3D12Device *device, RenderCommandListType type);
         ~D3D12CommandQueue() override;
-        std::unique_ptr<RenderCommandList> createCommandList() override;
-        std::unique_ptr<RenderSwapChain> createSwapChain(const RenderSwapChainDesc &desc) override;
+        RenderCommandList *createCommandListRaw() override;
+        RenderSwapChain *createSwapChainRaw(const RenderSwapChainDesc &desc) override;
         void executeCommandLists(const RenderCommandList **commandLists, uint32_t commandListCount, RenderCommandSemaphore **waitSemaphores, uint32_t waitSemaphoreCount, RenderCommandSemaphore **signalSemaphores, uint32_t signalSemaphoreCount, RenderCommandFence *signalFence) override;
         void waitForCommandFence(RenderCommandFence *fence) override;
     };
@@ -281,8 +282,8 @@ namespace plume {
         ~D3D12Buffer() override;
         void *map(uint32_t subresource, const RenderRange *readRange) override;
         void unmap(uint32_t subresource, const RenderRange *writtenRange) override;
-        std::unique_ptr<RenderBufferFormattedView> createBufferFormattedView(RenderFormat format) override;
-        void setName(const std::string &name) override;
+        RenderBufferFormattedView *createBufferFormattedViewRaw(RenderFormat format) override;
+        void setName(const char *name) override;
         uint64_t getDeviceAddress() const override;
     };
 
@@ -306,8 +307,8 @@ namespace plume {
         D3D12Texture() = default;
         D3D12Texture(D3D12Device *device, D3D12Pool *pool, const RenderTextureDesc &desc);
         ~D3D12Texture() override;
-        std::unique_ptr<RenderTextureView> createTextureView(const RenderTextureViewDesc &desc) const override;
-        void setName(const std::string &name) override;
+        RenderTextureView *createTextureViewRaw(const RenderTextureViewDesc &desc) const override;
+        void setName(const char *name) override;
     };
 
     struct D3D12TextureView : RenderTextureView {
@@ -343,8 +344,8 @@ namespace plume {
 
         D3D12Pool(D3D12Device *device, const RenderPoolDesc &desc, bool gpuUploadHeapFallback);
         ~D3D12Pool() override;
-        std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) override;
-        std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) override;
+        RenderBuffer *createBufferRaw(const RenderBufferDesc &desc) override;
+        RenderTexture *createTextureRaw(const RenderTextureDesc &desc) override;
     };
 
     struct D3D12Shader : RenderShader {
@@ -355,7 +356,7 @@ namespace plume {
 
         D3D12Shader(D3D12Device *device, const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format);
         ~D3D12Shader() override;
-        virtual void setName(const std::string &name) override;
+        virtual void setName(const char *name) override;
     };
 
     struct D3D12Sampler : RenderSampler {
@@ -388,8 +389,8 @@ namespace plume {
 
         D3D12ComputePipeline(D3D12Device *device, const RenderComputePipelineDesc &desc);
         ~D3D12ComputePipeline() override;
-        virtual void setName(const std::string &name) override;
-        virtual RenderPipelineProgram getProgram(const std::string &name) const override;
+        virtual void setName(const char *name) override;
+        virtual RenderPipelineProgram getProgram(const char *name) const override;
     };
 
     struct D3D12GraphicsPipeline : D3D12Pipeline {
@@ -400,8 +401,8 @@ namespace plume {
 
         D3D12GraphicsPipeline(D3D12Device *device, const RenderGraphicsPipelineDesc &desc);
         ~D3D12GraphicsPipeline() override;
-        virtual void setName(const std::string &name) override;
-        virtual RenderPipelineProgram getProgram(const std::string &name) const override;
+        virtual void setName(const char *name) override;
+        virtual RenderPipelineProgram getProgram(const char *name) const override;
     };
 
     struct D3D12RaytracingPipeline : D3D12Pipeline {
@@ -413,8 +414,8 @@ namespace plume {
 
         D3D12RaytracingPipeline(D3D12Device *device, const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline);
         ~D3D12RaytracingPipeline() override;
-        virtual void setName(const std::string &name) override;
-        virtual RenderPipelineProgram getProgram(const std::string &name) const override;
+        virtual void setName(const char *name) override;
+        virtual RenderPipelineProgram getProgram(const char *name) const override;
     };
 
     struct D3D12PipelineLayout : RenderPipelineLayout {
@@ -449,24 +450,24 @@ namespace plume {
         uint64_t timestampFrequency = 1;
         bool gpuUploadHeapFallback = false;
 
-        D3D12Device(D3D12Interface *renderInterface, const std::string &preferredDeviceName);
+        D3D12Device(D3D12Interface *renderInterface, const char *preferredDeviceName);
         ~D3D12Device() override;
-        std::unique_ptr<RenderDescriptorSet> createDescriptorSet(const RenderDescriptorSetDesc &desc) override;
-        std::unique_ptr<RenderShader> createShader(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) override;
-        std::unique_ptr<RenderSampler> createSampler(const RenderSamplerDesc &desc) override;
-        std::unique_ptr<RenderPipeline> createComputePipeline(const RenderComputePipelineDesc &desc) override;
-        std::unique_ptr<RenderPipeline> createGraphicsPipeline(const RenderGraphicsPipelineDesc &desc) override;
-        std::unique_ptr<RenderPipeline> createRaytracingPipeline(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline) override;
-        std::unique_ptr<RenderCommandQueue> createCommandQueue(RenderCommandListType type) override;
-        std::unique_ptr<RenderBuffer> createBuffer(const RenderBufferDesc &desc) override;
-        std::unique_ptr<RenderTexture> createTexture(const RenderTextureDesc &desc) override;
-        std::unique_ptr<RenderAccelerationStructure> createAccelerationStructure(const RenderAccelerationStructureDesc &desc) override;
-        std::unique_ptr<RenderPool> createPool(const RenderPoolDesc &desc) override;
-        std::unique_ptr<RenderPipelineLayout> createPipelineLayout(const RenderPipelineLayoutDesc &desc) override;
-        std::unique_ptr<RenderCommandFence> createCommandFence() override;
-        std::unique_ptr<RenderCommandSemaphore> createCommandSemaphore() override;
-        std::unique_ptr<RenderFramebuffer> createFramebuffer(const RenderFramebufferDesc &desc) override;
-        std::unique_ptr<RenderQueryPool> createQueryPool(uint32_t queryCount) override;
+        RenderDescriptorSet *createDescriptorSetRaw(const RenderDescriptorSetDesc &desc) override;
+        RenderShader *createShaderRaw(const void *data, uint64_t size, const char *entryPointName, RenderShaderFormat format) override;
+        RenderSampler *createSamplerRaw(const RenderSamplerDesc &desc) override;
+        RenderPipeline *createComputePipelineRaw(const RenderComputePipelineDesc &desc) override;
+        RenderPipeline *createGraphicsPipelineRaw(const RenderGraphicsPipelineDesc &desc) override;
+        RenderPipeline *createRaytracingPipelineRaw(const RenderRaytracingPipelineDesc &desc, const RenderPipeline *previousPipeline) override;
+        RenderCommandQueue *createCommandQueueRaw(RenderCommandListType type) override;
+        RenderBuffer *createBufferRaw(const RenderBufferDesc &desc) override;
+        RenderTexture *createTextureRaw(const RenderTextureDesc &desc) override;
+        RenderAccelerationStructure *createAccelerationStructureRaw(const RenderAccelerationStructureDesc &desc) override;
+        RenderPool *createPoolRaw(const RenderPoolDesc &desc) override;
+        RenderPipelineLayout *createPipelineLayoutRaw(const RenderPipelineLayoutDesc &desc) override;
+        RenderCommandFence *createCommandFenceRaw() override;
+        RenderCommandSemaphore *createCommandSemaphoreRaw() override;
+        RenderFramebuffer *createFramebufferRaw(const RenderFramebufferDesc &desc) override;
+        RenderQueryPool *createQueryPoolRaw(uint32_t queryCount) override;
         void setBottomLevelASBuildInfo(RenderBottomLevelASBuildInfo &buildInfo, const RenderBottomLevelASMesh *meshes, uint32_t meshCount, bool preferFastBuild, bool preferFastTrace) override;
         void setTopLevelASBuildInfo(RenderTopLevelASBuildInfo &buildInfo, const RenderTopLevelASInstance *instances, uint32_t instanceCount, bool preferFastBuild, bool preferFastTrace) override;
         void setShaderBindingTableInfo(RenderShaderBindingTableInfo &tableInfo, const RenderShaderBindingGroups &groups, const RenderPipeline *pipeline, RenderDescriptorSet **descriptorSets, uint32_t descriptorSetCount) override;
@@ -487,9 +488,10 @@ namespace plume {
 
         D3D12Interface();
         ~D3D12Interface() override;
-        std::unique_ptr<RenderDevice> createDevice(const std::string &preferredDeviceName) override;
+        RenderDevice *createDeviceRaw(const char *preferredDeviceName) override;
         const RenderInterfaceCapabilities &getCapabilities() const override;
-        const std::vector<std::string> &getDeviceNames() const override;
+        uint32_t getDeviceCount() const override;
+        const char *getDeviceName(uint32_t index) const override;
         bool isValid() const;
     };
 };
