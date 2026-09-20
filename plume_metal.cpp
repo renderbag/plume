@@ -3796,10 +3796,20 @@ namespace plume {
 
         const std::string deviceName(mtl->name()->utf8String());
         description.name = deviceName;
+#if TARGET_OS_IPHONE
+        // MTLDevice location and recommendedMaxWorkingSetSize are macOS-only selectors;
+        // iOS devices are always integrated and share system memory.
+        description.type = RenderDeviceType::INTEGRATED;
+#else
         description.type = mapDeviceType(mtl->location());
+#endif
         description.driverVersion = 1; // Unavailable
         description.vendor = mtl->supportsFamily(MTL::GPUFamilyApple1) ? RenderDeviceVendor::APPLE : getRenderDeviceVendor(mtl->registryID());
+#if TARGET_OS_IPHONE
+        description.dedicatedVideoMemory = NS::ProcessInfo::processInfo()->physicalMemory();
+#else
         description.dedicatedVideoMemory = mtl->recommendedMaxWorkingSetSize();
+#endif
 
         timestampCounterSet = findTimestampCounterSet();
         if (timestampCounterSet != nullptr) {
@@ -3823,7 +3833,11 @@ namespace plume {
         capabilities.resolveModes = false;
         capabilities.scalarBlockLayout = true;
         capabilities.presentWait = true;
+#if TARGET_OS_IPHONE
+        capabilities.preferHDR = NS::ProcessInfo::processInfo()->physicalMemory() > (512 * 1024 * 1024);
+#else
         capabilities.preferHDR = mtl->recommendedMaxWorkingSetSize() > (512 * 1024 * 1024);
+#endif
         capabilities.dynamicDepthBias = true;
         capabilities.uma = mtl->hasUnifiedMemory();
         capabilities.gpuUploadHeap = capabilities.uma;
