@@ -30,7 +30,7 @@
 namespace plume {
     extern std::unique_ptr<RenderInterface> CreateMetalInterface();
     extern std::unique_ptr<RenderInterface> CreateD3D12Interface();
-    #if PLUME_SDL_VULKAN_ENABLED
+    #if PLUME_SDL2_VULKAN_ENABLED
     extern std::unique_ptr<RenderInterface> CreateVulkanInterface(RenderWindow sdlWindow);
     #else
     extern std::unique_ptr<RenderInterface> CreateVulkanInterface();
@@ -298,7 +298,7 @@ namespace plume {
         SDL_SetWindowTitle(window, windowTitle.c_str());
 
         TestContext ctx;
-#if PLUME_SDL_VULKAN_ENABLED
+#if PLUME_SDL2_VULKAN_ENABLED
         createContext(ctx, renderInterface, window, apiName);
 #elif defined(__linux__)
         SDL_SysWMinfo wmInfo;
@@ -365,7 +365,7 @@ std::unique_ptr<plume::RenderInterface> CreateRenderInterface(SDL_Window* window
 #if defined(_WIN32)
     if (useVulkan) {
         apiName = "Vulkan";
-#if PLUME_SDL_VULKAN_ENABLED
+#if PLUME_SDL2_VULKAN_ENABLED
         return plume::CreateVulkanInterface(window);
 #else
         return plume::CreateVulkanInterface();
@@ -378,7 +378,7 @@ std::unique_ptr<plume::RenderInterface> CreateRenderInterface(SDL_Window* window
 #elif defined(__APPLE__)
     if (useVulkan) {
         apiName = "Vulkan";
-#if PLUME_SDL_VULKAN_ENABLED
+#if PLUME_SDL2_VULKAN_ENABLED
         return plume::CreateVulkanInterface(window);
 #else
         return plume::CreateVulkanInterface();
@@ -390,7 +390,7 @@ std::unique_ptr<plume::RenderInterface> CreateRenderInterface(SDL_Window* window
     }
 #else
     apiName = "Vulkan";
-#if PLUME_SDL_VULKAN_ENABLED
+#if PLUME_SDL2_VULKAN_ENABLED
     return plume::CreateVulkanInterface(window);
 #else
     return plume::CreateVulkanInterface();
@@ -405,7 +405,7 @@ int main(int argc, char* argv[]) {
     }
 
     uint32_t flags = SDL_WINDOW_RESIZABLE;
-#if PLUME_SDL_VULKAN_ENABLED
+#if PLUME_SDL2_VULKAN_ENABLED
     flags |= SDL_WINDOW_VULKAN;
 #elif defined(__APPLE__)
     flags |= SDL_WINDOW_METAL;

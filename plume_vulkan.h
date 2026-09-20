@@ -454,7 +454,7 @@ namespace plume {
         RenderInterfaceCapabilities capabilities;
         std::vector<std::string> deviceNames;
 
-#   if PLUME_SDL_VULKAN_ENABLED
+#   if PLUME_SDL2_VULKAN_ENABLED
         VulkanInterface(RenderWindow sdlWindow);
 #   else
         VulkanInterface();

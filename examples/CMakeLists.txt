@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Enable SDL Vulkan integration (Linux only)
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    set(PLUME_SDL_VULKAN_ENABLED ON CACHE BOOL "Enable SDL Vulkan integration" FORCE)
+    set(PLUME_SDL2_VULKAN_ENABLED ON CACHE BOOL "Enable SDL Vulkan integration" FORCE)
 endif()
 
 # Find or fetch SDL2 (required for examples)
