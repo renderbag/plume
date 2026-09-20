@@ -226,6 +226,50 @@ namespace plume {
             return DXGI_FORMAT_BC7_UNORM;
         case RenderFormat::BC7_UNORM_SRGB:
             return DXGI_FORMAT_BC7_UNORM_SRGB;
+        case RenderFormat::ASTC_4X4_TYPELESS:
+        case RenderFormat::ASTC_4X4_UNORM:
+        case RenderFormat::ASTC_4X4_UNORM_SRGB:
+        case RenderFormat::ASTC_5X4_TYPELESS:
+        case RenderFormat::ASTC_5X4_UNORM:
+        case RenderFormat::ASTC_5X4_UNORM_SRGB:
+        case RenderFormat::ASTC_5X5_TYPELESS:
+        case RenderFormat::ASTC_5X5_UNORM:
+        case RenderFormat::ASTC_5X5_UNORM_SRGB:
+        case RenderFormat::ASTC_6X5_TYPELESS:
+        case RenderFormat::ASTC_6X5_UNORM:
+        case RenderFormat::ASTC_6X5_UNORM_SRGB:
+        case RenderFormat::ASTC_6X6_TYPELESS:
+        case RenderFormat::ASTC_6X6_UNORM:
+        case RenderFormat::ASTC_6X6_UNORM_SRGB:
+        case RenderFormat::ASTC_8X5_TYPELESS:
+        case RenderFormat::ASTC_8X5_UNORM:
+        case RenderFormat::ASTC_8X5_UNORM_SRGB:
+        case RenderFormat::ASTC_8X6_TYPELESS:
+        case RenderFormat::ASTC_8X6_UNORM:
+        case RenderFormat::ASTC_8X6_UNORM_SRGB:
+        case RenderFormat::ASTC_8X8_TYPELESS:
+        case RenderFormat::ASTC_8X8_UNORM:
+        case RenderFormat::ASTC_8X8_UNORM_SRGB:
+        case RenderFormat::ASTC_10X5_TYPELESS:
+        case RenderFormat::ASTC_10X5_UNORM:
+        case RenderFormat::ASTC_10X5_UNORM_SRGB:
+        case RenderFormat::ASTC_10X6_TYPELESS:
+        case RenderFormat::ASTC_10X6_UNORM:
+        case RenderFormat::ASTC_10X6_UNORM_SRGB:
+        case RenderFormat::ASTC_10X8_TYPELESS:
+        case RenderFormat::ASTC_10X8_UNORM:
+        case RenderFormat::ASTC_10X8_UNORM_SRGB:
+        case RenderFormat::ASTC_10X10_TYPELESS:
+        case RenderFormat::ASTC_10X10_UNORM:
+        case RenderFormat::ASTC_10X10_UNORM_SRGB:
+        case RenderFormat::ASTC_12X10_TYPELESS:
+        case RenderFormat::ASTC_12X10_UNORM:
+        case RenderFormat::ASTC_12X10_UNORM_SRGB:
+        case RenderFormat::ASTC_12X12_TYPELESS:
+        case RenderFormat::ASTC_12X12_UNORM:
+        case RenderFormat::ASTC_12X12_UNORM_SRGB:
+            assert(false && "ASTC formats are not supported in D3D12.");
+            return DXGI_FORMAT_FORCE_UINT;
         default:
             assert(false && "Unknown format.");
             return DXGI_FORMAT_FORCE_UINT;
@@ -692,13 +736,14 @@ namespace plume {
         case RenderTextureCopyType::PLACED_FOOTPRINT: {
             const D3D12Buffer *interfaceBuffer = static_cast<const D3D12Buffer *>(location.buffer);
             const uint32_t blockWidth = RenderFormatBlockWidth(location.placedFootprint.format);
+            const uint32_t blockHeight = RenderFormatBlockHeight(location.placedFootprint.format);
             const uint32_t blockCount = (location.placedFootprint.rowWidth + blockWidth - 1) / blockWidth;
             loc.pResource = (interfaceBuffer != nullptr) ? interfaceBuffer->d3d : nullptr;
             loc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
             loc.PlacedFootprint.Offset = location.placedFootprint.offset;
             loc.PlacedFootprint.Footprint.Format = toDXGI(location.placedFootprint.format);
             loc.PlacedFootprint.Footprint.Width = ((location.placedFootprint.width + blockWidth - 1) / blockWidth) * blockWidth;
-            loc.PlacedFootprint.Footprint.Height = ((location.placedFootprint.height + blockWidth - 1) / blockWidth) * blockWidth;
+            loc.PlacedFootprint.Footprint.Height = ((location.placedFootprint.height + blockHeight - 1) / blockHeight) * blockHeight;
             loc.PlacedFootprint.Footprint.Depth = location.placedFootprint.depth;
             loc.PlacedFootprint.Footprint.RowPitch = blockCount * RenderFormatSize(location.placedFootprint.format);
 
