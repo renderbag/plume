@@ -2491,6 +2491,10 @@ namespace plume {
     void MetalCommandList::drawInstanced(const uint32_t vertexCountPerInstance, const uint32_t instanceCount, const uint32_t startVertexLocation, const uint32_t startInstanceLocation) {
         assert(activeGraphicsPipelineLayout != nullptr);
 
+        // Skip draws whose pipeline failed to compile; encoding with a null PSO is undefined behavior.
+        if (activeRenderState == nullptr || activeRenderState->renderPipelineState == nullptr)
+            return;
+
         MetalAutoreleasePool releasePool;
         checkActiveRenderEncoder();
         checkForUpdatesInGraphicsState();
@@ -2500,6 +2504,10 @@ namespace plume {
 
     void MetalCommandList::drawIndexedInstanced(const uint32_t indexCountPerInstance, const uint32_t instanceCount, const uint32_t startIndexLocation, const int32_t baseVertexLocation, const uint32_t startInstanceLocation) {
         assert(activeGraphicsPipelineLayout != nullptr);
+
+        // Skip draws whose pipeline failed to compile; encoding with a null PSO is undefined behavior.
+        if (activeRenderState == nullptr || activeRenderState->renderPipelineState == nullptr)
+            return;
 
         MetalAutoreleasePool releasePool;
         checkActiveRenderEncoder();
@@ -3395,7 +3403,7 @@ namespace plume {
     void MetalCommandList::checkForUpdatesInGraphicsState() {
         // Pipeline state - only update if the actual pipeline object changed
         if (dirtyGraphicsState.pipelineState) {
-            if (activeRenderState && activeRenderState->renderPipelineState != stateCache.lastPipelineState) {
+            if (activeRenderState && activeRenderState->renderPipelineState != nullptr && activeRenderState->renderPipelineState != stateCache.lastPipelineState) {
                 activeRenderEncoder->setRenderPipelineState(activeRenderState->renderPipelineState);
                 stateCache.lastPipelineState = activeRenderState->renderPipelineState;
             }
