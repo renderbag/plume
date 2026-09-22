@@ -48,7 +48,7 @@ namespace plume {
 #   ifdef VULKAN_OBJECT_NAMES_ENABLED
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #   endif
-#   if defined(_WIN64)
+#   if defined(_WIN32) || defined(_WIN64)
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #   elif defined(__ANDROID__)
         VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
@@ -1855,7 +1855,7 @@ namespace plume {
 
         this->descriptorSetCount = uint32_t(pipelineLayout->descriptorSetLayouts.size());
 
-        VkResult res = vkCreateRayTracingPipelinesKHR(device->vk, nullptr, nullptr, 1, &pipelineInfo, nullptr, &vk);
+        VkResult res = vkCreateRayTracingPipelinesKHR(device->vk, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vk);
         if (res != VK_SUCCESS) {
             fprintf(stderr, "vkCreateRayTracingPipelinesKHR failed with error code 0x%X.\n", res);
             return;
@@ -2082,7 +2082,7 @@ namespace plume {
 
         VkResult res;
 
-#   ifdef _WIN64
+#   if defined(_WIN32) || defined(_WIN64)
         assert(desc.renderWindow != 0);
         VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
         surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -2458,7 +2458,7 @@ namespace plume {
     }
 
     void VulkanSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
-#   if defined(_WIN64)
+#   if defined(_WIN32) || defined(_WIN64)
         RECT rect;
         GetClientRect(desc.renderWindow, &rect);
         dstWidth = rect.right - rect.left;

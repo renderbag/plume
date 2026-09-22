@@ -879,7 +879,7 @@ namespace plume {
     D3D12_CPU_DESCRIPTOR_HANDLE D3D12DescriptorHeapAllocator::getCPUHandleAt(uint32_t index) const {
         assert(index < heapSize);
         assert(cpuDescriptorHandle.ptr > 0);
-        return { cpuDescriptorHandle.ptr + uint64_t(index) * descriptorHandleIncrement };
+        return { cpuDescriptorHandle.ptr + SIZE_T(index) * descriptorHandleIncrement };
     }
 
     D3D12_GPU_DESCRIPTOR_HANDLE D3D12DescriptorHeapAllocator::getGPUHandleAt(uint32_t index) const {
