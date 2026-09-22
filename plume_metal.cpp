@@ -1993,6 +1993,19 @@ namespace plume {
 
     bool MetalSwapChain::resize() {
         MetalAutoreleasePool releasePool;
+
+        // Drop any drawables still held from the previous swap chain generation.
+        // On iOS the layer's drawables are invalidated when the app is suspended,
+        // and holding or presenting them across a resume is undefined behavior.
+        // Callers idle the GPU before resizing, so the references are safe to release.
+        for (uint32_t i = 0; i < MAX_DRAWABLES; i++) {
+            MetalDrawable &drawable = drawables[i];
+            if (drawable.mtl != nullptr) {
+                drawable.mtl->release();
+                drawable.mtl = nullptr;
+            }
+        }
+
         getWindowSize(width, height);
 
         if (width == 0 || height == 0) {
