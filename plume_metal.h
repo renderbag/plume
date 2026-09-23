@@ -20,12 +20,12 @@
 
 /// macOS
 #ifndef PLUME_MACOS
-#    define PLUME_MACOS                (TARGET_OS_OSX || TARGET_OS_MACCATALYST)
+#    define PLUME_MACOS                TARGET_OS_OSX
 #endif
 
 /// iOS
 #ifndef PLUME_IOS
-#    define PLUME_IOS                    (TARGET_OS_IOS && !TARGET_OS_MACCATALYST)
+#    define PLUME_IOS                    TARGET_OS_IOS
 #endif
 
 /// Apple Silicon (iOS, tvOS, macOS)

@@ -79,7 +79,7 @@ namespace plume {
         if (device->supportsFamily(MTL::GPUFamilyApple3)) {
             minTexelBufferOffsetAlignment = 16;
         }
-    #elif TARGET_OS_MAC
+    #elif TARGET_OS_OSX
         minTexelBufferOffsetAlignment = 256;
         if (device->supportsFamily(MTL::GPUFamilyApple3)) {
             minTexelBufferOffsetAlignment = 16;
@@ -3779,7 +3779,7 @@ namespace plume {
         this->renderInterface = renderInterface;
 
         // Device Selection
-#if TARGET_OS_MAC
+#if PLUME_MACOS
         NS::Array* devices = MTL::CopyAllDevices();
         MTL::Device *preferredDevice = nullptr;
         for (NS::UInteger i = 0; i < devices->count(); i++) {
