@@ -3022,6 +3022,37 @@ namespace plume {
                 dstOrigin
             );
             activeBlitEncoder->popDebugGroup();
+        } else if (dstLocation.type == RenderTextureCopyType::PLACED_FOOTPRINT && srcLocation.type == RenderTextureCopyType::SUBRESOURCE) {
+            assert(dstBuffer != nullptr);
+            assert(srcTexture != nullptr);
+
+            // Calculate block size based on source texture format
+            const uint32_t blockWidth = RenderFormatBlockWidth(srcTexture->desc.format);
+
+            const MTL::Size size = { dstLocation.placedFootprint.width, dstLocation.placedFootprint.height, dstLocation.placedFootprint.depth };
+
+            const uint32_t horizontalBlocks = (dstLocation.placedFootprint.rowWidth + blockWidth - 1) / blockWidth;
+            const uint32_t verticalBlocks = (dstLocation.placedFootprint.height + blockWidth - 1) / blockWidth;
+            const uint32_t bytesPerRow = horizontalBlocks * RenderFormatSize(srcTexture->desc.format);
+            const uint32_t bytesPerImage = bytesPerRow * verticalBlocks;
+
+            const MTL::Origin srcOrigin = (srcBox != nullptr)
+                ? MTL::Origin { NS::UInteger(srcBox->left), NS::UInteger(srcBox->top), NS::UInteger(srcBox->front) }
+                : MTL::Origin { 0, 0, 0 };
+
+            activeBlitEncoder->pushDebugGroup(MTLSTR("CopyTextureRegion"));
+            activeBlitEncoder->copyFromTexture(
+                srcTexture->mtl,
+                srcLocation.subresource.arrayIndex,
+                srcLocation.subresource.mipLevel,
+                srcOrigin,
+                size,
+                dstBuffer->mtl,
+                dstLocation.placedFootprint.offset,
+                bytesPerRow,
+                bytesPerImage
+            );
+            activeBlitEncoder->popDebugGroup();
         } else {
             assert(dstTexture != nullptr);
             assert(srcTexture != nullptr);
