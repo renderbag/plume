@@ -9,6 +9,7 @@
 #include <chrono>
 #include <functional>
 #include <SDL.h>
+#include <SDL_main.h>
 #include <SDL_syswm.h>
 #include <thread>
 #include <random>
@@ -310,7 +311,12 @@ namespace plume {
         SDL_VERSION(&wmInfo.version);
         SDL_GetWindowWMInfo(window, &wmInfo);
         SDL_MetalView view = SDL_Metal_CreateView(window);
-        createContext(ctx, renderInterface, { wmInfo.info.cocoa.window, SDL_Metal_GetLayer(view) }, apiName);
+#if TARGET_OS_OSX
+        auto windowHandle = wmInfo.info.cocoa.window;
+#else
+        auto windowHandle = wmInfo.info.uikit.window;
+#endif
+        createContext(ctx, renderInterface, { windowHandle, SDL_Metal_GetLayer(view) }, apiName);
 #elif defined(WIN32)
         SDL_SysWMinfo wmInfo;
         SDL_VERSION(&wmInfo.version);

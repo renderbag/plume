@@ -79,7 +79,7 @@ namespace plume {
         if (device->supportsFamily(MTL::GPUFamilyApple3)) {
             minTexelBufferOffsetAlignment = 16;
         }
-    #elif TARGET_OS_MAC
+    #elif TARGET_OS_OSX
         minTexelBufferOffsetAlignment = 256;
         if (device->supportsFamily(MTL::GPUFamilyApple3)) {
             minTexelBufferOffsetAlignment = 16;
@@ -1916,7 +1916,7 @@ namespace plume {
         // Metal supports a maximum of 3 drawables.
         this->drawables.resize(MAX_DRAWABLES);
 
-        this->windowWrapper = std::make_unique<CocoaWindow>(desc.renderWindow.window);
+        this->windowWrapper = std::make_unique<AppleWindow>(desc.renderWindow.window);
         getWindowSize(width, height);
 
         // Set the layer's drawable size to match the window size
@@ -2100,7 +2100,7 @@ namespace plume {
 
     void MetalSwapChain::getWindowSize(uint32_t &dstWidth, uint32_t &dstHeight) const {
         MetalAutoreleasePool releasePool;
-        CocoaWindowAttributes attributes;
+        AppleWindowAttributes attributes;
         windowWrapper->getWindowAttributes(&attributes);
         dstWidth = attributes.width;
         dstHeight = attributes.height;
@@ -3779,6 +3779,7 @@ namespace plume {
         this->renderInterface = renderInterface;
 
         // Device Selection
+#if PLUME_MACOS
         NS::Array* devices = MTL::CopyAllDevices();
         MTL::Device *preferredDevice = nullptr;
         for (NS::UInteger i = 0; i < devices->count(); i++) {
@@ -3793,6 +3794,10 @@ namespace plume {
         mtl = preferredDevice ? preferredDevice : MTL::CreateSystemDefaultDevice();
         mtl->retain();
         devices->release();
+#else
+        mtl = MTL::CreateSystemDefaultDevice();
+        mtl->retain();
+#endif
 
         NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
 
@@ -4209,11 +4214,18 @@ namespace plume {
         capabilities.shaderFormat = RenderShaderFormat::METAL;
 
         // Fill device names.
+    #if TARGET_OS_MAC
         const NS::Array* devices = MTL::CopyAllDevices();
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
             deviceNames.push_back(std::string(deviceName->utf8String()));
         }
+    #else
+        MTL::Device* defaultDevice = MTL::CreateSystemDefaultDevice();
+        if (defaultDevice) {
+            deviceNames.push_back(std::string(defaultDevice->name()->utf8String()));
+        }
+    #endif
     }
 
     MetalInterface::~MetalInterface() {}
