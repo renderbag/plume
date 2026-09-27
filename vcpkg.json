@@ -1,0 +1,11 @@
+{
+    "builtin-baseline": "d4424d012d982dc21529708ccc31fef27c55dcea",
+    "dependencies": [
+        "sdl2"
+    ],
+    "vcpkg-configuration": {
+        "overlay-triplets": [
+            "vcpkg/triplets"
+        ]
+    }
+}
