@@ -302,6 +302,20 @@ static std::string testClearColor(TestContext &ctx) {
     return checkPixels(target.read(ctx), TargetSize, TargetSize, [](uint32_t, uint32_t) { return Pixel{ 64, 128, 191, 255 }; });
 }
 
+static std::string testClearColorRect(TestContext &ctx) {
+    Target target(ctx, RenderFormat::D32_FLOAT);
+    const RenderRect rect(4, 4, 12, 12);
+    submit(ctx, [&](RenderCommandList *commandList) {
+        target.begin(commandList, Black);
+        commandList->clearColor(0, Red, &rect, 1);
+    });
+
+    return checkPixels(target.read(ctx), TargetSize, TargetSize, [](uint32_t x, uint32_t y) {
+        const bool inside = (x >= 4) && (x < 12) && (y >= 4) && (y < 12);
+        return inside ? Pixel{ 255, 0, 0, 255 } : Pixel{ 0, 0, 0, 255 };
+    });
+}
+
 static std::string testTextureReadbackRegion(TestContext &ctx) {
     const uint32_t width = 16;
     const uint32_t height = 16;
@@ -501,6 +515,7 @@ struct Test {
 
 static const Test Tests[] = {
     { "clear_color", testClearColor },
+    { "clear_color_rect", testClearColorRect },
     { "texture_readback_region", testTextureReadbackRegion },
     { "texture_readback_mip", testTextureReadbackMip },
     { "depth_test", testDepthTest },
