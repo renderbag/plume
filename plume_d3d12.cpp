@@ -2312,7 +2312,13 @@ namespace plume {
 
         const D3D12_TEXTURE_COPY_LOCATION copyDstLocation = toD3D12(dstLocation);
         const D3D12_TEXTURE_COPY_LOCATION copySrcLocation = toD3D12(srcLocation);
-        setSamplePositions(dstLocation.texture);
+
+        const bool hasDestinationTexture = (dstLocation.texture != nullptr);
+
+        if (hasDestinationTexture) {
+            setSamplePositions(dstLocation.texture);
+        }
+
         d3d->CopyTextureRegion(&copyDstLocation, dstX, dstY, dstZ, &copySrcLocation, (srcBox != nullptr) ? &copyBox : nullptr);
         resetSamplePositions();
     }

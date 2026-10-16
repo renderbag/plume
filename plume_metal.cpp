@@ -3022,6 +3022,41 @@ namespace plume {
                 dstOrigin
             );
             activeBlitEncoder->popDebugGroup();
+        } else if (dstLocation.type == RenderTextureCopyType::PLACED_FOOTPRINT && srcLocation.type == RenderTextureCopyType::SUBRESOURCE) {
+            assert(dstBuffer != nullptr);
+            assert(srcTexture != nullptr);
+
+            // Calculate block size based on source texture format
+            const uint32_t blockWidth = RenderFormatBlockWidth(srcTexture->desc.format);
+
+            const uint32_t mipLevel = srcLocation.subresource.mipLevel;
+            const MTL::Size size = (srcBox != nullptr)
+                ? MTL::Size { NS::UInteger(srcBox->right - srcBox->left), NS::UInteger(srcBox->bottom - srcBox->top), NS::UInteger(srcBox->back - srcBox->front) }
+                : MTL::Size { std::max(srcTexture->desc.width >> mipLevel, 1U), std::max(srcTexture->desc.height >> mipLevel, 1U), std::max(srcTexture->desc.depth >> mipLevel, 1U) };
+
+            const uint32_t horizontalBlocks = (dstLocation.placedFootprint.rowWidth + blockWidth - 1) / blockWidth;
+            const uint32_t verticalBlocks = (dstLocation.placedFootprint.height + blockWidth - 1) / blockWidth;
+            const uint32_t bytesPerRow = horizontalBlocks * RenderFormatSize(srcTexture->desc.format);
+            const uint32_t bytesPerImage = bytesPerRow * verticalBlocks;
+            const uint64_t dstOffset = dstLocation.placedFootprint.offset + dstZ * bytesPerImage + (dstY / blockWidth) * bytesPerRow + (dstX / blockWidth) * RenderFormatSize(srcTexture->desc.format);
+
+            const MTL::Origin srcOrigin = (srcBox != nullptr)
+                ? MTL::Origin { NS::UInteger(srcBox->left), NS::UInteger(srcBox->top), NS::UInteger(srcBox->front) }
+                : MTL::Origin { 0, 0, 0 };
+
+            activeBlitEncoder->pushDebugGroup(MTLSTR("CopyTextureRegion"));
+            activeBlitEncoder->copyFromTexture(
+                srcTexture->mtl,
+                srcLocation.subresource.arrayIndex,
+                srcLocation.subresource.mipLevel,
+                srcOrigin,
+                size,
+                dstBuffer->mtl,
+                dstOffset,
+                bytesPerRow,
+                bytesPerImage
+            );
+            activeBlitEncoder->popDebugGroup();
         } else {
             assert(dstTexture != nullptr);
             assert(srcTexture != nullptr);
