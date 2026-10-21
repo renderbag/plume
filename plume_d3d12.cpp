@@ -3658,8 +3658,10 @@ namespace plume {
             DXGI_ADAPTER_DESC1 adapterDesc;
             adapterOption->GetDesc1(&adapterDesc);
 
-            // Ignore remote or software adapters.
-            if (adapterDesc.Flags & (DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE)) {
+            // Ignore remote adapters, and software adapters unless one was requested by name.
+            std::string deviceName = Utf16ToUtf8(adapterDesc.Description);
+            bool softwareAdapter = (adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0;
+            if ((adapterDesc.Flags & DXGI_ADAPTER_FLAG_REMOTE) || (softwareAdapter && (deviceName != preferredDeviceName))) {
                 adapterOption->Release();
                 continue;
             }
@@ -3742,7 +3744,6 @@ namespace plume {
             }
 
             // Pick this adapter and device if it has better feature support than the current one.
-            std::string deviceName = Utf16ToUtf8(adapterDesc.Description);
             bool preferOverNothing = (adapter == nullptr) || (d3d == nullptr);
             bool preferVideoMemory = adapterDesc.DedicatedVideoMemory > description.dedicatedVideoMemory;
             bool preferUserChoice = preferredDeviceName == deviceName;

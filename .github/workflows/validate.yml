@@ -118,3 +118,71 @@ jobs:
           name: plume-macos-${{ matrix.type }}-${{ matrix.os }}
           path: |
             cmake-build/bin/plume_triangle
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-15]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-plume-tests-ccache
+
+      - name: Install Windows Dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install ninja
+          Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+
+      # mesa-vulkan-drivers brings lavapipe, a software Vulkan driver.
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libx11-dev mesa-vulkan-drivers
+
+      - name: Install macOS Dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      - name: Configure Developer Command Prompt
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build Tests (Unix)
+        if: runner.os != 'Windows'
+        run: |-
+          # enable ccache
+          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+
+          cmake -DCMAKE_BUILD_TYPE=Debug -DPLUME_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
+          cmake --build cmake-build --config Debug --target plume_tests
+
+      - name: Build Tests (Windows)
+        if: runner.os == 'Windows'
+        run: |-
+          $cpuCores = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
+
+          # remove LLVM from PATH so it doesn't overshadow the one provided by VS
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -ne 'C:\Program Files\LLVM\bin' }) -join ';'
+
+          cmake -DCMAKE_BUILD_TYPE=Debug -DPLUME_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
+          cmake --build cmake-build --config Debug --target plume_tests -j $cpuCores
+
+      - name: Run Tests
+        if: runner.os != 'Windows'
+        run: ./cmake-build/bin/plume_tests
+
+      # There is no GPU on the runners, so D3D12 runs on WARP.
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
+        run: ./cmake-build/bin/plume_tests.exe --device "Microsoft Basic Render Driver"
