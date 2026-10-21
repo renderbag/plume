@@ -1344,6 +1344,7 @@ namespace plume {
         NS::Error *error = nullptr;
         const dispatch_data_t dispatchData = dispatch_data_create(data, size, dispatch_get_main_queue(), ^{});
         library = device->mtl->newLibrary(dispatchData, &error);
+        dispatch_release(dispatchData);
 
         if (error != nullptr) {
             fprintf(stderr, "MTLDevice newLibraryWithSource: failed with error %s.\n", error->localizedDescription()->utf8String());
@@ -2812,12 +2813,7 @@ namespace plume {
             if (RenderFormatIsStencil(targetFramebuffer->depthAttachment.format)) {
                 pipelineDesc->setStencilAttachmentPixelFormat(pipelineDesc->depthAttachmentPixelFormat());
             }
-            MTL::DepthStencilDescriptor *depthStencilDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
-            depthStencilDescriptor->setDepthWriteEnabled(false);
-            const MTL::DepthStencilState *depthStencilState = device->mtl->newDepthStencilState(depthStencilDescriptor);
-            activeRenderEncoder->setDepthStencilState(depthStencilState);
-
-            depthStencilDescriptor->release();
+            activeRenderEncoder->setDepthStencilState(device->clearColorDepthState);
         }
 
         const MTL::RenderPipelineState *pipelineState = device->getOrCreateClearRenderPipelineState(pipelineDesc);
@@ -3825,8 +3821,7 @@ namespace plume {
             }
         }
 
-        mtl = preferredDevice ? preferredDevice : MTL::CreateSystemDefaultDevice();
-        mtl->retain();
+        mtl = preferredDevice ? preferredDevice->retain() : MTL::CreateSystemDefaultDevice();
         devices->release();
 
         NS::OperatingSystemVersion osVersion = NS::ProcessInfo::processInfo()->operatingSystemVersion();
@@ -3919,6 +3914,10 @@ namespace plume {
         clearVertexFunction->release();
         clearColorFunction->release();
         clearDepthFunction->release();
+        clearColorDepthState->release();
+        clearDepthState->release();
+        clearDepthStencilState->release();
+        clearStencilState->release();
         sharedBlitDescriptor->release();
 
         nullBuffer.reset();
@@ -4169,6 +4168,7 @@ namespace plume {
         stencilDescriptor->setWriteMask(0xFFFFFFFF);
 
         MTL::DepthStencilDescriptor *depthDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
+        clearColorDepthState = mtl->newDepthStencilState(depthDescriptor);
 
         depthDescriptor->setDepthWriteEnabled(true);
         depthDescriptor->setDepthCompareFunction(MTL::CompareFunctionAlways);
@@ -4244,11 +4244,13 @@ namespace plume {
         capabilities.shaderFormat = RenderShaderFormat::METAL;
 
         // Fill device names.
-        const NS::Array* devices = MTL::CopyAllDevices();
+        NS::Array* devices = MTL::CopyAllDevices();
         for (NS::UInteger i = 0; i < devices->count(); i++) {
             NS::String* deviceName = ((MTL::Device *)devices->object(i))->name();
             deviceNames.push_back(std::string(deviceName->utf8String()));
         }
+
+        devices->release();
     }
 
     MetalInterface::~MetalInterface() {}
