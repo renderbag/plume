@@ -2347,8 +2347,10 @@ namespace plume {
 
         const D3D12Texture *interfaceDstTexture = static_cast<const D3D12Texture *>(dstTexture);
         const D3D12Texture *interfaceSrcTexture = static_cast<const D3D12Texture *>(srcTexture);
+        const RenderFormat dstFormat = interfaceDstTexture->desc.format;
+        const bool depthTarget = interfaceDstTexture->desc.flags & RenderTextureFlag::DEPTH_TARGET;
         setSamplePositions(interfaceDstTexture);
-        d3d->ResolveSubresource(interfaceDstTexture->d3d, 0, interfaceSrcTexture->d3d, 0, toDXGI(interfaceDstTexture->desc.format));
+        d3d->ResolveSubresource(interfaceDstTexture->d3d, 0, interfaceSrcTexture->d3d, 0, depthTarget ? toDXGIDepthStencilView(dstFormat) : toDXGI(dstFormat));
         resetSamplePositions();
     }
 
@@ -2359,6 +2361,8 @@ namespace plume {
 
         const D3D12Texture *interfaceDstTexture = static_cast<const D3D12Texture *>(dstTexture);
         const D3D12Texture *interfaceSrcTexture = static_cast<const D3D12Texture *>(srcTexture);
+        const RenderFormat dstFormat = interfaceDstTexture->desc.format;
+        const bool depthTarget = interfaceDstTexture->desc.flags & RenderTextureFlag::DEPTH_TARGET;
         D3D12_RECT rect;
         if (srcRect != nullptr) {
             rect.left = srcRect->left;
@@ -2368,7 +2372,7 @@ namespace plume {
         }
 
         setSamplePositions(interfaceDstTexture);
-        d3dV1->ResolveSubresourceRegion(interfaceDstTexture->d3d, 0, dstX, dstY, interfaceSrcTexture->d3d, 0, (srcRect != nullptr) ? &rect : nullptr, toDXGI(interfaceDstTexture->desc.format), toD3D12(resolveMode));
+        d3dV1->ResolveSubresourceRegion(interfaceDstTexture->d3d, 0, dstX, dstY, interfaceSrcTexture->d3d, 0, (srcRect != nullptr) ? &rect : nullptr, depthTarget ? toDXGIDepthStencilView(dstFormat) : toDXGI(dstFormat), toD3D12(resolveMode));
         resetSamplePositions();
     }
 
