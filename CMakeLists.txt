@@ -22,6 +22,7 @@ cmake_dependent_option(PLUME_SDL3_VULKAN_ENABLED "Enable SDL3 Vulkan integration
 cmake_dependent_option(PLUME_D3D12_AGILITY_SDK_ENABLED "Enable D3D12 Agility SDK" OFF WIN32 OFF)
 cmake_dependent_option(PLUME_APPLE_RETINA_ENABLED "Enable Apple Retina display support" ON APPLE ON)
 option(PLUME_BUILD_EXAMPLES "Build example applications" OFF)
+option(PLUME_BUILD_TESTS "Build correctness tests" OFF)
 
 # Windows-specific definitions
 if(WIN32)
@@ -59,6 +60,7 @@ message(STATUS "Plume - SDL2 Vulkan integration: ${PLUME_SDL2_VULKAN_ENABLED}")
 message(STATUS "Plume - SDL3 Vulkan integration: ${PLUME_SDL3_VULKAN_ENABLED}")
 message(STATUS "Plume - D3D12 Agility SDK: ${PLUME_D3D12_AGILITY_SDK_ENABLED}")
 message(STATUS "Plume - Building examples: ${PLUME_BUILD_EXAMPLES}")
+message(STATUS "Plume - Building tests: ${PLUME_BUILD_TESTS}")
 
 # Basic source files that are always included
 set(PLUME_SOURCES
@@ -127,4 +129,9 @@ endif()
 # Add examples if requested
 if(PLUME_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+# Add tests if requested
+if(PLUME_BUILD_TESTS)
+    add_subdirectory(tests)
 endif()
