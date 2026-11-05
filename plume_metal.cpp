@@ -1411,8 +1411,8 @@ namespace plume {
         descriptor->setSAddressMode(mapSamplerAddressMode(desc.addressU));
         descriptor->setTAddressMode(mapSamplerAddressMode(desc.addressV));
         descriptor->setRAddressMode(mapSamplerAddressMode(desc.addressW));
-        descriptor->setMaxAnisotropy(desc.maxAnisotropy);
-        descriptor->setCompareFunction(mapCompareFunction(desc.comparisonFunc));
+        descriptor->setMaxAnisotropy(desc.anisotropyEnabled ? desc.maxAnisotropy : 1U);
+        descriptor->setCompareFunction(desc.comparisonEnabled ? mapCompareFunction(desc.comparisonFunc) : MTL::CompareFunctionNever);
         descriptor->setLodMinClamp(desc.minLOD);
         descriptor->setLodMaxClamp(desc.maxLOD);
         descriptor->setBorderColor(mapSamplerBorderColor(desc.borderColor));
