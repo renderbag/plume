@@ -13,6 +13,7 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 #include <CoreFoundation/CoreFoundation.h>
+#include <objc/message.h>
 
 #include <algorithm>
 #include <mutex>
@@ -2218,7 +2219,13 @@ namespace plume {
     void MetalQueryPool::queryResults() {
         MetalAutoreleasePool releasePool;
         const NS::Data* data = sampleBuffer->resolveCounterRange(NS::Range(0, results.size()));
-        std::memcpy(results.data(), data->mutableBytes(), results.size() * sizeof(uint64_t));
+        if (data == nullptr) {
+            return;
+        }
+
+        // The resolved data is an immutable NSData, which has no mutableBytes on some GPUs (Intel UHD 630): use bytes.
+        const void *bytes = reinterpret_cast<const void *(*)(const void *, SEL)>(&objc_msgSend)(data, sel_registerName("bytes"));
+        std::memcpy(results.data(), bytes, results.size() * sizeof(uint64_t));
     }
 
     const uint64_t *MetalQueryPool::getResults() const {
