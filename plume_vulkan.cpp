@@ -11,6 +11,7 @@
 #include "plume_vulkan.h"
 
 #include <algorithm>
+#include <map>
 #include <cmath>
 #include <climits>
 #include <unordered_map>
@@ -84,6 +85,7 @@ namespace plume {
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
         VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
+        VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
         VK_KHR_PRESENT_ID_EXTENSION_NAME,
         VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
         VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME,
@@ -1288,6 +1290,78 @@ namespace plume {
             setLayoutHandles.emplace_back(setLayout->vk);
         }
 
+        // Root descriptors: one push descriptor set per register space, placed at the set index equal
+        // to the space (after the descriptor sets; empty sets fill any gap).
+        if (desc.rootDescriptorDescsCount > 0) {
+            if (!device->pushDescriptorSupported) {
+                fprintf(stderr, "Root descriptors need VK_KHR_push_descriptor, which the device does not support.\n");
+                return;
+            }
+
+            std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> spaces;
+            for (uint32_t i = 0; i < desc.rootDescriptorDescsCount; i++) {
+                const RenderRootDescriptorDesc &src = desc.rootDescriptorDescs[i];
+                RootDescriptor dst;
+                dst.setIndex = src.registerSpace;
+                dst.binding = src.shaderRegister;
+                switch (src.type) {
+                case RenderRootDescriptorType::CONSTANT_BUFFER:
+                    dst.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    break;
+                case RenderRootDescriptorType::SHADER_RESOURCE:
+                case RenderRootDescriptorType::UNORDERED_ACCESS:
+                    dst.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    break;
+                default:
+                    assert(false && "Unknown root descriptor type.");
+                    break;
+                }
+
+                rootDescriptors.emplace_back(dst);
+
+                VkDescriptorSetLayoutBinding binding = {};
+                binding.binding = dst.binding;
+                binding.descriptorType = dst.type;
+                binding.descriptorCount = 1;
+                binding.stageFlags = VK_SHADER_STAGE_ALL;
+                spaces[dst.setIndex].emplace_back(binding);
+            }
+
+            for (const auto &[space, bindings] : spaces) {
+                if (space < setLayoutHandles.size()) {
+                    fprintf(stderr, "Root descriptor register space %u is already used by a descriptor set.\n", space);
+                    return;
+                }
+
+                while (setLayoutHandles.size() < space) {
+                    VkDescriptorSetLayoutCreateInfo emptyInfo = {};
+                    emptyInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                    VkDescriptorSetLayout empty = VK_NULL_HANDLE;
+                    if (vkCreateDescriptorSetLayout(device->vk, &emptyInfo, nullptr, &empty) != VK_SUCCESS) {
+                        fprintf(stderr, "vkCreateDescriptorSetLayout failed for an empty set.\n");
+                        return;
+                    }
+
+                    rootSetLayouts.emplace_back(empty);
+                    setLayoutHandles.emplace_back(empty);
+                }
+
+                VkDescriptorSetLayoutCreateInfo pushInfo = {};
+                pushInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                pushInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+                pushInfo.bindingCount = uint32_t(bindings.size());
+                pushInfo.pBindings = bindings.data();
+                VkDescriptorSetLayout pushLayout = VK_NULL_HANDLE;
+                if (vkCreateDescriptorSetLayout(device->vk, &pushInfo, nullptr, &pushLayout) != VK_SUCCESS) {
+                    fprintf(stderr, "vkCreateDescriptorSetLayout failed for the root descriptors of space %u.\n", space);
+                    return;
+                }
+
+                rootSetLayouts.emplace_back(pushLayout);
+                setLayoutHandles.emplace_back(pushLayout);
+            }
+        }
+
         layoutInfo.pSetLayouts = !setLayoutHandles.empty() ? setLayoutHandles.data() : nullptr;
         layoutInfo.setLayoutCount = uint32_t(setLayoutHandles.size());
 
@@ -1305,6 +1379,10 @@ namespace plume {
 
         for (VulkanDescriptorSetLayout *setLayout : descriptorSetLayouts) {
             delete setLayout;
+        }
+
+        for (VkDescriptorSetLayout setLayout : rootSetLayouts) {
+            vkDestroyDescriptorSetLayout(device->vk, setLayout, nullptr);
         }
     }
 
@@ -3036,7 +3114,32 @@ namespace plume {
     }
 
     void VulkanCommandList::setGraphicsRootDescriptor(RenderBufferReference bufferReference, uint32_t rootDescriptorIndex) {
-        assert(false && "Root descriptors are not supported in Vulkan.");
+        pushRootDescriptor(VK_PIPELINE_BIND_POINT_GRAPHICS, activeGraphicsPipelineLayout, bufferReference, rootDescriptorIndex);
+    }
+
+    void VulkanCommandList::pushRootDescriptor(VkPipelineBindPoint bindPoint, const VulkanPipelineLayout *layout, RenderBufferReference bufferReference, uint32_t rootDescriptorIndex) {
+        assert(layout != nullptr);
+        assert(rootDescriptorIndex < layout->rootDescriptors.size());
+        assert(bufferReference.ref != nullptr);
+
+        const VulkanPipelineLayout::RootDescriptor &root = layout->rootDescriptors[rootDescriptorIndex];
+        const VulkanBuffer *buffer = static_cast<const VulkanBuffer *>(bufferReference.ref);
+        const VkPhysicalDeviceLimits &limits = layout->device->physicalDeviceProperties.limits;
+        const uint64_t maxRange = (root.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ? limits.maxUniformBufferRange : limits.maxStorageBufferRange;
+        assert(bufferReference.offset < buffer->desc.size);
+
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = buffer->vk;
+        bufferInfo.offset = bufferReference.offset;
+        bufferInfo.range = std::min<uint64_t>(buffer->desc.size - bufferReference.offset, maxRange);
+
+        VkWriteDescriptorSet write = {};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstBinding = root.binding;
+        write.descriptorCount = 1;
+        write.descriptorType = root.type;
+        write.pBufferInfo = &bufferInfo;
+        vkCmdPushDescriptorSetKHR(vk, bindPoint, layout->vk, root.setIndex, 1, &write);
     }
 
     void VulkanCommandList::setRaytracingPipelineLayout(const RenderPipelineLayout *pipelineLayout) {
@@ -4211,6 +4314,7 @@ namespace plume {
 
         // Fill Vulkan-only capabilities.
         loadStoreOpNoneSupported = supportedOptionalExtensions.find(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME) != supportedOptionalExtensions.end();
+        pushDescriptorSupported = supportedOptionalExtensions.find(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) != supportedOptionalExtensions.end();
 
         if (!nullDescriptorSupported) {
             nullBuffer = createBuffer(RenderBufferDesc::DefaultBuffer(16, RenderBufferFlag::VERTEX));

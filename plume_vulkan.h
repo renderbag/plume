@@ -129,9 +129,19 @@ namespace plume {
     };
 
     struct VulkanPipelineLayout : RenderPipelineLayout {
+        // A root descriptor is a binding of a push descriptor set (VK_KHR_push_descriptor):
+        // the set index is the register space, the binding the shader register.
+        struct RootDescriptor {
+            uint32_t setIndex = 0;
+            uint32_t binding = 0;
+            VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        };
+
         VkPipelineLayout vk = VK_NULL_HANDLE;
         std::vector<VkPushConstantRange> pushConstantRanges;
         std::vector<VulkanDescriptorSetLayout *> descriptorSetLayouts;
+        std::vector<RootDescriptor> rootDescriptors;
+        std::vector<VkDescriptorSetLayout> rootSetLayouts; // Push descriptor sets and empty gap fillers.
         VulkanDevice *device = nullptr;
 
         VulkanPipelineLayout(VulkanDevice *device, const RenderPipelineLayoutDesc &desc);
@@ -320,6 +330,7 @@ namespace plume {
         void setGraphicsPushConstants(uint32_t rangeIndex, const void *data, uint32_t offset = 0, uint32_t size = 0) override;
         void setGraphicsDescriptorSet(RenderDescriptorSet *descriptorSet, uint32_t setIndex) override;
         void setGraphicsRootDescriptor(RenderBufferReference bufferReference, uint32_t rootDescriptorIndex) override;
+        void pushRootDescriptor(VkPipelineBindPoint bindPoint, const VulkanPipelineLayout *layout, RenderBufferReference bufferReference, uint32_t rootDescriptorIndex);
         void setRaytracingPipelineLayout(const RenderPipelineLayout *pipelineLayout) override;
         void setRaytracingPushConstants(uint32_t rangeIndex, const void *data, uint32_t offset = 0, uint32_t size = 0) override;
         void setRaytracingDescriptorSet(RenderDescriptorSet *descriptorSet, uint32_t setIndex) override;
@@ -416,6 +427,7 @@ namespace plume {
         VkPhysicalDeviceSampleLocationsPropertiesEXT sampleLocationProperties = {};
         std::unique_ptr<RenderBuffer> nullBuffer;
         bool loadStoreOpNoneSupported = false;
+        bool pushDescriptorSupported = false;
         bool nullDescriptorSupported = false;
 
         VulkanDevice(VulkanInterface *renderInterface, const std::string &preferredDeviceName);
