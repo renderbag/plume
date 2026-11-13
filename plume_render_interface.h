@@ -155,6 +155,10 @@ namespace plume {
         virtual void discardTexture(const RenderTexture* texture) = 0; // D3D12 only.
         virtual void resetQueryPool(const RenderQueryPool *queryPool, uint32_t queryFirstIndex, uint32_t queryCount) = 0;
         virtual void writeTimestamp(const RenderQueryPool *queryPool, uint32_t queryIndex) = 0;
+        // Occlusion queries (samples that pass the depth and stencil tests) in a pool from
+        // RenderDevice::createOcclusionQueryPool.
+        virtual void beginQuery(const RenderQueryPool *queryPool, uint32_t queryIndex) { (void)queryPool; (void)queryIndex; }
+        virtual void endQuery(const RenderQueryPool *queryPool, uint32_t queryIndex) { (void)queryPool; (void)queryIndex; }
 
         // Concrete implementation shortcuts.
         inline void barriers(RenderBarrierStages stages, const RenderBufferBarrier &barrier) {
@@ -226,6 +230,8 @@ namespace plume {
         virtual void queryResults() = 0;
         virtual const uint64_t *getResults() const = 0;
         virtual uint32_t getCount() const = 0;
+        // Results of queries [first, first + count) without waiting; false if any is not available yet.
+        virtual bool getRawResults(uint32_t first, uint32_t count, uint64_t *out) { (void)first; (void)count; (void)out; return false; }
     };
 
     struct RenderDevice {
@@ -246,6 +252,8 @@ namespace plume {
         virtual std::unique_ptr<RenderCommandSemaphore> createCommandSemaphore() = 0;
         virtual std::unique_ptr<RenderFramebuffer> createFramebuffer(const RenderFramebufferDesc &desc) = 0;
         virtual std::unique_ptr<RenderQueryPool> createQueryPool(uint32_t queryCount) = 0;
+        // nullptr if the backend has no occlusion queries (only Vulkan has them so far).
+        virtual std::unique_ptr<RenderQueryPool> createOcclusionQueryPool(uint32_t queryCount) { (void)queryCount; return nullptr; }
         virtual void setBottomLevelASBuildInfo(RenderBottomLevelASBuildInfo &buildInfo, const RenderBottomLevelASMesh *meshes, uint32_t meshCount, bool preferFastBuild = true, bool preferFastTrace = false) = 0;
         virtual void setTopLevelASBuildInfo(RenderTopLevelASBuildInfo &buildInfo, const RenderTopLevelASInstance *instances, uint32_t instanceCount, bool preferFastBuild = true, bool preferFastTrace = false) = 0;
         virtual void setShaderBindingTableInfo(RenderShaderBindingTableInfo &tableInfo, const RenderShaderBindingGroups &groups, const RenderPipeline *pipeline, RenderDescriptorSet **descriptorSets, uint32_t descriptorSetCount) = 0;
