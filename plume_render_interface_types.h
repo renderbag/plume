@@ -1334,6 +1334,8 @@ namespace plume {
         float depthBiasClamp = 0.0f;
         float slopeScaledDepthBias = 0.0f;
         bool dynamicDepthBiasEnabled = false;
+        bool dynamicBlendConstantsEnabled = false; // Blend constants come from RenderCommandList::setBlendConstants.
+        bool dynamicStencilReferenceEnabled = false; // The stencil reference comes from RenderCommandList::setStencilReference.
         bool depthEnabled = false;
         bool depthWriteEnabled = false;
         bool stencilEnabled = false;

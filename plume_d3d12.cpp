@@ -2237,6 +2237,15 @@ namespace plume {
         }
     }
 
+    void D3D12CommandList::setBlendConstants(const float rgba[4]) {
+        d3d->OMSetBlendFactor(rgba);
+    }
+
+    void D3D12CommandList::setStencilReference(uint32_t reference) {
+        d3d->OMSetStencilRef(reference);
+        activeStencilRef = reference;
+    }
+
     void D3D12CommandList::setDepthBias(float depthBias, float depthBiasClamp, float slopeScaledDepthBias) {
 #   ifdef PLUME_D3D12_AGILITY_SDK_ENABLED
         assert(d3dV9 != nullptr);
@@ -2472,6 +2481,10 @@ namespace plume {
         assert(activeGraphicsPipeline->type == D3D12Pipeline::Type::Graphics);
 
         const D3D12GraphicsPipeline *graphicsPipeline = static_cast<const D3D12GraphicsPipeline *>(activeGraphicsPipeline);
+        if (graphicsPipeline->dynamicStencilRef) {
+            return;
+        }
+
         if (activeStencilRef != graphicsPipeline->stencilRef) {
             d3d->OMSetStencilRef(graphicsPipeline->stencilRef);
             activeStencilRef = graphicsPipeline->stencilRef;
@@ -3086,6 +3099,7 @@ namespace plume {
         assert(desc.pipelineLayout != nullptr);
 
         topology = toD3D12(desc.primitiveTopology);
+        dynamicStencilRef = desc.dynamicStencilReferenceEnabled;
 
         const D3D12PipelineLayout *pipelineLayout = static_cast<const D3D12PipelineLayout *>(desc.pipelineLayout);
         const D3D12Shader *vertexShader = static_cast<const D3D12Shader *>(desc.vertexShader);

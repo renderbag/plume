@@ -1607,6 +1607,7 @@ namespace plume {
         state.renderPipelineState = device->mtl->newRenderPipelineState(descriptor, &error);
         state.primitiveType = mapPrimitiveType(desc.primitiveTopology);
         state.stencilReference = desc.stencilEnabled ? desc.stencilReference : 0;
+        state.dynamicStencilReferenceEnabled = desc.dynamicStencilReferenceEnabled;
 
         if (desc.dynamicDepthBiasEnabled) {
             state.dynamicDepthBiasEnabled = true;
@@ -2750,6 +2751,16 @@ namespace plume {
         }
     }
 
+    void MetalCommandList::setBlendConstants(const float rgba[4]) {
+        std::copy(rgba, rgba + 4, dynamicBlendConstants);
+        dirtyGraphicsState.blendConstants = 1;
+    }
+
+    void MetalCommandList::setStencilReference(uint32_t reference) {
+        dynamicStencilReference = reference;
+        dirtyGraphicsState.depthStencil = 1;
+    }
+
     void MetalCommandList::setDepthBias(float depthBias, float depthBiasClamp, float slopeScaledDepthBias) {
         dynamicDepthBias.depthBias = depthBias;
         dynamicDepthBias.depthBiasClamp = depthBiasClamp;
@@ -3444,9 +3455,10 @@ namespace plume {
                     activeRenderEncoder->setDepthStencilState(activeRenderState->depthStencilState);
                     stateCache.lastDepthStencilState = activeRenderState->depthStencilState;
                 }
-                if (activeRenderState->stencilReference != stateCache.lastStencilReference) {
-                    activeRenderEncoder->setStencilReferenceValue(activeRenderState->stencilReference);
-                    stateCache.lastStencilReference = activeRenderState->stencilReference;
+                const uint32_t stencilReference = activeRenderState->dynamicStencilReferenceEnabled ? dynamicStencilReference : activeRenderState->stencilReference;
+                if (stencilReference != stateCache.lastStencilReference) {
+                    activeRenderEncoder->setStencilReferenceValue(stencilReference);
+                    stateCache.lastStencilReference = stencilReference;
                 }
             }
             dirtyGraphicsState.depthStencil = 0;
@@ -3469,6 +3481,12 @@ namespace plume {
                 }
             }
             dirtyGraphicsState.rasterizer = 0;
+        }
+
+        // Blend constants
+        if (dirtyGraphicsState.blendConstants) {
+            activeRenderEncoder->setBlendColor(dynamicBlendConstants[0], dynamicBlendConstants[1], dynamicBlendConstants[2], dynamicBlendConstants[3]);
+            dirtyGraphicsState.blendConstants = 0;
         }
 
         // Depth bias

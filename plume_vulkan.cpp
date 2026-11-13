@@ -1718,6 +1718,13 @@ namespace plume {
         dynamicStates.clear();
         dynamicStates.emplace_back(VK_DYNAMIC_STATE_VIEWPORT);
         dynamicStates.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
+        if (desc.dynamicBlendConstantsEnabled) {
+            dynamicStates.emplace_back(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+        }
+
+        if (desc.dynamicStencilReferenceEnabled) {
+            dynamicStates.emplace_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
+        }
 
         if (desc.dynamicDepthBiasEnabled) {
             dynamicStates.emplace_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
@@ -3247,6 +3254,14 @@ namespace plume {
 
     void VulkanCommandList::setDepthBias(float depthBias, float depthBiasClamp, float slopeScaledDepthBias) {
         vkCmdSetDepthBias(vk, depthBias, depthBiasClamp, slopeScaledDepthBias);
+    }
+
+    void VulkanCommandList::setBlendConstants(const float rgba[4]) {
+        vkCmdSetBlendConstants(vk, rgba);
+    }
+
+    void VulkanCommandList::setStencilReference(uint32_t reference) {
+        vkCmdSetStencilReference(vk, VK_STENCIL_FACE_FRONT_AND_BACK, reference);
     }
 
     static void clearCommonRectVector(uint32_t width, uint32_t height, const RenderRect *clearRects, uint32_t clearRectsCount, std::vector<VkClearRect> &rectVector) {
