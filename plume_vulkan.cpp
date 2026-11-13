@@ -3020,6 +3020,7 @@ namespace plume {
 
     void VulkanCommandList::dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) {
         assert(activeComputePipelineLayout != nullptr);
+        endActiveRenderPass();
 
         vkCmdDispatch(vk, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
     }
@@ -3029,6 +3030,7 @@ namespace plume {
         assert(interfaceBuffer != nullptr);
         assert((interfaceBuffer->desc.flags & RenderBufferFlag::SHADER_BINDING_TABLE) && "Buffer must allow being used as a shader binding table.");
         assert(activeRaytracingPipelineLayout != nullptr);
+        endActiveRenderPass();
 
         VkBufferDeviceAddressInfo tableAddressInfo = {};
         tableAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -3255,7 +3257,14 @@ namespace plume {
     }
 
     void VulkanCommandList::setFramebuffer(const RenderFramebuffer *framebuffer) {
-        endActiveRenderPass();
+        // The active render pass ends when a draw or clear needs another framebuffer
+        // (checkActiveRenderPass) or a command that is not allowed in a render pass comes.
+        // Rebinding the active framebuffer, or binding one that gets no draws before
+        // switching back, no longer ends and restarts the pass (a store and reload of
+        // every attachment on tile GPUs).
+        if (framebuffer == nullptr) {
+            endActiveRenderPass();
+        }
 
         if (framebuffer != nullptr) {
             const VulkanFramebuffer *interfaceFramebuffer = static_cast<const VulkanFramebuffer *>(framebuffer);
@@ -3561,6 +3570,7 @@ namespace plume {
     void VulkanCommandList::buildBottomLevelAS(const RenderAccelerationStructure *dstAccelerationStructure, RenderBufferReference scratchBuffer, const RenderBottomLevelASBuildInfo &buildInfo) {
         assert(dstAccelerationStructure != nullptr);
         assert(scratchBuffer.ref != nullptr);
+        endActiveRenderPass();
 
         const VulkanAccelerationStructure *interfaceAccelerationStructure = static_cast<const VulkanAccelerationStructure *>(dstAccelerationStructure);
         assert(interfaceAccelerationStructure->type == RenderAccelerationStructureType::BOTTOM_LEVEL);
@@ -3595,6 +3605,7 @@ namespace plume {
     void VulkanCommandList::buildTopLevelAS(const RenderAccelerationStructure *dstAccelerationStructure, RenderBufferReference scratchBuffer, RenderBufferReference instancesBuffer, const RenderTopLevelASBuildInfo &buildInfo) {
         assert(dstAccelerationStructure != nullptr);
         assert(scratchBuffer.ref != nullptr);
+        endActiveRenderPass();
         assert(instancesBuffer.ref != nullptr);
 
         const VulkanAccelerationStructure *interfaceAccelerationStructure = static_cast<const VulkanAccelerationStructure *>(dstAccelerationStructure);
@@ -3703,7 +3714,11 @@ namespace plume {
 
     void VulkanCommandList::checkActiveRenderPass() {
         assert(targetFramebuffer != nullptr);
-        
+
+        if ((activeRenderPass != VK_NULL_HANDLE) && (activeFramebuffer != targetFramebuffer)) {
+            endActiveRenderPass();
+        }
+
         if (activeRenderPass == VK_NULL_HANDLE) {
             VkRenderPassBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -3713,6 +3728,7 @@ namespace plume {
             beginInfo.renderArea.extent.height = targetFramebuffer->height;
             vkCmdBeginRenderPass(vk, &beginInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
             activeRenderPass = targetFramebuffer->renderPass;
+            activeFramebuffer = targetFramebuffer;
         }
     }
 
@@ -3726,6 +3742,7 @@ namespace plume {
             passQueries.clear();
             vkCmdEndRenderPass(vk);
             activeRenderPass = VK_NULL_HANDLE;
+            activeFramebuffer = nullptr;
         }
     }
 

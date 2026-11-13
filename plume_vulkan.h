@@ -324,6 +324,8 @@ namespace plume {
         std::vector<PassQuery> passQueriesClosed;
         // true: begin and end every query outside render passes (ends the active pass).
         bool queriesEndRenderPass = false;
+        // The framebuffer of the active render pass instance.
+        const VulkanFramebuffer *activeFramebuffer = nullptr;
 
         VulkanCommandList(VulkanCommandQueue *queue);
         ~VulkanCommandList() override;
