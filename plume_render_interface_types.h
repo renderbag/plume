@@ -166,6 +166,21 @@ namespace plume {
         BC7_TYPELESS,
         BC7_UNORM,
         BC7_UNORM_SRGB,
+        R16G16_SSCALED,
+        R16G16B16A16_SSCALED,
+        // Vertex formats: USCALED/SSCALED are unnormalized integers read as floats.
+        R16G16B16A16_USCALED,
+        R8G8B8A8_USCALED,
+        R8G8B8A8_SSCALED,
+        R16G16_USCALED,
+        R8G8_USCALED,
+        R8G8_SSCALED,
+        R16_USCALED,
+        R16_SSCALED,
+        R8_USCALED,
+        R8_SSCALED,
+        A2B10G10R10_UNORM_PACK32,
+        A2B10G10R10_SNORM_PACK32,
         MAX
     };
 
@@ -597,6 +612,24 @@ namespace plume {
         case RenderFormat::BC7_UNORM:
         case RenderFormat::BC7_UNORM_SRGB:
             return 16;
+        case RenderFormat::R16G16B16A16_SSCALED:
+        case RenderFormat::R16G16B16A16_USCALED:
+            return 8;
+        case RenderFormat::A2B10G10R10_UNORM_PACK32:
+        case RenderFormat::A2B10G10R10_SNORM_PACK32:
+        case RenderFormat::R8G8B8A8_USCALED:
+        case RenderFormat::R8G8B8A8_SSCALED:
+        case RenderFormat::R16G16_SSCALED:
+        case RenderFormat::R16G16_USCALED:
+            return 4;
+        case RenderFormat::R8G8_USCALED:
+        case RenderFormat::R8G8_SSCALED:
+        case RenderFormat::R16_USCALED:
+        case RenderFormat::R16_SSCALED:
+            return 2;
+        case RenderFormat::R8_USCALED:
+        case RenderFormat::R8_SSCALED:
+            return 1;
         default:
             assert(false && "Unknown format.");
             return 1;
@@ -681,6 +714,21 @@ namespace plume {
         case RenderFormat::BC7_UNORM:
         case RenderFormat::BC7_UNORM_SRGB:
             return 4;
+        case RenderFormat::R16G16B16A16_SSCALED:
+        case RenderFormat::R16G16_SSCALED:
+        case RenderFormat::R16G16B16A16_USCALED:
+        case RenderFormat::R8G8B8A8_USCALED:
+        case RenderFormat::R8G8B8A8_SSCALED:
+        case RenderFormat::R16G16_USCALED:
+        case RenderFormat::R8G8_USCALED:
+        case RenderFormat::R8G8_SSCALED:
+        case RenderFormat::R16_USCALED:
+        case RenderFormat::R16_SSCALED:
+        case RenderFormat::R8_USCALED:
+        case RenderFormat::R8_SSCALED:
+        case RenderFormat::A2B10G10R10_UNORM_PACK32:
+        case RenderFormat::A2B10G10R10_SNORM_PACK32:
+            return 1;
         default:
             assert(false && "Unknown format.");
             return 1;

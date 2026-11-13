@@ -249,6 +249,34 @@ namespace plume {
             return VK_FORMAT_BC7_UNORM_BLOCK;
         case RenderFormat::BC7_UNORM_SRGB:
             return VK_FORMAT_BC7_SRGB_BLOCK;
+        case RenderFormat::R16G16B16A16_SSCALED:
+            return VK_FORMAT_R16G16B16A16_SSCALED;
+        case RenderFormat::R16G16_SSCALED:
+            return VK_FORMAT_R16G16_SSCALED;
+        case RenderFormat::R16G16B16A16_USCALED:
+            return VK_FORMAT_R16G16B16A16_USCALED;
+        case RenderFormat::R8G8B8A8_USCALED:
+            return VK_FORMAT_R8G8B8A8_USCALED;
+        case RenderFormat::R8G8B8A8_SSCALED:
+            return VK_FORMAT_R8G8B8A8_SSCALED;
+        case RenderFormat::R16G16_USCALED:
+            return VK_FORMAT_R16G16_USCALED;
+        case RenderFormat::R8G8_USCALED:
+            return VK_FORMAT_R8G8_USCALED;
+        case RenderFormat::R8G8_SSCALED:
+            return VK_FORMAT_R8G8_SSCALED;
+        case RenderFormat::R16_USCALED:
+            return VK_FORMAT_R16_USCALED;
+        case RenderFormat::R16_SSCALED:
+            return VK_FORMAT_R16_SSCALED;
+        case RenderFormat::R8_USCALED:
+            return VK_FORMAT_R8_USCALED;
+        case RenderFormat::R8_SSCALED:
+            return VK_FORMAT_R8_SSCALED;
+        case RenderFormat::A2B10G10R10_UNORM_PACK32:
+            return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        case RenderFormat::A2B10G10R10_SNORM_PACK32:
+            return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
         default:
             assert(false && "Unknown format.");
             return VK_FORMAT_UNDEFINED;
