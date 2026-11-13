@@ -2661,8 +2661,13 @@ namespace plume {
             imageViews.emplace_back(colorAttachmentImageView);
 
             if (i == 0) {
-                width = uint32_t(colorAttachment->desc.width);
-                height = colorAttachment->desc.height;
+                // A view of one mip level renders at that level's size (the base
+                // size made MoltenVK write outside the attachment: GPU page faults).
+                uint32_t mip = 0;
+                if (desc.colorAttachmentViews && desc.colorAttachmentViews[i])
+                    mip = static_cast<const VulkanTextureView *>(desc.colorAttachmentViews[i])->desc.mipSlice;
+                width = std::max(1u, uint32_t(colorAttachment->desc.width) >> mip);
+                height = std::max(1u, uint32_t(colorAttachment->desc.height) >> mip);
             }
 
             VkAttachmentReference reference = {};
@@ -2706,8 +2711,10 @@ namespace plume {
             imageViews.emplace_back(depthAttachmentImageView);
 
             if (desc.colorAttachmentsCount == 0) {
-                width = uint32_t(depthAttachment->desc.width);
-                height = depthAttachment->desc.height;
+                const uint32_t depthMip = desc.depthAttachmentView != nullptr
+                    ? static_cast<const VulkanTextureView *>(desc.depthAttachmentView)->desc.mipSlice : 0;
+                width = std::max(1u, uint32_t(depthAttachment->desc.width) >> depthMip);
+                height = std::max(1u, uint32_t(depthAttachment->desc.height) >> depthMip);
             }
 
             depthReference.attachment = uint32_t(attachments.size());
