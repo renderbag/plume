@@ -184,6 +184,10 @@ namespace plume {
             return DXGI_FORMAT_R8_SNORM;
         case RenderFormat::R8_SINT:
             return DXGI_FORMAT_R8_SINT;
+        case RenderFormat::B5G6R5_UNORM:
+            return DXGI_FORMAT_B5G6R5_UNORM;
+        case RenderFormat::B5G5R5A1_UNORM:
+            return DXGI_FORMAT_B5G5R5A1_UNORM;
         case RenderFormat::BC1_TYPELESS:
             return DXGI_FORMAT_BC1_TYPELESS;
         case RenderFormat::BC1_UNORM:
@@ -3869,6 +3873,7 @@ namespace plume {
         capabilities.bufferDeviceAddress = true;
         capabilities.presentWait = true;
         capabilities.queryPools = true;
+        capabilities.packed16BitFormats = true;
         capabilities.maxTextureSize = 16384;
         capabilities.preferHDR = description.dedicatedVideoMemory > (512 * 1024 * 1024);
         capabilities.samplerMirrorClampToEdge = true;
