@@ -145,6 +145,8 @@ namespace plume {
         R8_UINT,
         R8_SNORM,
         R8_SINT,
+        B5G6R5_UNORM,
+        B5G5R5A1_UNORM,
         BC1_TYPELESS,
         BC1_UNORM,
         BC1_UNORM_SRGB,
@@ -570,6 +572,8 @@ namespace plume {
         case RenderFormat::R16_UINT:
         case RenderFormat::R16_SNORM:
         case RenderFormat::R16_SINT:
+        case RenderFormat::B5G6R5_UNORM:
+        case RenderFormat::B5G5R5A1_UNORM:
             return 2;
         case RenderFormat::R8_TYPELESS:
         case RenderFormat::R8_UNORM:
@@ -658,6 +662,8 @@ namespace plume {
         case RenderFormat::R8_UINT:
         case RenderFormat::R8_SNORM:
         case RenderFormat::R8_SINT:
+        case RenderFormat::B5G6R5_UNORM:
+        case RenderFormat::B5G5R5A1_UNORM:
             return 1;
         case RenderFormat::BC1_TYPELESS:
         case RenderFormat::BC1_UNORM:
@@ -1814,6 +1820,9 @@ namespace plume {
 
         // Query Pools.
         bool queryPools = false;
+
+        // 16-bit packed pixel formats (e.g. B5G6R5, B5G5R5A1).
+        bool packed16BitFormats = false;
     };
 
     struct RenderInterfaceCapabilities {

@@ -256,6 +256,10 @@ namespace plume {
                     return RenderFormat::R8_SNORM;
                 case MTL::PixelFormatR8Sint:
                     return RenderFormat::R8_SINT;
+                case MTL::PixelFormatB5G6R5Unorm:
+                    return RenderFormat::B5G6R5_UNORM;
+                case MTL::PixelFormatBGR5A1Unorm:
+                    return RenderFormat::B5G5R5A1_UNORM;
                 // Block compressed formats
                 case MTL::PixelFormatBC1_RGBA:
                     return RenderFormat::BC1_UNORM;
@@ -401,6 +405,10 @@ namespace plume {
                 return MTL::PixelFormatR8Snorm;
             case RenderFormat::R8_SINT:
                 return MTL::PixelFormatR8Sint;
+            case RenderFormat::B5G6R5_UNORM:
+                return MTL::PixelFormatB5G6R5Unorm;
+            case RenderFormat::B5G5R5A1_UNORM:
+                return MTL::PixelFormatBGR5A1Unorm;
             // Block compressed formats
            case RenderFormat::BC1_TYPELESS:
                return MTL::PixelFormatBC1_RGBA;
@@ -3879,6 +3887,7 @@ namespace plume {
         capabilities.uma = mtl->hasUnifiedMemory();
         capabilities.gpuUploadHeap = capabilities.uma;
         capabilities.queryPools = timestampCounterSet != nullptr;
+        capabilities.packed16BitFormats = mtl->supportsFamily(MTL::GPUFamilyApple1);
         capabilities.samplerMirrorClampToEdge = true;
 
 #if PLUME_IOS

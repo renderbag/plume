@@ -207,6 +207,12 @@ namespace plume {
             return VK_FORMAT_R8_SNORM;
         case RenderFormat::R8_SINT:
             return VK_FORMAT_R8_SINT;
+        case RenderFormat::B5G6R5_UNORM:
+            // Vulkan specifies the component order in reverse
+            return VK_FORMAT_R5G6B5_UNORM_PACK16;
+        case RenderFormat::B5G5R5A1_UNORM:
+            // Vulkan specifies the component order in reverse
+            return VK_FORMAT_A1R5G5B5_UNORM_PACK16;
         case RenderFormat::BC1_TYPELESS:
             return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
         case RenderFormat::BC1_UNORM:
@@ -4169,6 +4175,7 @@ namespace plume {
         capabilities.preferHDR = memoryHeapSize > (512 * 1024 * 1024);
         capabilities.dynamicDepthBias = true;
         capabilities.queryPools = true;
+        capabilities.packed16BitFormats = true;
         capabilities.uma = (description.type == RenderDeviceType::INTEGRATED) && hasHostVisibleDeviceLocalMemory;
         capabilities.gpuUploadHeap = capabilities.uma;
 
