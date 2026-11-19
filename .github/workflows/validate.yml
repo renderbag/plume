@@ -9,19 +9,61 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  build:
+  build-unix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         type: [Debug, Release]
-        os:
-          [
-            ubuntu-22.04,
-            ubuntu-22.04-arm,
-            windows-latest,
-            macos-15-intel,
-            macos-15,
-          ]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-15-intel, macos-15]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Install devenv
+        uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+
+      - run: nix profile install nixpkgs#devenv
+
+      - name: Build with devenv
+        shell: devenv shell bash -- -e {0}
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.type }} \
+            -DPLUME_BUILD_EXAMPLES=ON
+          cmake --build build --target plume
+          cmake --build build --target plume_triangle
+          cmake --build build --target plume_cube
+
+      - name: Upload Linux Build
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plume-linux-${{ matrix.type }}-${{ matrix.os }}
+          path: |
+            build/bin/plume_triangle
+            build/bin/plume_cube
+
+      - name: Upload macOS Build
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plume-macos-${{ matrix.type }}-${{ matrix.os }}
+          path: |
+            build/bin/plume_triangle
+            build/bin/plume_cube
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        type: [Debug, Release]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,10 +73,9 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-plume-ccache-${{ matrix.type }}
+          key: windows-plume-ccache-${{ matrix.type }}
 
       - name: Install Windows Dependencies
-        if: runner.os == 'Windows'
         run: |
           choco install ninja
           vcpkg install sdl2 --triplet x64-windows-static
@@ -42,48 +83,11 @@ jobs:
           Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
           "C:\vcpkg\installed\x64-windows-static\bin" >> $env:GITHUB_PATH
 
-      - name: Install Linux Dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build libsdl2-dev libgtk-3-dev
-
-          # Install SDL2
-          echo ::group::install SDL2
-          wget https://www.libsdl.org/release/SDL2-2.26.1.tar.gz
-          tar -xzf SDL2-2.26.1.tar.gz
-          cd SDL2-2.26.1
-          ./configure
-          make -j 10
-          sudo make install
-          sudo cp -av /usr/local/lib/libSDL* /lib/x86_64-linux-gnu/
-          echo ::endgroup::
-
-          # Enable ccache
-          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
-
-      - name: Install macOS Dependencies
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja sdl2
-
       - name: Configure Developer Command Prompt
-        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build Plume (Unix)
-        if: runner.os != 'Windows'
-        run: |-
-          # enable ccache
-          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
-
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DPLUME_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
-          cmake --build cmake-build --config ${{ matrix.type }} --target plume
-          cmake --build cmake-build --config ${{ matrix.type }} --target plume_triangle
-
-      - name: Build Plume (Windows)
-        if: runner.os == 'Windows'
-        run: |-
+      - name: Build Plume
+        run: |
           # enable ccache
           set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
           $cpuCores = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
@@ -91,30 +95,15 @@ jobs:
           # remove LLVM from PATH so it doesn't overshadow the one provided by VS
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -ne 'C:\Program Files\LLVM\bin' }) -join ';'
 
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DPLUME_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
-          cmake --build cmake-build --config ${{ matrix.type }} --target plume -j $cpuCores
-          cmake --build cmake-build --config ${{ matrix.type }} --target plume_triangle -j $cpuCores
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DPLUME_BUILD_EXAMPLES=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B build
+          cmake --build build --config ${{ matrix.type }} --target plume -j $cpuCores
+          cmake --build build --config ${{ matrix.type }} --target plume_triangle -j $cpuCores
+          cmake --build build --config ${{ matrix.type }} --target plume_cube -j $cpuCores
 
       - name: Upload Windows Build
-        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: plume-windows-${{ matrix.type }}
           path: |
-            cmake-build/bin/plume_triangle.exe
-
-      - name: Upload Linux Build
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: plume-linux-${{ matrix.type }}-${{ matrix.os }}
-          path: |
-            cmake-build/bin/plume_triangle
-
-      - name: Upload macOS Build
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
-        with:
-          name: plume-macos-${{ matrix.type }}-${{ matrix.os }}
-          path: |
-            cmake-build/bin/plume_triangle
+            build/bin/plume_triangle.exe
+            build/bin/plume_cube.exe
