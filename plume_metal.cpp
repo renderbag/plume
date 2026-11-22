@@ -2235,7 +2235,10 @@ namespace plume {
     void MetalQueryPool::queryResults() {
         MetalAutoreleasePool releasePool;
         const NS::Data* data = sampleBuffer->resolveCounterRange(NS::Range(0, results.size()));
-        std::memcpy(results.data(), data->mutableBytes(), results.size() * sizeof(uint64_t));
+        if (data == nullptr) {
+            return;
+        }
+        std::memcpy(results.data(), data->bytes(), results.size() * sizeof(uint64_t));
     }
 
     const uint64_t *MetalQueryPool::getResults() const {
