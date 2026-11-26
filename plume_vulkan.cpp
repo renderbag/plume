@@ -87,8 +87,6 @@ namespace plume {
         VK_KHR_PRESENT_ID_EXTENSION_NAME,
         VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
         VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME,
-        // Vulkan spec requires this to be enabled if supported by the driver.
-        VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
     };
 
     // Common functions.
@@ -3914,14 +3912,6 @@ namespace plume {
             featuresChain = &bufferDeviceAddressFeatures;
         }
 
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-        const bool portabilityFound = supportedOptionalExtensions.find(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME) != supportedOptionalExtensions.end();
-        if (portabilityFound) {
-            portabilityFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
-            portabilityFeatures.pNext = featuresChain;
-            featuresChain = &portabilityFeatures;
-        }
-
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures = {};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
         const bool rayTracingFound = (supportedOptionalExtensions.find(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) != supportedOptionalExtensions.end()) && (supportedOptionalExtensions.find(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) != supportedOptionalExtensions.end());
@@ -4002,11 +3992,6 @@ namespace plume {
         if (bufferDeviceAddressSupported) {
             bufferDeviceAddressFeatures.pNext = createDeviceChain;
             createDeviceChain = &bufferDeviceAddressFeatures;
-        }
-        
-        if (portabilityFound) {
-            portabilityFeatures.pNext = createDeviceChain;
-            createDeviceChain = &portabilityFeatures;
         }
 
         // Retrieve the information for the queue families.
