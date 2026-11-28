@@ -186,3 +186,13 @@ jobs:
       - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         run: ./cmake-build/bin/plume_tests.exe --device "Microsoft Basic Render Driver"
+
+      - name: Check Autorelease Pools
+        if: runner.os == 'macOS'
+        run: |
+          OBJC_DEBUG_MISSING_POOLS=YES ./cmake-build/bin/plume_tests 2>&1 | tee tests.log
+          ! grep 'MISSING POOLS' tests.log
+
+      - name: Check Leaks
+        if: runner.os == 'macOS'
+        run: MallocStackLogging=1 leaks --atExit -- ./cmake-build/bin/plume_tests
