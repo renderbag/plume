@@ -708,6 +708,7 @@ namespace plume {
         MTL::Function* clearColorFunction;
         MTL::Function* clearDepthFunction;
         MTL::Function* clearStencilFunction;
+        MTL::DepthStencilState *clearColorDepthState;
         MTL::DepthStencilState *clearDepthState;
         MTL::DepthStencilState *clearStencilState;
         MTL::DepthStencilState *clearDepthStencilState;
