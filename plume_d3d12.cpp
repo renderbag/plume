@@ -631,15 +631,21 @@ namespace plume {
         // Use graphics pipeline states.
         if (stages == RenderBarrierStage::GRAPHICS) {
             if (accessBits == RenderBufferAccess::READ) {
+                D3D12_RESOURCE_STATES resourceStates = D3D12_RESOURCE_STATE_COMMON;
+
                 if (bufferFlags & (RenderBufferFlag::VERTEX | RenderBufferFlag::CONSTANT)) {
-                    return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+                    resourceStates |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
                 }
 
                 if (bufferFlags & RenderBufferFlag::INDEX) {
-                    return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+                    resourceStates |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
                 }
 
-                return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+                if (bufferFlags & RenderBufferFlag::STORAGE) {
+                    resourceStates |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+                }
+
+                return resourceStates;
             }
         }
 
