@@ -143,6 +143,15 @@ namespace plume {
         return clampedRect;
     }
 
+    bool viewportsEqual(const MTL::Viewport& a, const MTL::Viewport& b) {
+        return a.originX == b.originX && a.originY == b.originY && a.width == b.width && a.height == b.height &&
+               a.znear == b.znear && a.zfar == b.zfar;
+    }
+
+    bool scissorsEqual(const MTL::ScissorRect& a, const MTL::ScissorRect& b) {
+        return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+    }
+
     // MARK: - Mapping RHI <> Metal
 
     MTL::DataType mapDataType(RenderDescriptorRangeType type) {
@@ -2226,7 +2235,10 @@ namespace plume {
     void MetalQueryPool::queryResults() {
         MetalAutoreleasePool releasePool;
         const NS::Data* data = sampleBuffer->resolveCounterRange(NS::Range(0, results.size()));
-        std::memcpy(results.data(), data->mutableBytes(), results.size() * sizeof(uint64_t));
+        if (data == nullptr) {
+            return;
+        }
+        std::memcpy(results.data(), data->bytes(), results.size() * sizeof(uint64_t));
     }
 
     const uint64_t *MetalQueryPool::getResults() const {
@@ -2708,27 +2720,32 @@ namespace plume {
     void MetalCommandList::setViewports(const RenderViewport *viewports, const uint32_t count) {
         viewportVector.resize(count);
 
+        // Since viewports are set at the encoder level, we mark it as dirty so it'll be updated on next active encoder check
+        dirtyGraphicsState.viewports |= count != stateCache.lastViewports.size();
+
         for (uint32_t i = 0; i < count; i++) {
             const MTL::Viewport viewport { viewports[i].x, viewports[i].y, viewports[i].width, viewports[i].height, viewports[i].minDepth, viewports[i].maxDepth };
             viewportVector[i] = viewport;
-        }
 
-        // Since viewports are set at the encoder level, we mark it as dirty so it'll be updated on next active encoder check
-        if (viewportVector != stateCache.lastViewports) {
-            dirtyGraphicsState.viewports = 1;
+            if (!dirtyGraphicsState.viewports && !viewportsEqual(stateCache.lastViewports[i], viewport)) {
+                dirtyGraphicsState.viewports = 1;
+            }
         }
     }
 
     void MetalCommandList::setScissors(const RenderRect *scissorRects, const uint32_t count) {
         scissorVector.resize(count);
 
-        for (uint32_t i = 0; i < count; i++) {
-            scissorVector[i] = clampScissorRectIfNecessary(scissorRects[i], targetFramebuffer);
-        }
-
         // Since scissors are set at the encoder level, we mark it as dirty so it'll be updated on next active encoder check
-        if (scissorVector != stateCache.lastScissors) {
-            dirtyGraphicsState.scissors = 1;
+        dirtyGraphicsState.scissors |= count != stateCache.lastScissors.size();
+
+        for (uint32_t i = 0; i < count; i++) {
+            const MTL::ScissorRect scissor = clampScissorRectIfNecessary(scissorRects[i], targetFramebuffer);
+            scissorVector[i] = scissor;
+
+            if (!dirtyGraphicsState.scissors && !scissorsEqual(stateCache.lastScissors[i], scissor)) {
+                dirtyGraphicsState.scissors = 1;
+            }
         }
     }
 
@@ -3505,7 +3522,7 @@ namespace plume {
 
         // Viewports
         if (dirtyGraphicsState.viewports) {
-            if (!viewportVector.empty() && viewportVector != stateCache.lastViewports) {
+            if (!viewportVector.empty()) {
                 activeRenderEncoder->setViewports(viewportVector.data(), viewportVector.size());
                 stateCache.lastViewports = viewportVector;
             }
@@ -3514,7 +3531,7 @@ namespace plume {
 
         // Scissors
         if (dirtyGraphicsState.scissors) {
-            if (!scissorVector.empty() && scissorVector != stateCache.lastScissors) {
+            if (!scissorVector.empty()) {
                 activeRenderEncoder->setScissorRects(scissorVector.data(), scissorVector.size());
                 stateCache.lastScissors = scissorVector;
             }
@@ -3637,7 +3654,7 @@ namespace plume {
         }
 
         if (isCompute) {
-            auto* computeEncoder = static_cast<MTL::ComputeCommandEncoder*>(encoder);
+            auto* computeEncoder = reinterpret_cast<MTL::ComputeCommandEncoder*>(encoder);
             {
                 std::lock_guard lock(device->resourcesMutex);
                 for (const auto* resource : device->gpuAddressableResources) {
@@ -3652,17 +3669,18 @@ namespace plume {
                 }
             }
         } else {
-            auto* renderEncoder = static_cast<MTL::RenderCommandEncoder*>(encoder);
+            constexpr MTL::RenderStages stages = MTL::RenderStageVertex | MTL::RenderStageFragment;
+            auto* renderEncoder = reinterpret_cast<MTL::RenderCommandEncoder*>(encoder);
             {
                 std::lock_guard lock(device->resourcesMutex);
                 for (const auto* resource : device->gpuAddressableResources) {
-                    renderEncoder->useResource(resource, MTL::ResourceUsageRead | MTL::ResourceUsageWrite);
+                    renderEncoder->useResource(resource, MTL::ResourceUsageRead | MTL::ResourceUsageWrite, stages);
                 }
             }
             for (const auto* descriptorSet : currentEncoderDescriptorSets) {
                 for (const auto& entry : descriptorSet->resourceEntries) {
                     if (entry.resource != nullptr) {
-                        renderEncoder->useResource(entry.resource, mapResourceUsage(entry.type), MTL::RenderStageVertex | MTL::RenderStageFragment);
+                        renderEncoder->useResource(entry.resource, mapResourceUsage(entry.type), stages);
                     }
                 }
             }
@@ -3877,7 +3895,7 @@ namespace plume {
         // TODO: Support Raytracing.
         // capabilities.raytracing = mtl->supportsRaytracing();
         capabilities.maxTextureSize = mtl->supportsFamily(MTL::GPUFamilyApple3) ? 16384 : 8192;
-        capabilities.sampleLocations = mtl->programmableSamplePositionsSupported();
+        capabilities.sampleLocations = mtl->areProgrammableSamplePositionsSupported();
         capabilities.resolveRegion = true;
         capabilities.resolveModes = false;
         capabilities.scalarBlockLayout = true;
